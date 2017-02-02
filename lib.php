@@ -43,6 +43,6 @@ defined('MOODLE_INTERNAL') || die();
  */
 function qtype_essayautograde_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array()) {
     global $CFG;
-    require_once($CFG->libdir . '/questionlib.php');
+    require_once($CFG->dirroot.'/lib/questionlib.php');
     question_pluginfile($course, $context, 'qtype_essayautograde', $filearea, $args, $forcedownload, $options);
 }

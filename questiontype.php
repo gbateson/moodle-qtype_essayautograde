@@ -35,78 +35,155 @@ require_once($CFG->dirroot.'/question/type/essay/questiontype.php');
  */
 class qtype_essayautograde extends qtype_essay {
 
+    /** Answer types in question_answers record */
+    const ANSWER_TYPE_BAND    = 0;
+    const ANSWER_TYPE_PHRASE  = 1;
+
+    /** Item types */
+    const ITEM_TYPE_NONE      = 0;
+    const ITEM_TYPE_CHARACTER = 1;
+    const ITEM_TYPE_WORD      = 2;
+    const ITEM_TYPE_SENTENCE  = 3;
+    const ITEM_TYPE_PARAGRAPH = 4;
+
     public function is_manual_graded() {
         return true;
     }
 
-    public function response_file_areas() {
-        return parent::response_file_areas();
-    }
-
-    public function get_question_options($question) {
-        parent::get_question_options($question);
-    }
-
     public function save_question_options($formdata) {
         global $DB;
-        $update = false;
+
         parent::save_question_options($formdata);
-        if ($options = $DB->get_record('qtype_essayautograde_options', array('questionid' => $formdata->id))) {
+
+        $update = false;
+        $options = array('questionid' => $formdata->id);
+        if ($options = $DB->get_record('qtype_essayautograde_options', $options)) {
+
+            $names = self::get_field_names();
+            foreach ($names as $name) {
+                if ($options->$name != $formdata->$name) {
+                    $options->$name = $formdata->$name;
+                    $update = true;
+                }
+            }
         }
         if ($update) {
             $DB->update_record('qtype_essayautograde_options', $options);
         }
+
+        if ($answerids = $DB->get_records('question_answers', array('question' => $formdata->id), 'id ASC', 'id,question')) {
+            $answerids = array_keys($answerids);
+        } else {
+            $answerids = array();
+        }
+
+        $answers = array();
+        $result = new stdClass();
+
+        $repeats = $formdata->countbands;
+        $counts  = $formdata->bandcount;
+        $percent = $formdata->bandpercent;
+
+        $items = array();
+        foreach ($counts as $i => $count) {
+            if (array_key_exists($count, $items)) {
+                continue;
+            }
+            $items[$count] = $percent[$i];
+        }
+        ksort($items);
+
+        foreach ($items as $count => $percent) {
+            $answers[] = (object)array(
+                'question'       => $formdata->id,
+                'fraction'       => self::ANSWER_TYPE_BAND,
+                'answer'         => $count,
+                'answerformat'   => $percent,
+                'feedback'       => '',
+                'feedbackformat' => 0,
+            );
+        }
+
+        $repeats = $formdata->countphrases;
+        $phrases = $formdata->phrasematch;
+        $percent = $formdata->phrasepercent;
+
+        $items = array();
+        foreach ($phrases as $i => $phrase) {
+            if ($phrase=='') {
+                continue;
+            }
+            if (array_key_exists($phrase, $items)) {
+                continue;
+            }
+            $items[$phrase] = $percent[$i];
+        }
+        asort($items);
+
+        foreach ($items as $phrase => $percent) {
+            $answers[] = (object)array(
+                'question'       => $formdata->id,
+                'fraction'       => self::ANSWER_TYPE_PHRASE,
+                'answer'         => '',
+                'answerformat'   => 0,
+                'feedback'       => $phrase,
+                'feedbackformat' => $percent,
+            );
+        }
+
+        foreach ($answers as $answer) {
+            if ($answer->id = array_shift($answerids)) {
+                if (! $DB->update_record('question_answers', $answer)) {
+                    $result->error = get_string('cannotupdaterecord', 'error', 'question_answers (id='.$answer->id.')');
+                    return $result;
+                }
+            } else {
+                unset($answer->id);
+                if (! $answer->id = $DB->insert_record('question_answers', $answer)) {
+                    $result->error = get_string('cannotinsertrecord', 'error', 'question_answers');
+                    return $result;
+                }
+            }
+        }
+
+        // Delete old answer records, if any.
+        if (count($answerids)) {
+            foreach ($answerids as $answerid) {
+                $DB->delete_records('question_answers', array('id' => $answerid));
+            }
+        }
+
+        return true;
     }
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
+        $names = self::get_field_names();
+        foreach ($names as $name) {
+            $question->$name = $questiondata->options->$name;
+        }
     }
 
     public function delete_question($questionid, $contextid) {
+        global $DB;
+        $DB->delete_records('qtype_essayautograde_options', array('questionid' => $questionid));
         parent::delete_question($questionid, $contextid);
-    }
-
-    /**
-     * @return array the different response formats that the question type supports.
-     * internal name => human-readable name.
-     */
-    public function response_formats() {
-        return parent::response_formats();
-    }
-
-    /**
-     * @return array the choices that should be offerd when asking if a response is required
-     */
-    public function response_required_options() {
-        return parent::response_required_options();
-    }
-
-    /**
-     * @return array the choices that should be offered for the input box size.
-     */
-    public function response_sizes() {
-        return parent::response_sizes();
-    }
-
-    /**
-     * @return array the choices that should be offered for the number of attachments.
-     */
-    public function attachment_options() {
-        return parent::attachment_options();
-    }
-
-    /**
-     * @return array the choices that should be offered for the number of required attachments.
-     */
-    public function attachments_required_options() {
-        return parent::attachments_required_options();
     }
 
     public function move_files($questionid, $oldcontextid, $newcontextid) {
         parent::move_files($questionid, $oldcontextid, $newcontextid);
+        $fs = get_file_storage();
+        $fs->move_area_files_to_new_context($oldcontextid,
+                $newcontextid, 'qtype_essayautograde', 'graderinfo', $questionid);
     }
 
     protected function delete_files($questionid, $contextid) {
         parent::delete_files($questionid, $contextid);
+        $fs = get_file_storage();
+        $fs->delete_area_files($contextid, 'qtype_essayautograde', 'graderinfo', $questionid);
+    }
+
+    static public function get_field_names() {
+        return array('enableautograde', 'allowoverride', 'itemtype', 'itemcount');
     }
 }

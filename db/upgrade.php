@@ -30,7 +30,28 @@ defined('MOODLE_INTERNAL') || die();
  * @param int $oldversion the version we are upgrading from.
  */
 function xmldb_qtype_essayautograde_upgrade($oldversion) {
-    global $CFG;
+    global $CFG, $DB;
+
+    $dbman = $DB->get_manager();
+
+    $newversion = 2017020203;
+    if ($oldversion < $newversion) {
+        $table = new xmldb_table('qtype_essayautograde_options');
+        $fields = array(
+            new xmldb_field('enableautograde', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 1, 'responsetemplateformat'),
+            new xmldb_field('allowoverride',   XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 1, 'enableautograde'),
+            new xmldb_field('itemtype',        XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, 0, 'allowoverride'),
+            new xmldb_field('itemcount',       XMLDB_TYPE_INTEGER, '6', null, XMLDB_NOTNULL, null, 0, 'itemtype')
+        );
+        foreach ($fields as $field) {
+            if ($dbman->field_exists($table, $field)) {
+                $dbman->change_field_type($table, $field);
+            } else {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
+    }
 
     return true;
 }
