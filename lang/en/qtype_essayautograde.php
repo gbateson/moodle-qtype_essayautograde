@@ -24,34 +24,47 @@
  */
 
 $string['pluginname'] = 'Essay (auto-grade)';
-$string['pluginname_help'] = 'In response to a question (that may include an image) the respondent writes an answer of a paragraph or two. Initially, the essayautograde question will assign a grade automatically based on the word/character count, and optionally the presence of certain target phrases. This grade may be overridden later by the teacher.';
+$string['pluginname_help'] = 'In response to a question that may include an image, the respondent writes an answer of one or more paragraphs. Initially, a grade is awarded automatically based on the number of characters, words, sentences or paragarphs, and the presence of certain target phrases. The automatic grade may be overridden later by the teacher.';
 $string['pluginname_link'] = 'question/type/essayautograde';
 $string['pluginnameadding'] = 'Adding an Essay (auto-grade) question';
 $string['pluginnameediting'] = 'Editing an Essay (auto-grade) question';
-$string['pluginnamesummary'] = 'Allows a response of a few sentences or paragraphs. The response is given an automatically generated grade which may be overridden later.';
+$string['pluginnamesummary'] = 'Allows an essay of several sentences or paragraphs to be submitted as a question response. The essay is graded automatically. The grade may be overridden later.';
 
 $string['addmorebands'] = 'Add {$a} more grade bands';
 $string['addmorephrases'] = 'Add {$a} more target phrases';
 $string['allowoverride_help'] = 'Allow, or disallow, the teacher to override the automatically-generated grade';
 $string['allowoverride'] = 'Allow manual override';
 $string['autograding'] = 'Auto-grading';
-$string['bandcount'] = 'Item count';
-$string['bandpercent'] = 'Percent';
+$string['bandcount'] = 'For up to';
+$string['bandpercent'] = 'items, award';
 $string['characters'] = 'Characters';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
-$string['gradeband_help'] = 'Specify the maximum count of items, i.e. words or characters, for this band to be applied, and the grade that is to be awarded.';
+$string['gradeband_help'] = 'Specify the maximum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
 $string['gradeband'] = 'Grade band [{no}]';
 $string['gradebands'] = 'Grade bands';
-$string['itemcount_help'] = 'The minimum number of items that must be in the response in order to achieve the maximum grade for this question.';
+$string['itemcount_help'] = 'The minimum number of countable items that must be in the essay text in order to achieve the maximum grade for this question.
+
+Note, that this value may be rendered ineffective by the grade bands, if any, defined below.';
 $string['itemcount'] = 'Expected number of items';
-$string['itemtype_help'] = 'Select the type items in the response that will contribute to the auto-grade.';
-$string['itemtype'] = 'Type of items';
+$string['itemtype_help'] = 'Select the type of items in the essay text that will contribute to the auto-grade.';
+$string['itemtype'] = 'Type of countable items';
 $string['paragraphs'] = 'Paragraphs';
-$string['percentofquestiongrade'] = '{$a}% of question grade';
+$string['percentofquestiongrade'] = '{$a}% of the question grade.';
+$string['phrasematch'] = 'If';
+$string['phrasepercent'] = 'is used, award';
 $string['sentences'] = 'Sentences';
-$string['targetphrase_help'] = 'Specify the grade that will be added if this phrase appears in the response to this question. A question mark, "?", matches any single character, while an asterisk, "*", matches an arbitrary number of characters (including zero characters).';
+$string['targetphrase_help'] = 'Specify the grade that will be added if this target phrase appears in the essay. 
+
+> **e.g.** If [Finally] is used, award [10% of the question grade.]
+
+The target phrase can be a single phrase or a list phrases separated by either a comma "," or the word  "OR" (upper case).
+
+> **e.g.** If [Finally OR Lastly] is used, award [10% of the question grade.]
+
+A question mark "?" in a phrase matches any single character, while an asterisk "*" matches an arbitrary number of characters (including zero characters).
+
+> **e.g.** If [First\*Then\*Finally] is used, award [50% of the question grade.]';
 $string['targetphrase'] = 'Target phrase [{no}]';
 $string['targetphrases'] = 'Target phrases';
 $string['words'] = 'Words';
-

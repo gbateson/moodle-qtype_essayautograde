@@ -30,4 +30,4 @@ $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2016112900;
 $plugin->version   = 2017020101;
-$plugin->release   = '2017-02-01 (01)';
+$plugin->release   = '2017-02-02 (02)';
