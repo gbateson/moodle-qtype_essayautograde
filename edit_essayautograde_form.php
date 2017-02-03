@@ -226,12 +226,10 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
-        $names = qtype_essayautograde::get_field_names();
-        foreach ($names as $name) {
-            if (isset($question->options->$name)) {
-                $question->$name = $question->options->$name;
-            }
-        }
+        $question->enableautograde  = $question->options->enableautograde;
+        $question->allowoverride = $question->options->allowoverride;
+        $question->itemtype  = $question->options->itemtype;
+        $question->itemcount = $question->options->itemcount;
 
         return $question;
     }

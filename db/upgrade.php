@@ -53,5 +53,30 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
     }
 
+    $newversion = 2017020305;
+    if ($oldversion < $newversion) {
+        $select = 'qeo.*';
+        $from   = '{qtype_essay_options} qeo JOIN {question} q ON qeo.questionid = q.id';
+        $where  = 'q.qtype = :qtype';
+        $params = array('qtype' => 'essayautograde');
+        if ($records = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
+            $optionstable = 'qtype_essayautograde_options';
+            foreach ($records as $record) {
+                $DB->delete_records('qtype_essay_options', array('id' => $record->id));
+                $record->enableautograde = 1;
+                $record->allowoverride   = 1;
+                $record->itemtype        = 2; // 2=words
+                $record->itemcount       = 100;
+                if ($record->id = $DB->get_field($optionstable, 'id', array('questionid' => $record->questionid))) {
+                    $DB->update_record($optionstable, $record);
+                } else {
+                    unset($record->id);
+                    $DB->insert_record($optionstable, $record);
+                }
+            }
+        }
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
+    }
+
     return true;
 }

@@ -29,5 +29,5 @@ $plugin->cron      = 0;
 $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2016112900;
-$plugin->version   = 2017020304;
-$plugin->release   = '2017-02-03 (04)';
+$plugin->version   = 2017020305;
+$plugin->release   = '2017-02-03 (05)';

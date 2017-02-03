@@ -25,7 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot.'/question/type/essay/questiontype.php');
+require_once($CFG->dirroot.'/lib/questionlib.php');
 
 /**
  * The essayautograde question type.
@@ -33,7 +33,7 @@ require_once($CFG->dirroot.'/question/type/essay/questiontype.php');
  * @copyright  2005 Mark Nielsen
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_essayautograde extends qtype_essay {
+class qtype_essayautograde extends question_type {
 
     /** Answer types in question_answers record */
     const ANSWER_TYPE_BAND    = 0;
@@ -50,35 +50,63 @@ class qtype_essayautograde extends qtype_essay {
         return true;
     }
 
+    public function response_file_areas() {
+        return array('attachments', 'answer');
+    }
+
+    public function get_question_options($question) {
+        global $DB;
+        $plugin = $this->plugin_name();
+        $optionstable = $plugin.'_options';
+        $question->options = $DB->get_record($optionstable, array('questionid' => $question->id), '*', MUST_EXIST);
+        parent::get_question_options($question);
+    }
+
     public function save_question_options($formdata) {
         global $DB;
 
-        parent::save_question_options($formdata);
+        ///////////////////////////////////////////////////////
+        // save essayautograde options
+        ///////////////////////////////////////////////////////
 
-        $update = false;
-        $options = array('questionid' => $formdata->id);
-        if ($options = $DB->get_record('qtype_essayautograde_options', $options)) {
+        $plugin = $this->plugin_name();
+        $optionstable = $plugin.'_options';
+        $answerstable = 'question_answers';
 
-            $names = self::get_field_names();
-            foreach ($names as $name) {
-                if ($options->$name != $formdata->$name) {
-                    $options->$name = $formdata->$name;
-                    $update = true;
-                }
-            }
-        }
-        if ($update) {
-            $DB->update_record('qtype_essayautograde_options', $options);
-        }
+        $questionid = $formdata->id;
+        $context    = $formdata->context;
+        $graderinfo = $this->import_or_save_files($formdata->graderinfo, $context, $plugin, 'graderinfo', $questionid);
 
-        if ($answerids = $DB->get_records('question_answers', array('question' => $formdata->id), 'id ASC', 'id,question')) {
-            $answerids = array_keys($answerids);
+        $options = (object)array(
+            'id'                  => $DB->get_field($optionstable, 'id', array('questionid' => $questionid)),
+            'questionid'          => $formdata->id,
+            'responseformat'      => $formdata->responseformat,
+            'responserequired'    => $formdata->responserequired,
+            'responsefieldlines'  => $formdata->responsefieldlines,
+            'attachments'         => $formdata->attachments,
+            'attachmentsrequired' => $formdata->attachmentsrequired,
+            'graderinfo'          => $graderinfo,
+            'graderinfoformat'    => $formdata->graderinfo['format'],
+            'responsetemplate'    => $formdata->responsetemplate['text'],
+            'responsetemplateformat' => $formdata->responsetemplate['format'],
+            'enableautograde'     => $formdata->enableautograde,
+            'allowoverride'       => $formdata->allowoverride,
+            'itemtype'            => $formdata->itemtype,
+            'itemcount'           => $formdata->itemcount
+        );
+
+        if ($options->id) {
+            $DB->update_record($optionstable, $options);
         } else {
-            $answerids = array();
+            unset($options->id);
+            $DB->insert_record($optionstable, $options);
         }
 
         $answers = array();
-        $result = new stdClass();
+
+        ///////////////////////////////////////////////////////
+        // add grade bands to $answers
+        ///////////////////////////////////////////////////////
 
         $repeats = $formdata->countbands;
         $counts  = $formdata->bandcount;
@@ -96,13 +124,17 @@ class qtype_essayautograde extends qtype_essay {
         foreach ($items as $count => $percent) {
             $answers[] = (object)array(
                 'question'       => $formdata->id,
-                'fraction'       => self::ANSWER_TYPE_BAND,
                 'answer'         => $count,
                 'answerformat'   => $percent,
+                'fraction'       => self::ANSWER_TYPE_BAND,
                 'feedback'       => '',
                 'feedbackformat' => 0,
             );
         }
+
+        ///////////////////////////////////////////////////////
+        // add target phrases to $answers
+        ///////////////////////////////////////////////////////
 
         $repeats = $formdata->countphrases;
         $phrases = $formdata->phrasematch;
@@ -123,24 +155,36 @@ class qtype_essayautograde extends qtype_essay {
         foreach ($items as $phrase => $percent) {
             $answers[] = (object)array(
                 'question'       => $formdata->id,
-                'fraction'       => self::ANSWER_TYPE_PHRASE,
                 'answer'         => '',
                 'answerformat'   => 0,
+                'fraction'       => self::ANSWER_TYPE_PHRASE,
                 'feedback'       => $phrase,
                 'feedbackformat' => $percent,
             );
         }
 
+        ///////////////////////////////////////////////////////
+        // save $answers i.e. grade bands and target phrases
+        ///////////////////////////////////////////////////////
+
+        if ($answerids = $DB->get_records($answerstable, array('question' => $questionid), 'id ASC', 'id,question')) {
+            $answerids = array_keys($answerids);
+        } else {
+            $answerids = array();
+        }
+
         foreach ($answers as $answer) {
             if ($answer->id = array_shift($answerids)) {
-                if (! $DB->update_record('question_answers', $answer)) {
-                    $result->error = get_string('cannotupdaterecord', 'error', 'question_answers (id='.$answer->id.')');
+                if (! $DB->update_record($answerstable, $answer)) {
+                    $result = get_string('cannotupdaterecord', 'error', "question_answers (id=$answer->id)");
+                    $result = (object)array('error' => $result);
                     return $result;
                 }
             } else {
                 unset($answer->id);
-                if (! $answer->id = $DB->insert_record('question_answers', $answer)) {
-                    $result->error = get_string('cannotinsertrecord', 'error', 'question_answers');
+                if (! $answer->id = $DB->insert_record($answerstable, $answer)) {
+                    $result = get_string('cannotinsertrecord', 'error', 'question_answers');
+                    $result = (object)array('error' => $result);
                     return $result;
                 }
             }
@@ -149,7 +193,7 @@ class qtype_essayautograde extends qtype_essay {
         // Delete old answer records, if any.
         if (count($answerids)) {
             foreach ($answerids as $answerid) {
-                $DB->delete_records('question_answers', array('id' => $answerid));
+                $DB->delete_records($answerstable, array('id' => $answerid));
             }
         }
 
@@ -158,32 +202,104 @@ class qtype_essayautograde extends qtype_essay {
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
-        $names = self::get_field_names();
-        foreach ($names as $name) {
-            $question->$name = $questiondata->options->$name;
-        }
+        $question->responseformat      = $questiondata->options->responseformat;
+        $question->responserequired    = $questiondata->options->responserequired;
+        $question->responsefieldlines  = $questiondata->options->responsefieldlines;
+        $question->attachments         = $questiondata->options->attachments;
+        $question->attachmentsrequired = $questiondata->options->attachmentsrequired;
+        $question->graderinfo          = $questiondata->options->graderinfo;
+        $question->graderinfoformat    = $questiondata->options->graderinfoformat;
+        $question->responsetemplate    = $questiondata->options->responsetemplate;
+        $question->responsetemplateformat = $questiondata->options->responsetemplateformat;
+        $question->enableautograde     = $questiondata->options->enableautograde;
+        $question->allowoverride       = $questiondata->options->allowoverride;
+        $question->itemtype            = $questiondata->options->itemtype;
+        $question->itemcount           = $questiondata->options->itemcount;
     }
 
     public function delete_question($questionid, $contextid) {
         global $DB;
-        $DB->delete_records('qtype_essayautograde_options', array('questionid' => $questionid));
+        $plugin = $this->plugin_name();
+        $optionstable = $plugin.'_options';
+        $DB->delete_records($optionstable, array('questionid' => $questionid));
         parent::delete_question($questionid, $contextid);
+    }
+
+    /**
+     * @return array the different response formats that the question type supports.
+     * internal name => human-readable name.
+     */
+    public function response_formats() {
+        $plugin = 'qtype_essay';
+        return array(
+            'editor'           => get_string('formateditor',           $plugin),
+            'editorfilepicker' => get_string('formateditorfilepicker', $plugin),
+            'plain'            => get_string('formatplain',            $plugin),
+            'monospaced'       => get_string('formatmonospaced',       $plugin),
+            'noinline'         => get_string('formatnoinline',         $plugin),
+        );
+    }
+
+    /**
+     * @return array the choices that should be offerd when asking if a response is required
+     */
+    public function response_required_options() {
+        $plugin = 'qtype_essay';
+        return array(
+            1 => get_string('responseisrequired',  $plugin),
+            0 => get_string('responsenotrequired', $plugin),
+        );
+    }
+
+    /**
+     * @return array the choices that should be offered for the input box size.
+     */
+    public function response_sizes() {
+        $plugin = 'qtype_essay';
+        $choices = array();
+        for ($lines = 5; $lines <= 40; $lines += 5) {
+            $choices[$lines] = get_string('nlines', $plugin, $lines);
+        }
+        return $choices;
+    }
+
+    /**
+     * @return array the choices that should be offered for the number of attachments.
+     */
+    public function attachment_options() {
+        return array(
+            0 => get_string('no'),
+            1 => '1',
+            2 => '2',
+            3 => '3',
+            -1 => get_string('unlimited'),
+        );
+    }
+
+    /**
+     * @return array the choices that should be offered for the number of required attachments.
+     */
+    public function attachments_required_options() {
+        $plugin = 'qtype_essay';
+        return array(
+            0 => get_string('attachmentsoptional', $plugin),
+            1 => '1',
+            2 => '2',
+            3 => '3'
+        );
     }
 
     public function move_files($questionid, $oldcontextid, $newcontextid) {
         parent::move_files($questionid, $oldcontextid, $newcontextid);
+        $plugin = $this->plugin_name();
         $fs = get_file_storage();
-        $fs->move_area_files_to_new_context($oldcontextid,
-                $newcontextid, 'qtype_essayautograde', 'graderinfo', $questionid);
+        $fs->move_area_files_to_new_context($oldcontextid, $newcontextid, $plugin, 'graderinfo', $questionid);
     }
 
     protected function delete_files($questionid, $contextid) {
         parent::delete_files($questionid, $contextid);
+        $plugin = $this->plugin_name();
         $fs = get_file_storage();
-        $fs->delete_area_files($contextid, 'qtype_essayautograde', 'graderinfo', $questionid);
-    }
-
-    static public function get_field_names() {
-        return array('enableautograde', 'allowoverride', 'itemtype', 'itemcount');
+        $fs->delete_area_files($contextid, $plugin, 'graderinfo', $questionid);
     }
 }
