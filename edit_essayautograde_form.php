@@ -58,6 +58,14 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         return substr(get_class($this), 0, -10);
     }
 
+    /**
+     * Fetch a constant form the plugin class in "questiontype.php".
+     */
+    protected function plugin_constant($name) {
+        $qtype = $this->plugin_name();
+        return constant($qtype.'::'.$name);
+    }
+
     protected function definition_inner($mform) {
         parent::definition_inner($mform);
 
@@ -135,7 +143,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, qtype_essayautograde::ITEM_TYPE_WORD));
+        $mform->setDefault($name, $this->get_default_value($name, $this->plugin_constant('ITEM_TYPE_WORD')));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'itemcount';
@@ -145,7 +153,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setType($name, PARAM_INT);
         $mform->setDefault($name, $this->get_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
-        $mform->disabledIf($name, 'itemtype', 'eq', qtype_essayautograde::ITEM_TYPE_NONE);
+        $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_NONE'));
 
         /////////////////////////////////////////////////
         // add grade bands
@@ -175,7 +183,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $options[$name] = array('helpbutton' => array($name, $plugin),
                                 'disabledif' => array('enableautograde', 'eq', 0));
 
-        $repeats = $this->get_answer_repeats($this->question, qtype_essayautograde::ANSWER_TYPE_BAND);
+        $repeats = $this->plugin_constant('ANSWER_TYPE_BAND'); // type
+        $repeats = $this->get_answer_repeats($this->question, $repeats);
         $label = get_string('addmorebands', $plugin, self::NUM_ITEMS_ADD); // Button text.
         $this->repeat_elements($elements, $repeats, $options, 'countbands', 'addbands', self::NUM_ITEMS_ADD, $label, true);
 
@@ -213,7 +222,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $options[$name] = array('helpbutton' => array($name, $plugin),
                                 'disabledif' => array('enableautograde', 'eq', 0));
 
-        $repeats = $this->get_answer_repeats($this->question, qtype_essayautograde::ANSWER_TYPE_PHRASE);
+        $repeats = $this->plugin_constant('ANSWER_TYPE_PHRASE'); // type
+        $repeats = $this->get_answer_repeats($this->question, $repeats);
         $label = get_string('addmorephrases', $plugin, self::NUM_ITEMS_ADD); // Button text.
         $this->repeat_elements($elements, $repeats, $options, 'countphrases', 'addphrases', self::NUM_ITEMS_ADD, $label, true);
     }
@@ -250,13 +260,16 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
+        $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
+        $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
+
         foreach ($question->options->answers as $answer) {
             switch (intval($answer->fraction)) {
-                case qtype_essayautograde::ANSWER_TYPE_BAND:
+                case $ANSWER_TYPE_BAND:
                     $question->bandcount[] = $answer->answer;
                     $question->bandpercent[] = $answer->answerformat;
                     break;
-                case qtype_essayautograde::ANSWER_TYPE_PHRASE:
+                case $ANSWER_TYPE_PHRASE:
                     $question->phrasematch[] = $answer->feedback;
                     $question->phrasepercent[] = $answer->feedbackformat;
                     break;
@@ -338,10 +351,10 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      */
     protected function get_item_types() {
         $plugin = $this->plugin_name();
-        return array(qtype_essayautograde::ITEM_TYPE_NONE      => get_string('none'),
-                     qtype_essayautograde::ITEM_TYPE_CHARACTER => get_string('characters', $plugin),
-                     qtype_essayautograde::ITEM_TYPE_WORD      => get_string('words',      $plugin),
-                     qtype_essayautograde::ITEM_TYPE_SENTENCE  => get_string('sentences',  $plugin),
-                     qtype_essayautograde::ITEM_TYPE_PARAGRAPH => get_string('paragraphs', $plugin));
+        return array($this->plugin_constant('ITEM_TYPE_NONE')      => get_string('none'),
+                     $this->plugin_constant('ITEM_TYPE_CHARACTER') => get_string('characters', $plugin),
+                     $this->plugin_constant('ITEM_TYPE_WORD')      => get_string('words',      $plugin),
+                     $this->plugin_constant('ITEM_TYPE_SENTENCE')  => get_string('sentences',  $plugin),
+                     $this->plugin_constant('ITEM_TYPE_PARAGRAPH') => get_string('paragraphs', $plugin));
     }
 }
