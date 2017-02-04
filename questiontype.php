@@ -121,12 +121,13 @@ class qtype_essayautograde extends question_type {
         }
         ksort($items);
 
+        $fraction = floatval(self::ANSWER_TYPE_BAND);
         foreach ($items as $count => $percent) {
             $answers[] = (object)array(
                 'question'       => $formdata->id,
                 'answer'         => $count,
                 'answerformat'   => $percent,
-                'fraction'       => self::ANSWER_TYPE_BAND,
+                'fraction'       => $fraction,
                 'feedback'       => '',
                 'feedbackformat' => 0,
             );
@@ -152,12 +153,13 @@ class qtype_essayautograde extends question_type {
         }
         asort($items);
 
+        $fraction = floatval(self::ANSWER_TYPE_PHRASE);
         foreach ($items as $phrase => $percent) {
             $answers[] = (object)array(
                 'question'       => $formdata->id,
                 'answer'         => '',
                 'answerformat'   => 0,
-                'fraction'       => self::ANSWER_TYPE_PHRASE,
+                'fraction'       => $fraction,
                 'feedback'       => $phrase,
                 'feedbackformat' => $percent,
             );
@@ -190,11 +192,9 @@ class qtype_essayautograde extends question_type {
             }
         }
 
-        // Delete old answer records, if any.
-        if (count($answerids)) {
-            foreach ($answerids as $answerid) {
-                $DB->delete_records($answerstable, array('id' => $answerid));
-            }
+        // Delete remaining old answer records, if any.
+        while ($answerid = array_shift($answerids)) {
+            $DB->delete_records($answerstable, array('id' => $answerid));
         }
 
         return true;
