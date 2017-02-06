@@ -35,9 +35,10 @@ $string['addmorephrases'] = 'Add {$a} more target phrases';
 $string['allowoverride_help'] = 'Allow, or disallow, the teacher to override the automatically-generated grade';
 $string['allowoverride'] = 'Allow manual override';
 $string['autograding'] = 'Auto-grading';
-$string['bandcount'] = 'For up to';
-$string['bandpercent'] = 'items, award';
+$string['bandcount'] = 'For';
+$string['bandpercent'] = 'or more items, award';
 $string['characters'] = 'Characters';
+$string['correctresponse'] = 'To get full marks for this question, you must satisfy the following criteria:';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
 $string['gradeband_help'] = 'Specify the maximum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
@@ -53,8 +54,9 @@ $string['paragraphs'] = 'Paragraphs';
 $string['percentofquestiongrade'] = '{$a}% of the question grade.';
 $string['phrasematch'] = 'If';
 $string['phrasepercent'] = 'is used, award';
+$string['pleaseenterananswer'] = 'Please enter your response in the text box.';
 $string['sentences'] = 'Sentences';
-$string['targetphrase_help'] = 'Specify the grade that will be added if this target phrase appears in the essay. 
+$string['targetphrase_help'] = 'Specify the grade that will be added if this target phrase appears in the essay.
 
 > **e.g.** If [Finally] is used, award [10% of the question grade.]
 

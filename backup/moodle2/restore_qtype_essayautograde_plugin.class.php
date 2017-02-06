@@ -52,29 +52,31 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
         $data = (object)$data;
         $oldid = $data->id;
 
-        if (!isset($data->responsetemplate)) {
+        if (! isset($data->responsetemplate)) {
             $data->responsetemplate = '';
         }
-        if (!isset($data->responsetemplateformat)) {
+        if (! isset($data->responsetemplateformat)) {
             $data->responsetemplateformat = FORMAT_HTML;
         }
-        if (!isset($data->responserequired)) {
+        if (! isset($data->responserequired)) {
             $data->responserequired = 1;
         }
-        if (!isset($data->attachmentsrequired)) {
+        if (! isset($data->attachmentsrequired)) {
             $data->attachmentsrequired = 0;
         }
 
-        // Detect if the question is created or mapped.
-        $questioncreated = $this->get_mappingid('question_created',
-                $this->get_old_parentid('question')) ? true : false;
+        // Detect if the question is created or mapped
+        // "question" is the XML tag name, not the DB field name.
+        $oldquestionid   = $this->get_old_parentid('question');
+        $newquestionid   = $this->get_new_parentid('question');
 
-        // If the question has been created by restore, we need to create its
-        // qtype_essayautograde too.
-        if ($questioncreated) {
-            $data->questionid = $this->get_new_parentid('question');
-            $newitemid = $DB->insert_record('qtype_essayautograde_options', $data);
-            $this->set_mapping('qtype_essayautograde', $oldid, $newitemid);
+        // If the question has been created by restore,
+        // we need to create a "qtype_ordering_options" record
+        // and create a mapping from the $oldid to the $newid.
+        if ($this->get_mappingid('question_created', $oldquestionid)) {
+            $data->questionid = $newquestionid;
+            $newid = $DB->insert_record('qtype_essayautograde_options', $data);
+            $this->set_mapping('qtype_essayautograde_options', $oldid, $newid);
         }
     }
 
@@ -94,30 +96,42 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
     protected function after_execute_question() {
         global $DB;
 
-        $essayautogradeswithoutoptions = $DB->get_records_sql("
-                    SELECT *
-                      FROM {question} q
-                     WHERE q.qtype = ?
-                       AND NOT EXISTS (
-                        SELECT 1
-                          FROM {qtype_essayautograde_options}
-                         WHERE questionid = q.id
-                     )
-                ", array('essayautograde'));
+        $sql = 'SELECT 1 FROM {qtype_essayautograde_options} qeo WHERE qeo.questionid = q.id';
+        $sql = 'SELECT * FROM {question} q WHERE q.qtype = ?'." AND NOT EXISTS ($sql)";
+        $essayautogradeswithoutoptions = $DB->get_records_sql($sql, array('essayautograde'));
 
         foreach ($essayautogradeswithoutoptions as $q) {
-            $defaultoptions = new stdClass();
-            $defaultoptions->questionid = $q->id;
-            $defaultoptions->responseformat = 'editor';
-            $defaultoptions->responserequired = 1;
-            $defaultoptions->responsefieldlines = 15;
-            $defaultoptions->attachments = 0;
-            $defaultoptions->attachmentsrequired = 0;
-            $defaultoptions->graderinfo = '';
-            $defaultoptions->graderinfoformat = FORMAT_HTML;
-            $defaultoptions->responsetemplate = '';
-            $defaultoptions->responsetemplateformat = FORMAT_HTML;
-            $DB->insert_record('qtype_essayautograde_options', $defaultoptions);
+            $options = (object)array(
+                'questionid'          => $q->id,
+                'responseformat'      => 'editor',
+                'responserequired'    => 1,
+                'responsefieldlines'  => 15,
+                'attachments'         => 0,
+                'attachmentsrequired' => 0,
+                'graderinfo'          => '',
+                'graderinfoformat'    => FORMAT_HTML,
+                'responsetemplate'    => '',
+                'responsetemplateformat' => FORMAT_HTML,
+                'enableautograde'     => 1,
+                'allowoverride'       => 1,
+                'itemtype'            => 2, // words
+                'itemcount'           => 0,
+            );
+            $DB->insert_record('qtype_essayautograde_options', $options);
         }
+    }
+
+    /**
+     * Given one question_states record, return the answer
+     * recoded pointing to all the restored stuff for essayautograde questions.
+     * If not empty, answer is one question_answers->id.
+     *
+     * @param object $state
+     */
+    public function recode_legacy_state_answer($state) {
+        if (empty($state->answer)) {
+            return '';
+        }
+        return $this->get_mappingid('question_answer', $state->answer);
     }
 }

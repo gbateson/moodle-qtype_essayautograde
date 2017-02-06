@@ -35,43 +35,40 @@ require_once($CFG->dirroot.'/question/type/essay/renderer.php');
  */
 class qtype_essayautograde_renderer extends qtype_renderer {
 
-    public function formulation_and_controls(question_attempt $qa,
-            question_display_options $options) {
+    public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
 
         $question = $qa->get_question();
-        $responseoutput = $question->get_format_renderer($this->page);
+        $response = $qa->get_last_qt_data();
+        $question->update_current_response($response);
 
         // Answer field.
         $step = $qa->get_last_step_with_qt_var('answer');
 
-        if (!$step->has_qt_var('answer') && empty($options->readonly)) {
+        if (! $step->has_qt_var('answer') && empty($options->readonly)) {
             // Question has never been answered, fill it with response template.
             $step = new question_attempt_step(array('answer'=>$question->responsetemplate));
         }
 
+        $renderer = $question->get_format_renderer($this->page);
         if (empty($options->readonly)) {
-            $answer = $responseoutput->response_area_input('answer', $qa,
-                    $step, $question->responsefieldlines, $options->context);
-
+            $method = 'response_area_input';
         } else {
-            $answer = $responseoutput->response_area_read_only('answer', $qa,
-                    $step, $question->responsefieldlines, $options->context);
+            $method = 'response_area_read_only';
         }
+        $answer = $question->responsefieldlines;
+        $answer = $renderer->$method('answer', $qa, $step, $answer, $options->context);
 
         $files = '';
         if ($question->attachments) {
             if (empty($options->readonly)) {
                 $files = $this->files_input($qa, $question->attachments, $options);
-
             } else {
                 $files = $this->files_read_only($qa, $options);
             }
         }
 
         $result = '';
-        $result .= html_writer::tag('div', $question->format_questiontext($qa),
-                array('class' => 'qtext'));
-
+        $result .= html_writer::tag('div', $question->format_questiontext($qa), array('class' => 'qtext'));
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
         $result .= html_writer::tag('div', $answer, array('class' => 'answer'));
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
@@ -102,14 +99,161 @@ class qtype_essayautograde_renderer extends qtype_renderer {
     }
 
     public function manual_comment(question_attempt $qa, question_display_options $options) {
-        if ($options->manualcomment != question_display_options::EDITABLE) {
-            return '';
+        if ($options->manualcomment==question_display_options::EDITABLE) {
+            $plugin = $this->plugin_name();
+            $question = $qa->get_question();
+            $comment = $question->graderinfo;
+            $comment = $question->format_text($comment, $comment, $qa, $plugin, 'graderinfo', $question->id);
+            $comment = html_writer::nonempty_tag('div', $comment, array('class' => 'graderinfo'));
+        } else {
+            $comment = ''; // comment is not currently editable
+        }
+        return $comment;
+    }
+
+    /**
+     * Generate the specific feedback. This is feedback that varies according to
+     * the response the student gave.
+     *
+     * @param question_attempt $qa the question attempt to display.
+     * @return string HTML fragment.
+     */
+    public function specific_feedback(question_attempt $qa) {
+
+        //if ($feedback = $this->combined_feedback($qa)) {
+        //    $feedback = html_writer::tag('p', $feedback);
+        //}
+
+        $output = '';
+
+        // If required, add explanation of grade calculation.
+        if ($step = $qa->get_last_step()) {
+            $state = $step->get_state();
+            if ($state == 'gradedpartial' || $state == 'gradedwrong') {
+
+                $plugin = $this->plugin_name();
+                $question = $qa->get_question();
+
+                // show auto grading details if they are required
+                if ($question->enableautograde) {
+
+                    $currentresponse = $question->get_current_response();
+
+                    // Fetch grade details and score details.
+                    $output = array(
+                        'Number of words: '.$currentresponse->count,
+                        'Grade band: '.count($currentresponse->bands),
+                        'Phrases: '.count($currentresponse->phrases),
+                        'Fraction: '.$currentresponse->fraction,
+                    );
+                    $output = html_writer::alist($output);
+                }
+            }
         }
 
+        return $output;
+    }
+
+    /**
+     * Generate an automatic description of the correct response to this question.
+     * Not all question types can do this. If it is not possible, this method
+     * should just return an empty string.
+     *
+     * @param question_attempt $qa the question attempt to display.
+     * @return string HTML fragment.
+     */
+    public function correct_response(question_attempt $qa) {
+        global $DB;
+
+        $plugin = $this->plugin_name();
+        $output = '';
+
+        $showcorrect = false;
         $question = $qa->get_question();
-        return html_writer::nonempty_tag('div', $question->format_text(
-                $question->graderinfo, $question->graderinfo, $qa, 'qtype_essayautograde',
-                'graderinfo', $question->id), array('class' => 'graderinfo'));
+
+        if ($step = $qa->get_last_step()) {
+            switch ($step->get_state()) {
+                case 'gradedright':   $showcorrect = false; break;
+                case 'gradedpartial': $showcorrect = true;  break;
+                case 'gradedwrong':   $showcorrect = true;  break;
+            }
+        }
+
+        if ($showcorrect) {
+
+            // cache plugin constants
+            $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
+            $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
+
+            $bands = array();
+            $phrases = array();
+
+            // we only want the grade band for the highest percent (usually 100%)
+            $percent = 0;
+
+            $answers = $question->get_answers();
+            foreach ($answers as $answer) {
+                switch (intval($answer->fraction)) {
+
+                    case $ANSWER_TYPE_BAND:
+                        if ($percent <= $answer->answerformat) {
+                            $percent = $answer->answerformat;
+                            $band = get_string('bandcount', $plugin).' '.$answer->answer.' '.
+                                    get_string('bandpercent', $plugin).' '.
+                                    get_string('percentofquestiongrade', $plugin, $answer->answerformat);
+                            $bands = array($band);
+                        }
+                        break;
+
+                    case $ANSWER_TYPE_PHRASE:
+                        $phrase = get_string('phrasematch', $plugin).' "'.$answer->feedback.'" '.
+                                  get_string('phrasepercent', $plugin).' '.
+                                  get_string('percentofquestiongrade', $plugin, $answer->feedbackformat);
+                        $phrases[] = $phrase;
+                        break;
+                }
+            }
+
+            if (count($bands)) {
+                $output .= html_writer::alist($bands, array('class' => 'gradebands'));
+            }
+            if (count($phrases)) {
+                $output .= html_writer::alist($phrases, array('class' => 'targetphrases'));
+            }
+
+            if ($output) {
+                $name = 'correctresponse';
+                $output = html_writer::tag('p', get_string($name, $plugin), array('class' => $name)).$output;
+            }
+        }
+
+        return $output;
+    }
+
+    ///////////////////////////////////////////////////////
+    // non-standard methods (used only in this class)
+    ///////////////////////////////////////////////////////
+
+    /**
+     * qtype is plugin name without leading "qtype_"
+     */
+    protected function qtype() {
+        return substr($this->plugin_name(), 6);
+    }
+
+    /**
+     * Plugin name is class name without trailing "_renderer"
+     */
+    protected function plugin_name() {
+        return substr(get_class($this), 0, -9);
+    }
+
+    /**
+     * Fetch a constant from the plugin class in "questiontype.php".
+     */
+    protected function plugin_constant($name) {
+        $plugin = $this->plugin_name();
+        return constant($plugin.'::'.$name);
     }
 }
 

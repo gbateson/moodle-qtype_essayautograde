@@ -59,11 +59,11 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     /**
-     * Fetch a constant form the plugin class in "questiontype.php".
+     * Fetch a constant from the plugin class in "questiontype.php".
      */
     protected function plugin_constant($name) {
-        $qtype = $this->plugin_name();
-        return constant($qtype.'::'.$name);
+        $plugin = $this->plugin_name();
+        return constant($plugin.'::'.$name);
     }
 
     protected function definition_inner($mform) {

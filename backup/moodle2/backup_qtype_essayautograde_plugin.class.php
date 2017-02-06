@@ -48,17 +48,19 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         $plugin->add_child($pluginwrapper);
 
         // Now create the qtype own structures.
-        $essayautograde = new backup_nested_element('essayautograde', array('id'), array(
-                'responseformat', 'responserequired', 'responsefieldlines',
-                'attachments', 'attachmentsrequired', 'graderinfo',
-                'graderinfoformat', 'responsetemplate', 'responsetemplateformat'));
+        $fields = array('responseformat', 'responserequired', 'responsefieldlines',
+                        'attachments', 'attachmentsrequired',
+                        'graderinfo', 'graderinfoformat',
+                        'responsetemplate', 'responsetemplateformat',
+                        'enableautograde', 'allowoverride', 'itemtype', 'itemcount')
+        $essayautograde = new backup_nested_element('essayautograde', array('id'), $fields);
 
         // Now the own qtype tree.
         $pluginwrapper->add_child($essayautograde);
 
         // Set source to populate the data.
-        $essayautograde->set_source_table('qtype_essayautograde_options',
-                array('questionid' => backup::VAR_PARENTID));
+        $params = array('questionid' => backup::VAR_PARENTID);
+        $essayautograde->set_source_table('qtype_essayautograde_options', $params);
 
         // Don't need to annotate ids nor files.
 
