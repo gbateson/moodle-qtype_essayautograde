@@ -95,6 +95,9 @@ class qtype_essayautograde extends question_type {
             'itemcount'           => $formdata->itemcount
         );
 
+        // add options for feedback fields
+        $options = $this->save_combined_feedback_helper($options, $formdata, $context, true);
+
         if ($options->id) {
             $DB->update_record($optionstable, $options);
         } else {
@@ -102,6 +105,10 @@ class qtype_essayautograde extends question_type {
             $DB->insert_record($optionstable, $options);
         }
 
+        // save hints
+        $this->save_hints($formdata, false);
+
+        // initialize $anwers array
         $answers = array();
 
         ///////////////////////////////////////////////////////

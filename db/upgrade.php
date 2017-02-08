@@ -78,5 +78,26 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
     }
 
+    $newversion = 2017020809;
+    if ($oldversion < $newversion) {
+        $table = new xmldb_table('qtype_essayautograde_options');
+        $fields = array(
+            new xmldb_field('correctfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'responsetemplateformat'),
+            new xmldb_field('correctfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'correctfeedback'),
+            new xmldb_field('incorrectfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'correctfeedbackformat'),
+            new xmldb_field('incorrectfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'incorrectfeedback'),
+            new xmldb_field('partiallycorrectfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'incorrectfeedbackformat'),
+            new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'partiallycorrectfeedback')
+        );
+        foreach ($fields as $field) {
+            if ($dbman->field_exists($table, $field)) {
+                $dbman->change_field_type($table, $field);
+            } else {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
+    }
+
     return true;
 }

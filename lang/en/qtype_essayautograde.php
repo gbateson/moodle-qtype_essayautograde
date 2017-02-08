@@ -30,8 +30,8 @@ $string['pluginnameadding'] = 'Adding an Essay (auto-grade) question';
 $string['pluginnameediting'] = 'Editing an Essay (auto-grade) question';
 $string['pluginnamesummary'] = 'Allows an essay of several sentences or paragraphs to be submitted as a question response. The essay is graded automatically. The grade may be overridden later.';
 
-$string['addmorebands'] = 'Add {$a} more grade bands';
-$string['addmorephrases'] = 'Add {$a} more target phrases';
+$string['addmorebands'] = 'Add {$a} more grade band';
+$string['addmorephrases'] = 'Add {$a} more target phrase';
 $string['allowoverride_help'] = 'Allow, or disallow, the teacher to override the automatically-generated grade';
 $string['allowoverride'] = 'Allow manual override';
 $string['autograding'] = 'Auto-grading';

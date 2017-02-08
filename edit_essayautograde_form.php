@@ -38,8 +38,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
     /** Settings for adding repeated form elements */
     const NUM_ITEMS_DEFAULT = 0;
-    const NUM_ITEMS_MIN     = 1;
-    const NUM_ITEMS_ADD     = 2;
+    const NUM_ITEMS_MIN     = 0;
+    const NUM_ITEMS_ADD     = 1;
 
     /** Number of rows in TEXTAREA elements */
     const TEXTAREA_ROWS = 3;
@@ -82,36 +82,6 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $short_text_options  = array('size' => 3,  'style' => 'width: auto');
         $medium_text_options = array('size' => 5,  'style' => 'width: auto');
         $long_text_options   = array('size' => 10, 'style' => 'width: auto');
-
-        /////////////////////////////////////////////////
-        // collapse certain form sections
-        /////////////////////////////////////////////////
-
-        $names = array('responseoptions',
-                       'responsetemplateheader',
-                       'graderinfoheader');
-        foreach ($names as $name) {
-            if ($mform->elementExists($name)) {
-                $mform->setExpanded($name, false);
-            }
-        }
-
-        /////////////////////////////////////////////////
-        // reduce vertical height of textareas
-        /////////////////////////////////////////////////
-
-        $names = array('questiontext',
-                       'generalfeedback',
-                       'responsetemplate',
-                       'graderinfo');
-        foreach ($names as $name) {
-            if ($mform->elementExists($name)) {
-                $element = $mform->getElement($name);
-                $attributes = $element->getAttributes();
-                $attributes['rows'] = self::TEXTAREA_ROWS;
-                $element->setAttributes($attributes);
-            }
-        }
 
         /////////////////////////////////////////////////
         // add main form elements
@@ -226,11 +196,85 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $repeats = $this->get_answer_repeats($this->question, $repeats);
         $label = get_string('addmorephrases', $plugin, self::NUM_ITEMS_ADD); // Button text.
         $this->repeat_elements($elements, $repeats, $options, 'countphrases', 'addphrases', self::NUM_ITEMS_ADD, $label, true);
+
+        /////////////////////////////////////////////////
+        // Add feedback fields (= Combined feedback).
+        // and interactive settings (= Multiple tries).
+        // Move combined feedback after general feedback.
+        /////////////////////////////////////////////////
+
+        $this->add_combined_feedback_fields(false);
+        $this->add_interactive_settings(false, false);
+
+        $name = 'numhints';
+        if ($mform->elementExists($name)) {
+            $numhints = $mform->getElement($name);
+            $numhints = $numhints->getValue();
+        } else {
+            $numhints = 0;
+        }
+
+        $previousname = 'responseoptions';
+        $names = array('combinedfeedbackhdr',
+                       'correctfeedback',
+                       'partiallycorrectfeedback',
+                       'incorrectfeedback');
+        //$names[] = 'multitriesheader';
+        //$names[] = 'penalty';
+        //for ($i=0; $i<$numhints; $i++) {
+        //    $names[] = "hint[$i]";
+        //}
+        foreach ($names as $name) {
+            if ($mform->elementExists($name)) {
+                $mform->insertElementBefore($mform->removeElement($name, false), $previousname);
+            }
+        }
+
+        /////////////////////////////////////////////////
+        // collapse certain form sections
+        /////////////////////////////////////////////////
+
+        $names = array('combinedfeedbackhdr',
+                       'responseoptions',
+                       'responsetemplateheader',
+                       'graderinfoheader',
+                       'multitriesheader');
+        foreach ($names as $name) {
+            if ($mform->elementExists($name)) {
+                $mform->setExpanded($name, false);
+            }
+        }
+
+        /////////////////////////////////////////////////
+        // reduce vertical height of textareas
+        /////////////////////////////////////////////////
+
+        $names = array('questiontext',
+                       'generalfeedback',
+                       'correctfeedback',
+                       'partiallycorrectfeedback',
+                       'incorrectfeedback',
+                       'responsetemplate',
+                       'graderinfo');
+        for ($i=0; $i<$numhints; $i++) {
+            $names[] = "hint[$i]";
+        }
+        foreach ($names as $name) {
+            if ($mform->elementExists($name)) {
+                $element = $mform->getElement($name);
+                $attributes = $element->getAttributes();
+                $attributes['rows'] = self::TEXTAREA_ROWS;
+                $element->setAttributes($attributes);
+            }
+        }
     }
 
     protected function data_preprocessing($question) {
 
         $question = parent::data_preprocessing($question);
+
+        $question = $this->data_preprocessing_combined_feedback($question);
+        $question = $this->data_preprocessing_hints($question, false, false);
 
         /////////////////////////////////////////////////
         // add fields from qtype_essayautograde_options

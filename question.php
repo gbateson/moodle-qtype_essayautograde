@@ -48,7 +48,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     protected $currentresponse = null;
 
     /**
-     * Override "make_behaviour" method for from parent class, "qtype_essay_question",
+     * Override "make_behaviour" method in the parent class, "qtype_essay_question",
      * because we may need to autograde the response
      */
     public function make_behaviour(question_attempt $qa, $preferredbehaviour) {
@@ -114,6 +114,42 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     /**
+     * Checks whether the users is allow to be served a particular file.
+     *
+     * @param question_attempt $qa the question attempt being displayed.
+     * @param question_display_options $options the options that control display of the question.
+     * @param string $component the name of the component we are serving files for.
+     * @param string $filearea the name of the file area.
+     * @param array $args the remaining bits of the file path.
+     * @param bool $forcedownload whether the user must be forced to download the file.
+     * @return bool true if the user can access this file.
+     */
+    public function check_file_access($qa, $options, $component, $filearea, $args, $forcedownload) {
+        switch ($component) {
+            case 'question':
+                if ($filearea == 'response_attachments') {
+                    return ($this->attachments != 0);
+                }
+                if ($filearea == 'response_answer') {
+                    return ($this->responseformat === 'editorfilepicker');
+                }
+                if ($filearea == 'hint') {
+                    return $this->check_hint_file_access($qa, $options, $args);
+                }
+                if (in_array($filearea, $this->qtype->feedbackfields)) {
+                    return $this->check_combined_feedback_file_access($qa, $options, $filearea);
+                }
+                break;
+            case 'qtype_essayautograde':
+                if ($filearea == 'graderinfo') {
+                    return ($options->manualcomment && $args[0] == $this->id);
+                }
+                break;
+        }
+        parent::check_file_access($qa, $options, $component, $filearea, $args, $forcedownload);
+    }
+
+    /**
      * Get one of the question hints. The question_attempt is passed in case
      * the question type wants to do something complex. For example, the
      * multiple choice with multiple responses question type will turn off most
@@ -122,7 +158,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @param question_attempt $qa The question_attempt.
      */
     public function get_hint($hintnumber, question_attempt $qa) {
-        die(get_class($this).'->get_hint() is not implemented yet');
+        if (empty($this->hints[$hintnumber])) {
+            return null;
+        }
+        return $this->hints[$hintnumber];
     }
 
     /**
