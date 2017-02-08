@@ -41,6 +41,24 @@ require_once($CFG->dirroot.'/question/type/essay/question.php');
  */
 class qtype_essayautograde_question extends qtype_essay_question implements question_automatically_gradable {
 
+    /** @var string */
+    public $correctfeedback;
+
+    /** @var int */
+    public $correctfeedbackformat;
+
+    /** @var string */
+    public $incorrectfeedback;
+
+    /** @var int */
+    public $incorrectfeedbackformat;
+
+    /** @var string */
+    public $partiallycorrectfeedback;
+
+    /** @var int */
+    public $partiallycorrectfeedbackformat;
+
     /** Array of records from the "question_answers" table */
     protected $answers = null;
 
@@ -198,7 +216,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     /**
      * Fetch a constant from the plugin class in "questiontype.php".
      */
-    protected function plugin_constant($name) {
+    public function plugin_constant($name) {
         $plugin = $this->plugin_name();
         return constant($plugin.'::'.$name);
     }
@@ -226,7 +244,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         // count items in $text
         switch ($this->itemtype) {
-            case $this->plugin_constant('ITEM_TYPE_CHARACTER'): $count = $stats->chars; break;
+            case $this->plugin_constant('ITEM_TYPE_CHARACTER'): $count = $stats->characters; break;
             case $this->plugin_constant('ITEM_TYPE_WORD'):      $count = $stats->words; break;
             case $this->plugin_constant('ITEM_TYPE_SENTENCE'):  $count = $stats->sentences; break;
             case $this->plugin_constant('ITEM_TYPE_PARAGRAPH'): $count = $stats->paragraphs; break;
@@ -340,7 +358,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     protected function get_stats($text) {
         $precision = 1;
         $stats = (object)array(
-            'chars' => $this->get_stats_chars($text),
+            'characters' => $this->get_stats_characters($text),
             'words' => $this->get_stats_words($text),
             'hardwords' => $this->get_stats_hardwords($text),
             'sentences' => $this->get_stats_sentences($text),
@@ -357,11 +375,11 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $stats->lexicaldensity = round(($stats->uniquewords / $stats->words) * 100, $precision);
         }
         if ($stats->sentences) {
-            $stats->charspersentence = round($stats->chars / $stats->sentences, $precision);
+            $stats->charspersentence = round($stats->characters / $stats->sentences, $precision);
             $stats->wordspersentence = round($stats->words / $stats->sentences, $precision);
             $stats->hardwordspersentence = round($stats->hardwords / $stats->sentences, $precision);
         }
-        if ($stats->hardwordspersentence) {
+        if ($stats->wordspersentence) {
             $stats->fogindex = ($stats->wordspersentence + $stats->hardwordspersentence);
             $stats->fogindex = round($stats->fogindex * 0.4, $precision);
         }
@@ -374,7 +392,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     /**
      * get_stats
      */
-    protected function get_stats_chars($text) {
+    protected function get_stats_characters($text) {
         return core_text::strlen($text);
     }
 
@@ -463,7 +481,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $newstrlen = strlen($str);
             $count += ($oldstrlen - $newstrlen);
 
-            // adjust count for special last chars
+            // adjust count for special last char
             switch (substr($str, -1)) {
                 case 'E': $count--; break;
                 case 'Y': $count++; break;

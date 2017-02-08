@@ -38,24 +38,30 @@ $string['autograding'] = 'Auto-grading';
 $string['bandcount'] = 'For';
 $string['bandpercent'] = 'or more items, award';
 $string['characters'] = 'Characters';
-$string['correctresponse'] = 'Your grade was calcualted using the following criteria:';
+$string['charspersentence'] = 'Characters per sentence';
+$string['correctresponse'] = 'Your grade was calculated using the following criteria:';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
+$string['fogindex'] = 'Fog index';
 $string['gradeband_help'] = 'Specify the maximum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
 $string['gradeband'] = 'Grade band [{no}]';
 $string['gradebands'] = 'Grade bands';
+$string['hardwords'] = 'Hard words';
+$string['hardwordspersentence'] = 'Hard words per sentence';
 $string['itemcount_help'] = 'The minimum number of countable items that must be in the essay text in order to achieve the maximum grade for this question.
 
 Note, that this value may be rendered ineffective by the grade bands, if any, defined below.';
 $string['itemcount'] = 'Expected number of items';
 $string['itemtype_help'] = 'Select the type of items in the essay text that will contribute to the auto-grade.';
 $string['itemtype'] = 'Type of countable items';
+$string['lexicaldensity'] = 'Lexical density';
 $string['paragraphs'] = 'Paragraphs';
 $string['percentofquestiongrade'] = '{$a}% of the question grade.';
 $string['phrasematch'] = 'If';
 $string['phrasepercent'] = 'is used, award';
 $string['pleaseenterananswer'] = 'Please enter your response in the text box.';
 $string['sentences'] = 'Sentences';
+$string['sentencesperparagraph'] = 'Sentences per paragraph';
 $string['targetphrase_help'] = 'Specify the grade that will be added if this target phrase appears in the essay.
 
 > **e.g.** If [Finally] is used, award [10% of the question grade.]
@@ -69,4 +75,7 @@ A question mark "?" in a phrase matches any single character, while an asterisk 
 > **e.g.** If [First\*Then\*Finally] is used, award [50% of the question grade.]';
 $string['targetphrase'] = 'Target phrase [{no}]';
 $string['targetphrases'] = 'Target phrases';
+$string['textstatistics'] = 'Text statistics';
+$string['uniquewords'] = 'Unique words';
 $string['words'] = 'Words';
+$string['wordspersentence'] = 'Words per sentence';

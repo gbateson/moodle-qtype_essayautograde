@@ -33,7 +33,7 @@ require_once($CFG->dirroot.'/question/type/essay/renderer.php');
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_essayautograde_renderer extends qtype_renderer {
+class qtype_essayautograde_renderer extends qtype_with_combined_feedback_renderer {
 
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
 
@@ -121,9 +121,9 @@ class qtype_essayautograde_renderer extends qtype_renderer {
 
         $output = '';
 
-        //if ($feedback = $this->combined_feedback($qa)) {
-        //    $output .= html_writer::tag('p', $feedback);
-        //}
+        if ($feedback = $this->combined_feedback($qa)) {
+            $output .= html_writer::tag('p', $feedback);
+        }
 
         // If required, add explanation of grade calculation.
         if ($step = $qa->get_last_step()) {
@@ -134,27 +134,45 @@ class qtype_essayautograde_renderer extends qtype_renderer {
 
             // format $currentresponse->stats
             $table = new html_table();
+            $table->caption = get_string('textstatistics', $plugin);
             $table->attributes['class'] = 'generaltable essayautograde_stats';
-            $names = array('chars',
-                           'words',
-                           'hardwords',
-                           'sentences',
-                           'paragraphs',
-                           'uniquewords',
-                           'lexicaldensity',
-                           'charspersentence',
-                           'wordspersentence',
-                           'hardwordspersentence',
-                           'sentencesperparagraph',
-                           'fogindex');
+            switch ($question->itemtype) {
+
+                case $question->plugin_constant('ITEM_TYPE_CHARACTER'):
+                    $names = array('characters',
+                                   'sentences',
+                                   'charspersentence');
+                    break;
+
+                case $question->plugin_constant('ITEM_TYPE_WORD'):
+                    $names = array('words',
+                                   'sentences',
+                                   'wordspersentence',
+                                   'uniquewords',
+                                   'hardwords',
+                                   'lexicaldensity',
+                                   'fogindex');
+                    break;
+
+                case $question->plugin_constant('ITEM_TYPE_SENTENCE'):
+                case $question->plugin_constant('ITEM_TYPE_PARAGRAPH'):
+                    $names = array('sentences',
+                                   'paragraphs',
+                                   'sentencesperparagraph');
+                    break;
+            }
+
             foreach ($names as $name) {
-                $cells = array();
-                $cells[] = new html_table_cell(get_string($name, $plugin));
-                $cells[] = new html_table_cell($currentresponse->stats->$name);
+                $label = get_string($name, $plugin);
+                $value = $currentresponse->stats->$name;
+                if (is_int($value)) {
+                    $value = number_format($value);
+                }
+                $cells = array(new html_table_cell($label),
+                               new html_table_cell($value));
                 $table->data[] = new html_table_row($cells);
             }
             $output .= html_writer::table($table);
-
 
             $state = $step->get_state();
             if ($state == 'gradedpartial' || $state == 'gradedwrong') {
@@ -179,7 +197,7 @@ class qtype_essayautograde_renderer extends qtype_renderer {
                         }
                     }
                     if (count($details)) {
-                        $output = html_writer::alist($details);
+                        $output .= html_writer::alist($details);
                     }
                 }
             }
