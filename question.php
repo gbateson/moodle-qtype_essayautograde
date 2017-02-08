@@ -126,6 +126,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     public function check_file_access($qa, $options, $component, $filearea, $args, $forcedownload) {
         switch ($component) {
+
             case 'question':
                 if ($filearea == 'response_attachments') {
                     return ($this->attachments != 0);
@@ -140,7 +141,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                     return $this->check_combined_feedback_file_access($qa, $options, $filearea);
                 }
                 break;
-            case 'qtype_essayautograde':
+
+            case $this->plugin_name():
                 if ($filearea == 'graderinfo') {
                     return ($options->manualcomment && $args[0] == $this->id);
                 }
@@ -219,29 +221,15 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $text = preg_replace('/[ \t]+/', ' ', trim($text));
         $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
 
+        // get stats for this $text
+        $stats = $this->get_stats($text);
+
         // count items in $text
         switch ($this->itemtype) {
-
-            case $this->plugin_constant('ITEM_TYPE_CHARACTER'):
-                $count = core_text::strlen($text);
-                break;
-
-            case $this->plugin_constant('ITEM_TYPE_WORD'):
-                $count = str_word_count($text);
-                break;
-
-            case $this->plugin_constant('ITEM_TYPE_SENTENCE'):
-                $count = substr_count($text, '.');
-                break;
-
-            case $this->plugin_constant('ITEM_TYPE_PARAGRAPH'):
-                $count = substr_count($text, "\n") + 1;
-                 break;
-
-            case $this->plugin_constant('ITEM_TYPE_NONE'):
-            default:
-                break;
-
+            case $this->plugin_constant('ITEM_TYPE_CHARACTER'): $count = $stats->chars; break;
+            case $this->plugin_constant('ITEM_TYPE_WORD'):      $count = $stats->words; break;
+            case $this->plugin_constant('ITEM_TYPE_SENTENCE'):  $count = $stats->sentences; break;
+            case $this->plugin_constant('ITEM_TYPE_PARAGRAPH'): $count = $stats->paragraphs; break;
         }
 
         // get records from "question_answers" table
@@ -295,17 +283,25 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             }
         }
 
-        // store this information, incase it is needed elswhere
-        $this->set_current_response($count, $bands, $phrases, $fraction);
+
+        // store this information, in case it is needed elswhere
+        $this->set_current_response($text, $stats, $count, $bands, $phrases, $fraction);
     }
 
     /**
      * Store information about latest response to this question
      *
+     * @param  string  clean response $text
+     * @param  integer number of items in $text
+     * @param  array   applicable grade bands
+     * @param  phrases traget phrases in $text
+     * @param  decimal $fraction grade for $text
      * @return string
      */
-    public function set_current_response($count, $bands, $phrases, $fraction) {
-        $this->currentresponse = (object)array('count' => $count,
+    public function set_current_response($text, $stats, $count, $bands, $phrases, $fraction) {
+        $this->currentresponse = (object)array('text' => $text,
+                                               'stats' => $stats,
+                                               'count' => $count,
                                                'bands' => $bands,
                                                'phrases' => $phrases,
                                                'fraction' => $fraction);
@@ -338,4 +334,141 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         return $this->answers;
     }
 
+    /**
+     * get_stats
+     */
+    protected function get_stats($text) {
+        $precision = 1;
+        $stats = (object)array(
+            'chars' => $this->get_stats_chars($text),
+            'words' => $this->get_stats_words($text),
+            'hardwords' => $this->get_stats_hardwords($text),
+            'sentences' => $this->get_stats_sentences($text),
+            'paragraphs' => $this->get_stats_paragraphs($text),
+            'uniquewords' => $this->get_stats_uniquewords($text),
+            'lexicaldensity' => 0,
+            'charspersentence' => 0,
+            'wordspersentence' => 0,
+            'hardwordspersentence' => 0,
+            'sentencesperparagraph' => 0,
+            'fogindex' => 0,
+        );
+        if ($stats->words) {
+            $stats->lexicaldensity = round(($stats->uniquewords / $stats->words) * 100, $precision);
+        }
+        if ($stats->sentences) {
+            $stats->charspersentence = round($stats->chars / $stats->sentences, $precision);
+            $stats->wordspersentence = round($stats->words / $stats->sentences, $precision);
+            $stats->hardwordspersentence = round($stats->hardwords / $stats->sentences, $precision);
+        }
+        if ($stats->hardwordspersentence) {
+            $stats->fogindex = ($stats->wordspersentence + $stats->hardwordspersentence);
+            $stats->fogindex = round($stats->fogindex * 0.4, $precision);
+        }
+        if ($stats->paragraphs) {
+            $stats->sentencesperparagraph = round($stats->sentences / $stats->paragraphs, $precision);
+        }
+        return $stats;
+    }
+
+    /**
+     * get_stats
+     */
+    protected function get_stats_chars($text) {
+        return core_text::strlen($text);
+    }
+
+    /**
+     * get_stats_words
+     */
+    protected function get_stats_words($text) {
+        return str_word_count($text, 0);
+    }
+
+    /**
+     * get_stats_sentences
+     */
+    protected function get_stats_sentences($text) {
+        $items = preg_split('/[!?.]+(?![0-9])/', $text);
+        $items = array_filter($items);
+        return count($items);
+    }
+
+    /**
+     * get_stats_paragraphs
+     */
+    protected function get_stats_paragraphs($text) {
+        $items = explode("\n", $text);
+        $items = array_filter($items);
+        return count($items);
+    }
+
+    /**
+     * get_stats_uniquewords
+     */
+    protected function get_stats_uniquewords($text) {
+        $items = core_text::strtolower($text);
+        $items = str_word_count($items, 1);
+        $items = array_unique($items);
+        return count($items);
+    }
+
+    /**
+     * get_stats_hardwords
+     */
+    protected function get_stats_hardwords($text) {
+        $count = 0;
+        $items = core_text::strtolower($text);
+        $items = str_word_count($items, 1);
+        $items = array_unique($items);
+        foreach ($items as $item) {
+            if ($this->count_syllables($item) > 2) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * count_syllables
+     *
+     * based on: https://github.com/e-rasvet/sassessment/blob/master/lib.php
+     */
+    protected function count_syllables($word) {
+        // https://github.com/vanderlee/phpSyllable (multilang)
+        // https://github.com/DaveChild/Text-Statistics (English only)
+        // https://pear.php.net/manual/en/package.text.text-statistics.intro.php
+        // https://pear.php.net/package/Text_Statistics/docs/latest/__filesource/fsource_Text_Statistics__Text_Statistics-1.0.1TextWord.php.html
+        $str = strtoupper($word);
+        $oldstrlen = strlen($str);
+        if ($oldstrlen < 2) {
+            $count = 1;
+        } else {
+            $count = 0;
+
+            // detect syllables for double-vowels
+            $vowels = array('AA','AE','AI','AO','AU',
+                            'EA','EE','EI','EO','EU',
+                            'IA','IE','II','IO','IU',
+                            'OA','OE','OI','OO','OU',
+                            'UA','UE','UI','UO','UU');
+            $str = str_replace($vowels, '', $str);
+            $newstrlen = strlen($str);
+            $count += (($oldstrlen - $newstrlen) / 2);
+
+            // detect syllables for single-vowels
+            $vowels = array('A','E','I','O','U');
+            $str = str_replace($vowels, '', $str);
+            $oldstrlen = $newstrlen;
+            $newstrlen = strlen($str);
+            $count += ($oldstrlen - $newstrlen);
+
+            // adjust count for special last chars
+            switch (substr($str, -1)) {
+                case 'E': $count--; break;
+                case 'Y': $count++; break;
+            };
+        }
+        return $count;
+    }
 }
