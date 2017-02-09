@@ -1,25 +1,31 @@
-.que.essayautograde textarea.qtype_essayautograde_response {
+/***************************************************************************
+    Because the "essayautograde" question type extends the "essay" renderer,
+    the classes of the inner display elements use the original "essay" CSS
+    class names.
+***************************************************************************/
+
+.que.essayautograde textarea.qtype_essay_response {
     width: 100%;
 }
 
-.que.essayautograde textarea.qtype_essayautograde_response.qtype_essayautograde_plain {
+.que.essayautograde textarea.qtype_essay_response.qtype_essay_plain {
     white-space: pre-wrap;
     font: inherit;
 }
 
-.que.essayautograde textarea.qtype_essayautograde_response.qtype_essayautograde_monospaced {
+.que.essayautograde textarea.qtype_essay_response.qtype_essayautograde_monospaced {
     white-space: pre;
     font-family: Andale Mono, Monaco, Courier New, DejaVu Sans Mono, monospace;
 }
 
-.que.essayautograde .qtype_essayautograde_response {
+.que.essayautograde .qtype_essay_response {
     min-height: 3em;
 }
 
-.que.essayautograde .qtype_essayautograde_response.readonly {
+.que.essayautograde .qtype_essay_response.readonly {
     background-color: white;
 }
 
-.que.essayautograde div.qtype_essayautograde_response textarea {
+.que.essayautograde div.qtype_essay_response textarea {
     width: 100%;
 }

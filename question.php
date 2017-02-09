@@ -42,6 +42,12 @@ require_once($CFG->dirroot.'/question/type/essay/question.php');
 class qtype_essayautograde_question extends qtype_essay_question implements question_automatically_gradable {
 
     /** @var string */
+    public $feedback;
+
+    /** @var int */
+    public $feedbackformat;
+
+    /** @var string */
     public $correctfeedback;
 
     /** @var int */
@@ -113,7 +119,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         if ($this->is_gradable_response($response)) {
             return '';
         }
-        return get_string('pleaseenterananswer', $this->qtype->plugin_name());
+        return get_string('pleaseenterananswer', $this->plugin_name());
     }
 
     /**
@@ -128,7 +134,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     public function grade_response(array $response) {
         $this->update_current_response($response);
         $fraction = $this->get_current_response('fraction');
-        return array($fraction, question_state::graded_state_for_fraction($fraction));
+        if (empty($this->allowoverride)) {
+            $state = question_state::graded_state_for_fraction($fraction);
+        } else {
+            $state = question_state::manually_graded_state_for_fraction($fraction);
+        }
+        return array($fraction, $state);
     }
 
     /**
@@ -204,6 +215,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function qtype() {
         return substr($this->plugin_name(), 6);
+        // = return $this->qtype->name();
     }
 
     /**
@@ -211,7 +223,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function plugin_name() {
         return substr(get_class($this), 0, -9);
-    }
+        // = return $this->qtype->plugin_name();
+     }
 
     /**
      * Fetch a constant from the plugin class in "questiontype.php".
@@ -357,20 +370,18 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function get_stats($text) {
         $precision = 1;
-        $stats = (object)array(
-            'characters' => $this->get_stats_characters($text),
-            'words' => $this->get_stats_words($text),
-            'hardwords' => $this->get_stats_hardwords($text),
-            'sentences' => $this->get_stats_sentences($text),
-            'paragraphs' => $this->get_stats_paragraphs($text),
-            'uniquewords' => $this->get_stats_uniquewords($text),
-            'lexicaldensity' => 0,
-            'charspersentence' => 0,
-            'wordspersentence' => 0,
-            'hardwordspersentence' => 0,
-            'sentencesperparagraph' => 0,
-            'fogindex' => 0,
-        );
+        $stats = (object)array('characters'  => $this->get_stats_characters($text),
+                               'words'       => $this->get_stats_words($text),
+                               'sentences'   => $this->get_stats_sentences($text),
+                               'paragraphs'  => $this->get_stats_paragraphs($text),
+                               'hardwords'   => $this->get_stats_hardwords($text),
+                               'uniquewords' => $this->get_stats_uniquewords($text),
+                               'fogindex' => 0,
+                               'lexicaldensity' => 0,
+                               'charspersentence' => 0,
+                               'wordspersentence' => 0,
+                               'hardwordspersentence' => 0,
+                               'sentencesperparagraph' => 0);
         if ($stats->words) {
             $stats->lexicaldensity = round(($stats->uniquewords / $stats->words) * 100, $precision);
         }
@@ -458,8 +469,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         // https://pear.php.net/manual/en/package.text.text-statistics.intro.php
         // https://pear.php.net/package/Text_Statistics/docs/latest/__filesource/fsource_Text_Statistics__Text_Statistics-1.0.1TextWord.php.html
         $str = strtoupper($word);
-        $oldstrlen = strlen($str);
-        if ($oldstrlen < 2) {
+        $oldlen = strlen($str);
+        if ($oldlen < 2) {
             $count = 1;
         } else {
             $count = 0;
@@ -471,15 +482,15 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                             'OA','OE','OI','OO','OU',
                             'UA','UE','UI','UO','UU');
             $str = str_replace($vowels, '', $str);
-            $newstrlen = strlen($str);
-            $count += (($oldstrlen - $newstrlen) / 2);
+            $newlen = strlen($str);
+            $count += (($oldlen - $newlen) / 2);
 
             // detect syllables for single-vowels
             $vowels = array('A','E','I','O','U');
             $str = str_replace($vowels, '', $str);
-            $oldstrlen = $newstrlen;
-            $newstrlen = strlen($str);
-            $count += ($oldstrlen - $newstrlen);
+            $oldlen = $newlen;
+            $newlen = strlen($str);
+            $count += ($oldlen - $newlen);
 
             // adjust count for special last char
             switch (substr($str, -1)) {

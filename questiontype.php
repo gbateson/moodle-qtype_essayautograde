@@ -47,7 +47,10 @@ class qtype_essayautograde extends question_type {
     const ITEM_TYPE_PARAGRAPH = 4;
 
     /** @var array Combined feedback fields */
-    public $feedbackfields = array('correctfeedback', 'partiallycorrectfeedback', 'incorrectfeedback');
+    public $feedbackfields = array('feedback',
+                                   'correctfeedback',
+                                   'partiallycorrectfeedback',
+                                   'incorrectfeedback');
 
     public function is_manual_graded() {
         return true;
@@ -80,6 +83,11 @@ class qtype_essayautograde extends question_type {
         $context    = $formdata->context;
         $graderinfo = $this->import_or_save_files($formdata->graderinfo, $context, $plugin, 'graderinfo', $questionid);
 
+        $autofeedback = $formdata->autofeedback;
+        $autofeedback = array_filter($autofeedback);
+        $autofeedback = array_keys($autofeedback);
+        $autofeedback = implode(',', $autofeedback);
+
         $options = (object)array(
             'id'                  => $DB->get_field($optionstable, 'id', array('questionid' => $questionid)),
             'questionid'          => $formdata->id,
@@ -95,7 +103,8 @@ class qtype_essayautograde extends question_type {
             'enableautograde'     => $formdata->enableautograde,
             'allowoverride'       => $formdata->allowoverride,
             'itemtype'            => $formdata->itemtype,
-            'itemcount'           => $formdata->itemcount
+            'itemcount'           => $formdata->itemcount,
+            'autofeedback'        => $autofeedback
         );
 
         // add options for feedback fields
@@ -212,7 +221,6 @@ class qtype_essayautograde extends question_type {
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
         parent::initialise_question_instance($question, $questiondata);
-        $this->initialise_combined_feedback($question, $questiondata);
         $question->responseformat      = $questiondata->options->responseformat;
         $question->responserequired    = $questiondata->options->responserequired;
         $question->responsefieldlines  = $questiondata->options->responsefieldlines;
@@ -226,6 +234,8 @@ class qtype_essayautograde extends question_type {
         $question->allowoverride       = $questiondata->options->allowoverride;
         $question->itemtype            = $questiondata->options->itemtype;
         $question->itemcount           = $questiondata->options->itemcount;
+        $question->autofeedback        = $questiondata->options->autofeedback;
+        $this->initialise_combined_feedback($question, $questiondata);
     }
 
     public function delete_question($questionid, $contextid) {

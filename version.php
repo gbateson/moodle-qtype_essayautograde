@@ -28,6 +28,21 @@ defined('MOODLE_INTERNAL') || die();
 $plugin->cron      = 0;
 $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->requires  = 2016112900;
-$plugin->version   = 2017020812;
-$plugin->release   = '2017-02-08 (12)';
+$plugin->requires  = 2015111600; // Moodle 3.0
+$plugin->version   = 2017020913;
+$plugin->release   = '2017-02-09 (13)';
+
+// https://docs.moodle.org/dev/Releases
+// Moodle 3.2 2016120500  5 Dec 2016
+// Moodle 3.1 2016052300 23 May 2016
+// Moodle 3.0 2015111600 16 Nov 2015
+// Moodle 2.9 2015051100 11 May 2015
+// Moodle 2.8 2014111000 10 Nov 2014
+// Moodle 2.7 2014051200 12 May 2014
+// Moodle 2.6 2013111800 18 Nov 2013
+// Moodle 2.5 2013051400 14 May 2013
+// Moodle 2.4 2012120300  3 Dec 2012
+// Moodle 2.3 2012062500 25 Jun 2012
+// Moodle 2.2 2011120500  5 Dec 2011
+// Moodle 2.1 2011070100  1 Jul 2011
+// Moodle 2.0 2010112400 24 Nov 2010

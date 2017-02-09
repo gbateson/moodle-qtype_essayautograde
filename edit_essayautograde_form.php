@@ -109,7 +109,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
         $name = 'itemtype';
         $label = get_string($name, $plugin);
-        $options = $this->get_item_types();
+        $options = $this->get_itemtype_options();
         $mform->addElement('select', $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
@@ -124,6 +124,28 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setDefault($name, $this->get_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_NONE'));
+
+        $name = 'autofeedback';
+        $label = get_string($name, $plugin);
+        $options = $this->get_autofeedback_options(true);
+        $elements = array();
+        foreach ($options as $value => $text) {
+            $elements[] = $mform->createElement('checkbox', $name."[$value]",  '', $text);
+        }
+        $mform->addGroup($elements, $name, $label, html_writer::empty_tag('br'), false);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+
+        // only use defaults on new record
+        //$defaults = 'words,wordspersentence,uniquewords,hardwords';
+        //$defaults = $this->get_default_value($name, $defaults);
+        //$defaults = explode(',', $defaults);
+        //$defaults = array_filter($defaults);
+
+        foreach ($options as $value => $text) {
+            $mform->setType($name."[$value]", PARAM_INT);
+            //$mform->setDefault($name."[$value]", in_array($value, $defaults));
+        }
 
         /////////////////////////////////////////////////
         // add grade bands
@@ -219,11 +241,6 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                        'correctfeedback',
                        'partiallycorrectfeedback',
                        'incorrectfeedback');
-        //$names[] = 'multitriesheader';
-        //$names[] = 'penalty';
-        //for ($i=0; $i<$numhints; $i++) {
-        //    $names[] = "hint[$i]";
-        //}
         foreach ($names as $name) {
             if ($mform->elementExists($name)) {
                 $mform->insertElementBefore($mform->removeElement($name, false), $previousname);
@@ -288,6 +305,14 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $question->allowoverride = $question->options->allowoverride;
         $question->itemtype = $question->options->itemtype;
         $question->itemcount = $question->options->itemcount;
+        $question->autofeedback = $question->options->autofeedback;
+
+        $question->autofeedback = explode(',', $question->autofeedback);
+        $question->autofeedback = array_filter($question->autofeedback);
+        $question->autofeedback = array_flip($question->autofeedback);
+        foreach ($this->get_autofeedback_options(false) as $value) {
+            $question->autofeedback[$value] = array_key_exists($value, $question->autofeedback);
+        }
 
         /////////////////////////////////////////////////
         // add fields from question_answers
@@ -393,12 +418,34 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      *
      * @return array(type => description)
      */
-    protected function get_item_types() {
+    protected function get_itemtype_options() {
         $plugin = $this->plugin_name();
         return array($this->plugin_constant('ITEM_TYPE_NONE')      => get_string('none'),
                      $this->plugin_constant('ITEM_TYPE_CHARACTER') => get_string('characters', $plugin),
                      $this->plugin_constant('ITEM_TYPE_WORD')      => get_string('words',      $plugin),
                      $this->plugin_constant('ITEM_TYPE_SENTENCE')  => get_string('sentences',  $plugin),
                      $this->plugin_constant('ITEM_TYPE_PARAGRAPH') => get_string('paragraphs', $plugin));
+    }
+
+    /**
+     * Get array of countable item types
+     *
+     * @return array(type => description)
+     */
+    protected function get_autofeedback_options($returntext=true) {
+        $options = array('characters', 'words',
+                         'sentences', 'paragraphs',
+                         'uniquewords', 'hardwords',
+                         'charspersentence', 'wordspersentence',
+                         'hardwordspersentence', 'sentencesperparagraph',
+                         'lexicaldensity', 'fogindex');
+        if ($returntext) {
+            $plugin = $this->plugin_name();
+            $options = array_flip($options);
+            foreach (array_keys($options) as $option) {
+                $options[$option] = get_string($option, $plugin);            
+            }
+        }
+        return $options;
     }
 }
