@@ -138,17 +138,17 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $table->attributes['class'] = 'generaltable essayautograde_stats';
             $names = explode(',', $question->autofeedback);
             $names = array_filter($names);
-            if (count($names)) {
-                foreach ($names as $name) {
-                    $label = get_string($name, $plugin);
-                    $value = $currentresponse->stats->$name;
-                    if (is_int($value)) {
-                        $value = number_format($value);
-                    }
-                    $cells = array(new html_table_cell($label),
-                                   new html_table_cell($value));
-                    $table->data[] = new html_table_row($cells);
+            foreach ($names as $name) {
+                $label = get_string($name, $plugin);
+                $value = $currentresponse->stats->$name;
+                if (is_int($value)) {
+                    $value = number_format($value);
                 }
+                $cells = array(new html_table_cell($label),
+                               new html_table_cell($value));
+                $table->data[] = new html_table_row($cells);
+            }
+            if (count($table->data)) {
                 $output .= html_writer::table($table);
             }
 

@@ -38,10 +38,10 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
     if ($oldversion < $newversion) {
         $table = new xmldb_table('qtype_essayautograde_options');
         $fields = array(
-            new xmldb_field('enableautograde', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 1, 'responsetemplateformat'),
-            new xmldb_field('allowoverride',   XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, 1, 'enableautograde'),
-            new xmldb_field('itemtype',        XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, 0, 'allowoverride'),
-            new xmldb_field('itemcount',       XMLDB_TYPE_INTEGER, '6', null, XMLDB_NOTNULL, null, 0, 'itemtype')
+            new xmldb_field('enableautograde', XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1, 'responsetemplateformat'),
+            new xmldb_field('allowoverride',   XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1, 'enableautograde'),
+            new xmldb_field('itemtype',        XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0, 'allowoverride'),
+            new xmldb_field('itemcount',       XMLDB_TYPE_INTEGER, 6, null, XMLDB_NOTNULL, null, 0, 'itemtype')
         );
         foreach ($fields as $field) {
             if ($dbman->field_exists($table, $field)) {
@@ -78,17 +78,17 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
     }
 
-    $newversion = 2017020913;
+    $newversion = 2017020914;
     if ($oldversion < $newversion) {
         $table = new xmldb_table('qtype_essayautograde_options');
         $fields = array(
-            new xmldb_field('autofeedback', XMLDB_TYPE_CHAR, 255, null, XMLDB_NOTNULL, null, null, 'itemcount'),
-            new xmldb_field('correctfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'autofeedback'),
-            new xmldb_field('correctfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'correctfeedback'),
-            new xmldb_field('incorrectfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'correctfeedbackformat'),
-            new xmldb_field('incorrectfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'incorrectfeedback'),
-            new xmldb_field('partiallycorrectfeedback', XMLDB_TYPE_TEXT, null, null, null, null, null, 'incorrectfeedbackformat'),
-            new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'partiallycorrectfeedback')
+            new xmldb_field('autofeedback',                   XMLDB_TYPE_CHAR,    255,  null, XMLDB_NOTNULL, null, null, 'itemcount'),
+            new xmldb_field('correctfeedback',                XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'autofeedback'),
+            new xmldb_field('correctfeedbackformat',          XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0,    'correctfeedback'),
+            new xmldb_field('incorrectfeedback',              XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'correctfeedbackformat'),
+            new xmldb_field('incorrectfeedbackformat',        XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0,    'incorrectfeedback'),
+            new xmldb_field('partiallycorrectfeedback',       XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'incorrectfeedbackformat'),
+            new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0,    'partiallycorrectfeedback')
         );
         foreach ($fields as $field) {
             if ($dbman->field_exists($table, $field)) {

@@ -113,7 +113,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, $this->plugin_constant('ITEM_TYPE_WORD')));
+        $mform->setDefault($name, $this->get_default_value($name, $this->plugin_constant('ITEM_TYPE_WORDS')));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'itemcount';
@@ -420,11 +420,11 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      */
     protected function get_itemtype_options() {
         $plugin = $this->plugin_name();
-        return array($this->plugin_constant('ITEM_TYPE_NONE')      => get_string('none'),
-                     $this->plugin_constant('ITEM_TYPE_CHARACTER') => get_string('characters', $plugin),
-                     $this->plugin_constant('ITEM_TYPE_WORD')      => get_string('words',      $plugin),
-                     $this->plugin_constant('ITEM_TYPE_SENTENCE')  => get_string('sentences',  $plugin),
-                     $this->plugin_constant('ITEM_TYPE_PARAGRAPH') => get_string('paragraphs', $plugin));
+        return array($this->plugin_constant('ITEM_TYPE_NONE') => get_string('none'),
+                     $this->plugin_constant('ITEM_TYPE_CHARS') => get_string('chars', $plugin),
+                     $this->plugin_constant('ITEM_TYPE_WORDS') => get_string('words', $plugin),
+                     $this->plugin_constant('ITEM_TYPE_SENTENCES') => get_string('sentences', $plugin),
+                     $this->plugin_constant('ITEM_TYPE_PARAGRAPHS') => get_string('paragraphs', $plugin));
     }
 
     /**
@@ -433,7 +433,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      * @return array(type => description)
      */
     protected function get_autofeedback_options($returntext=true) {
-        $options = array('characters', 'words',
+        $options = array('chars', 'words',
                          'sentences', 'paragraphs',
                          'uniquewords', 'hardwords',
                          'charspersentence', 'wordspersentence',
@@ -443,7 +443,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             $plugin = $this->plugin_name();
             $options = array_flip($options);
             foreach (array_keys($options) as $option) {
-                $options[$option] = get_string($option, $plugin);            
+                $options[$option] = get_string($option, $plugin);
             }
         }
         return $options;

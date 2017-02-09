@@ -21,9 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 defined('MOODLE_INTERNAL') || die();
-
 
 /**
  * Provides the information to backup essayautograde questions
@@ -47,12 +45,20 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         // Connect the visible container ASAP.
         $plugin->add_child($pluginwrapper);
 
+        // This qtype uses standard question_answers, add them here
+        // to the tree before any other information that will use them.
+        $this->add_question_question_answers($pluginwrapper);
+
         // Now create the qtype own structures.
         $fields = array('responseformat', 'responserequired', 'responsefieldlines',
                         'attachments', 'attachmentsrequired',
                         'graderinfo', 'graderinfoformat',
                         'responsetemplate', 'responsetemplateformat',
-                        'enableautograde', 'allowoverride', 'itemtype', 'itemcount')
+                        'enableautograde', 'allowoverride',
+                        'itemtype', 'itemcount', 'autofeedback',
+                        'correctfeedback', 'correctfeedbackformat',
+                        'incorrectfeedback', 'incorrectfeedbackformat',
+                        'partiallycorrectfeedback', 'partiallycorrectfeedbackformat');
         $essayautograde = new backup_nested_element('essayautograde', array('id'), $fields);
 
         // Now the own qtype tree.
@@ -74,8 +80,10 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
      * files to be processed both in backup and restore.
      */
     public static function get_qtype_fileareas() {
-        return array(
-            'graderinfo' => 'question_created',
-        );
+        return array('graderinfo'        => 'question_created',
+                     'responsetemplate'  => 'question_created',
+                     'correctfeedback'   => 'question_created',
+                     'incorrectfeedback' => 'question_created',
+                     'partiallycorrectfeedback' => 'question_created');
     }
 }

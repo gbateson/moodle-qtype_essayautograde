@@ -40,11 +40,11 @@ class qtype_essayautograde extends question_type {
     const ANSWER_TYPE_PHRASE  = 1;
 
     /** Item types */
-    const ITEM_TYPE_NONE      = 0;
-    const ITEM_TYPE_CHARACTER = 1;
-    const ITEM_TYPE_WORD      = 2;
-    const ITEM_TYPE_SENTENCE  = 3;
-    const ITEM_TYPE_PARAGRAPH = 4;
+    const ITEM_TYPE_NONE = 0;
+    const ITEM_TYPE_CHARS = 1;
+    const ITEM_TYPE_WORDS = 2;
+    const ITEM_TYPE_SENTENCES = 3;
+    const ITEM_TYPE_PARAGRAPHS = 4;
 
     /** @var array Combined feedback fields */
     public $feedbackfields = array('feedback',

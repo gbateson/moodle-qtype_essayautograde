@@ -24,7 +24,7 @@
  */
 
 $string['pluginname'] = 'Essay (auto-grade)';
-$string['pluginname_help'] = 'In response to a question that may include an image, the respondent writes an answer of one or more paragraphs. Initially, a grade is awarded automatically based on the number of characters, words, sentences or paragarphs, and the presence of certain target phrases. The automatic grade may be overridden later by the teacher.';
+$string['pluginname_help'] = 'In response to a question that may include an image, the respondent writes an answer of one or more paragraphs. Initially, a grade is awarded automatically based on the number of chars, words, sentences or paragarphs, and the presence of certain target phrases. The automatic grade may be overridden later by the teacher.';
 $string['pluginname_link'] = 'question/type/essayautograde';
 $string['pluginnameadding'] = 'Adding an Essay (auto-grade) question';
 $string['pluginnameediting'] = 'Editing an Essay (auto-grade) question';
@@ -39,7 +39,7 @@ $string['autofeedback'] = 'Auto-feedback';
 $string['autograding'] = 'Auto-grading';
 $string['bandcount'] = 'For';
 $string['bandpercent'] = 'or more items, award';
-$string['characters'] = 'Characters';
+$string['chars'] = 'Characters';
 $string['charspersentence'] = 'Characters per sentence';
 $string['correctresponse'] = 'Your grade was calculated using the following criteria:';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
@@ -72,7 +72,7 @@ The target phrase can be a single phrase or a list phrases separated by either a
 
 > **e.g.** If [Finally OR Lastly] is used, award [10% of the question grade.]
 
-A question mark "?" in a phrase matches any single character, while an asterisk "*" matches an arbitrary number of characters (including zero characters).
+A question mark "?" in a phrase matches any single character, while an asterisk "*" matches an arbitrary number of chars (including zero chars).
 
 > **e.g.** If [First\*Then\*Finally] is used, award [50% of the question grade.]';
 $string['targetphrase'] = 'Target phrase [{no}]';

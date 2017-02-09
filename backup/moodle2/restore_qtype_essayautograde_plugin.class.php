@@ -21,9 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 defined('MOODLE_INTERNAL') || die();
-
 
 /**
  * restore plugin class that provides the necessary information
@@ -38,9 +36,17 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
      * Returns the paths to be handled by the plugin at question level
      */
     protected function define_question_plugin_structure() {
-        return array(
-            new restore_path_element('essayautograde', $this->get_pathfor('/essayautograde'))
-        );
+        $paths = array();
+
+        // This qtype uses question_answers, add them.
+        $this->add_question_question_answers($paths);
+
+        // Add own qtype stuff.
+        $name = 'essayautograde';
+        $path = $this->get_pathfor('/essayautograde');
+        $paths[] = new restore_path_element($name, $path);
+
+        return $paths;
     }
 
     /**
@@ -82,13 +88,19 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
 
     /**
      * Return the contents of this qtype to be processed by the links decoder
+     *
+     * @return array
      */
     public static function define_decode_contents() {
+        $fields = array('graderinfo',
+                        'responsetemplate',
+                        'correctfeedback',
+                        'incorrectfeedback',
+                        'partiallycorrectfeedback');
         return array(
-            new restore_decode_content('qtype_essayautograde_options', 'graderinfo', 'qtype_essayautograde'),
+            new restore_decode_content('qtype_essayautograde_options', $fields, 'qtype_essayautograde')
         );
     }
-
     /**
      * When restoring old data, that does not have the essayautograde options information
      * in the XML, supply defaults.
@@ -116,6 +128,13 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
                 'allowoverride'       => 1,
                 'itemtype'            => 2, // words
                 'itemcount'           => 0,
+                'autofeedback'        => '',
+                'correctfeedback'     => '',
+                'correctfeedbackformat' => FORMAT_HTML,
+                'incorrectfeedback'   => '',
+                'incorrectfeedbackformat' => FORMAT_HTML,
+                'partiallycorrectfeedback' => '',
+                'partiallycorrectfeedbackformat' => FORMAT_HTML
             );
             $DB->insert_record('qtype_essayautograde_options', $options);
         }
