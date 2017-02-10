@@ -34,9 +34,14 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
+    $plugintype = 'qtype';
+    $pluginname = 'essayautograde';
+    $plugin = $plugintype.'_'.$pluginname;
+    $pluginoptionstable = $plugin.'_options';
+
     $newversion = 2017020203;
     if ($oldversion < $newversion) {
-        $table = new xmldb_table('qtype_essayautograde_options');
+        $table = new xmldb_table($pluginoptionstable);
         $fields = array(
             new xmldb_field('enableautograde', XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1, 'responsetemplateformat'),
             new xmldb_field('allowoverride',   XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1, 'enableautograde'),
@@ -50,7 +55,7 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
                 $dbman->add_field($table, $field);
             }
         }
-        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
     $newversion = 2017020305;
@@ -60,27 +65,26 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         $where  = 'q.qtype = :qtype';
         $params = array('qtype' => 'essayautograde');
         if ($records = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
-            $optionstable = 'qtype_essayautograde_options';
             foreach ($records as $record) {
                 $DB->delete_records('qtype_essay_options', array('id' => $record->id));
                 $record->enableautograde = 1;
                 $record->allowoverride   = 1;
                 $record->itemtype        = 2; // 2=words
                 $record->itemcount       = 100;
-                if ($record->id = $DB->get_field($optionstable, 'id', array('questionid' => $record->questionid))) {
-                    $DB->update_record($optionstable, $record);
+                if ($record->id = $DB->get_field($pluginoptionstable, 'id', array('questionid' => $record->questionid))) {
+                    $DB->update_record($pluginoptionstable, $record);
                 } else {
                     unset($record->id);
-                    $DB->insert_record($optionstable, $record);
+                    $DB->insert_record($pluginoptionstable, $record);
                 }
             }
         }
-        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
     $newversion = 2017020914;
     if ($oldversion < $newversion) {
-        $table = new xmldb_table('qtype_essayautograde_options');
+        $table = new xmldb_table($pluginoptionstable);
         $fields = array(
             new xmldb_field('autofeedback',                   XMLDB_TYPE_CHAR,    255,  null, XMLDB_NOTNULL, null, null, 'itemcount'),
             new xmldb_field('correctfeedback',                XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'autofeedback'),
@@ -97,7 +101,19 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
                 $dbman->add_field($table, $field);
             }
         }
-        upgrade_plugin_savepoint(true, $newversion, 'qtype', 'essayautograde');
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2017020915;
+    if ($oldversion < $newversion) {
+        $field = 'autofeedback';
+        if ($records = $DB->get_records_select($pluginoptionstable, $DB->sql_like($field, '?'), array('%hardword%'))) {
+            foreach ($records as $record) {
+                $value = str_replace('hardword', 'longword', $record->$field);
+                $DB->set_field($pluginoptionstable, $field, $value, array('id' => $record->id));
+            }
+        }
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
     return true;

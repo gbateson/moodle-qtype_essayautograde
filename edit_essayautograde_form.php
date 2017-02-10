@@ -137,7 +137,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         // only use defaults on new record
-        //$defaults = 'words,wordspersentence,uniquewords,hardwords';
+        //$defaults = 'words,wordspersentence,uniquewords,longwords';
         //$defaults = $this->get_default_value($name, $defaults);
         //$defaults = explode(',', $defaults);
         //$defaults = array_filter($defaults);
@@ -435,9 +435,9 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     protected function get_autofeedback_options($returntext=true) {
         $options = array('chars', 'words',
                          'sentences', 'paragraphs',
-                         'uniquewords', 'hardwords',
+                         'uniquewords', 'longwords',
                          'charspersentence', 'wordspersentence',
-                         'hardwordspersentence', 'sentencesperparagraph',
+                         'longwordspersentence', 'sentencesperparagraph',
                          'lexicaldensity', 'fogindex');
         if ($returntext) {
             $plugin = $this->plugin_name();

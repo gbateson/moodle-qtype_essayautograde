@@ -374,13 +374,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                                'words' => $this->get_stats_words($text),
                                'sentences' => $this->get_stats_sentences($text),
                                'paragraphs' => $this->get_stats_paragraphs($text),
-                               'hardwords' => $this->get_stats_hardwords($text),
+                               'longwords' => $this->get_stats_longwords($text),
                                'uniquewords' => $this->get_stats_uniquewords($text),
                                'fogindex' => 0,
                                'lexicaldensity' => 0,
                                'charspersentence' => 0,
                                'wordspersentence' => 0,
-                               'hardwordspersentence' => 0,
+                               'longwordspersentence' => 0,
                                'sentencesperparagraph' => 0);
         if ($stats->words) {
             $stats->lexicaldensity = round(($stats->uniquewords / $stats->words) * 100, $precision);
@@ -388,10 +388,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         if ($stats->sentences) {
             $stats->charspersentence = round($stats->chars / $stats->sentences, $precision);
             $stats->wordspersentence = round($stats->words / $stats->sentences, $precision);
-            $stats->hardwordspersentence = round($stats->hardwords / $stats->sentences, $precision);
+            $stats->longwordspersentence = round($stats->longwords / $stats->sentences, $precision);
         }
         if ($stats->wordspersentence) {
-            $stats->fogindex = ($stats->wordspersentence + $stats->hardwordspersentence);
+            $stats->fogindex = ($stats->wordspersentence + $stats->longwordspersentence);
             $stats->fogindex = round($stats->fogindex * 0.4, $precision);
         }
         if ($stats->paragraphs) {
@@ -443,9 +443,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     /**
-     * get_stats_hardwords
+     * get_stats_longwords
      */
-    protected function get_stats_hardwords($text) {
+    protected function get_stats_longwords($text) {
         $count = 0;
         $items = core_text::strtolower($text);
         $items = str_word_count($items, 1);

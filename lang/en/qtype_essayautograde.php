@@ -48,8 +48,6 @@ $string['fogindex'] = 'Fog index';
 $string['gradeband_help'] = 'Specify the maximum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
 $string['gradeband'] = 'Grade band [{no}]';
 $string['gradebands'] = 'Grade bands';
-$string['hardwords'] = 'Hard words';
-$string['hardwordspersentence'] = 'Hard words per sentence';
 $string['itemcount_help'] = 'The minimum number of countable items that must be in the essay text in order to achieve the maximum grade for this question.
 
 Note, that this value may be rendered ineffective by the grade bands, if any, defined below.';
@@ -57,6 +55,8 @@ $string['itemcount'] = 'Expected number of items';
 $string['itemtype_help'] = 'Select the type of items in the essay text that will contribute to the auto-grade.';
 $string['itemtype'] = 'Type of countable items';
 $string['lexicaldensity'] = 'Lexical density';
+$string['longwords'] = 'Long words';
+$string['longwordspersentence'] = 'Long words per sentence';
 $string['paragraphs'] = 'Paragraphs';
 $string['percentofquestiongrade'] = '{$a}% of the question grade.';
 $string['phrasematch'] = 'If';
