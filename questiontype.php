@@ -244,7 +244,12 @@ class qtype_essayautograde extends question_type {
         $question->allowoverride       = $questiondata->options->allowoverride;
         $question->itemtype            = $questiondata->options->itemtype;
         $question->itemcount           = $questiondata->options->itemcount;
-        $question->textstatitems        = $questiondata->options->textstatitems;
+        $question->showcalculation     = $questiondata->options->showcalculation;
+        $question->showtextstats       = $questiondata->options->showtextstats;
+        $question->textstatitems       = $questiondata->options->textstatitems;
+        $question->showgradebands      = $questiondata->options->showgradebands;
+        $question->addpartialgrades    = $questiondata->options->addpartialgrades;
+        $question->showtargetphrases   = $questiondata->options->showtargetphrases;
         $this->initialise_combined_feedback($question, $questiondata);
     }
 

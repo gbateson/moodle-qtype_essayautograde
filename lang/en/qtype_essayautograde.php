@@ -46,15 +46,16 @@ $string['charspersentence'] = 'Characters per sentence';
 $string['correctresponse'] = 'Your grade was calculated using the following criteria:';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
-$string['explanationcompleteband'] = '({$a->percent}% for completing {$a->gradeband})';
-$string['explanationfirstitems'] = '({$a->percent}% for the first {$a->count} {$a->itemtype})';
-$string['explanationpartialband'] = '({$a->percent}% for partially completing {$a->gradeband})';
-$string['explanationremainingitems'] = '({$a->percent}% for the remaining {$a->count} {$a->itemtype})';
-$string['explanationtargetphrase'] = '({$a->percent}% for including the phrase {$a->phrase})';
+$string['explanationcompleteband'] = '{$a->percent}% for completing grade band [{$a->gradeband}]';
+$string['explanationfirstitems'] = '{$a->percent}% for the first {$a->count} {$a->itemtype}';
+$string['explanationpartialband'] = '{$a->percent}% for partially completing grade band [{$a->gradeband}]';
+$string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->count} {$a->itemtype}';
+$string['explanationtargetphrase'] = '{$a->percent}% for including the phrase "{$a->phrase}"';
 $string['fogindex'] = 'Fog index';
 $string['gradeband_help'] = 'Specify the maximum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
 $string['gradeband'] = 'Grade band [{no}]';
 $string['gradebands'] = 'Grade bands';
+$string['gradecalculation'] = 'Grade calculation';
 $string['itemcount_help'] = 'The minimum number of countable items that must be in the essay text in order to achieve the maximum grade for this question.
 
 Note, that this value may be rendered ineffective by the grade bands, if any, defined below.';

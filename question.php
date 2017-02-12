@@ -243,7 +243,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $count = 0;
         $bands = array();
         $phrases = array();
+        $myphrases = array();
         $fraction = 0.0;
+        $currentcount = 0;
+        $currentpercent = 0;
+        $completecount = 0;
+        $completepercent = 0;
 
         $text = question_utils::to_plain_text($response['answer'],
                                               $response['answerformat'],
@@ -285,28 +290,56 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
             // set fractional grade from item count and target phrases
             $fraction = 0.0;
+            $checkbands = true;
             foreach ($answers as $answer) {
                 switch (intval($answer->fraction)) {
 
                     case $ANSWER_TYPE_BAND:
-                        if ($count >= $answer->answer) {
-                            $fraction = ($answer->answerformat / 100);
-                            $bands = array($answer->answer => $answer->answerformat);
+                        if ($checkbands) {
+                            if ($answer->answer > $count) {
+                                $checkbands = false;
+                            }
+                            // update band counts and percents
+                            $completecount   = $currentcount;
+                            $completepercent = $currentpercent;
+                            $currentcount    = $answer->answer;
+                            $currentpercent  = $answer->answerformat;
                         }
+                        $bands[$answer->answer] = $answer->answerformat;
                         break;
 
                     case $ANSWER_TYPE_PHRASE:
-                        $search = $answer->feedback;
-                        $search = preg_quote($search, '/');
-                        $search = preg_replace('/ *(,|OR) */', '|', $search);
-                        $search = "/$search/s";
-                        if (preg_match($search, $text, $phrase)) {
-                            $fraction += ($answer->feedbackformat / 100);
-                            $phrases[] = $phrase[0];
+                        if ($search = trim($answer->feedback)) {
+                            $search = preg_quote($search, '/');
+                            $search = preg_replace('/ *(,|OR) */', '|', $search);
+                            $search = "/$search/s";
+                            if (preg_match($search, $text, $phrase)) {
+                                $phrase = $phrase[0];
+                                $fraction += ($answer->feedbackformat / 100);
+                                $myphrases[$phrase] = $answer->feedbackformat;
+                            }
+                            $phrases[$answer->feedback] = $answer->feedbackformat;
                         }
                         break;
                 }
             }
+
+            // set the item width of the current band
+            // and the percentage width of the current band
+            $currentcount = ($currentcount - $completecount);
+            $currentpercent = ($currentpercent - $completepercent);
+
+            // set the number of items to be graded by the current band
+            // and thus calculate the percent awarded by the current band
+            if ($this->addpartialgrades && $currentcount) {
+                $partialcount = ($count - $completecount);
+                $partialpercent = round(($partialcount / $currentcount) * $currentpercent);
+            } else {
+                $partialcount = 0;
+                $partialpercent = 0;
+            }
+
+            $fraction += (($completepercent + $partialpercent) / 100);
 
             // don't allow grades over 100%
             if ($fraction > 1.0) {
@@ -314,9 +347,18 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             }
         }
 
-
         // store this information, in case it is needed elswhere
-        $this->set_current_response($text, $stats, $count, $bands, $phrases, $fraction);
+        $this->save_current_response('text', $text);
+        $this->save_current_response('stats', $stats);
+        $this->save_current_response('count', $count);
+        $this->save_current_response('bands', $bands);
+        $this->save_current_response('phrases', $phrases);
+        $this->save_current_response('myphrases', $myphrases);
+        $this->save_current_response('fraction', $fraction);
+        $this->save_current_response('partialcount', $partialcount);
+        $this->save_current_response('partialpercent', $partialpercent);
+        $this->save_current_response('completecount', $completecount);
+        $this->save_current_response('completepercent', $completepercent);
     }
 
     /**
@@ -329,13 +371,11 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @param  decimal $fraction grade for $text
      * @return string
      */
-    public function set_current_response($text, $stats, $count, $bands, $phrases, $fraction) {
-        $this->currentresponse = (object)array('text' => $text,
-                                               'stats' => $stats,
-                                               'count' => $count,
-                                               'bands' => $bands,
-                                               'phrases' => $phrases,
-                                               'fraction' => $fraction);
+    public function save_current_response($name, $value) {
+        if ($this->currentresponse===null) {
+            $this->currentresponse = new stdClass();
+        }
+        $this->currentresponse->$name = $value;
     }
 
     /**
@@ -345,6 +385,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     public function get_current_response($name='') {
         if (empty($name)) {
+            return $this->currentresponse;
+        }
+        if ($this->currentresponse===null) {
             return $this->currentresponse;
         }
         return $this->currentresponse->$name;
