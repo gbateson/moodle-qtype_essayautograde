@@ -92,16 +92,17 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2017021216;
+    $newversion = 2017021217;
     if ($oldversion < $newversion) {
         xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
         $table = new xmldb_table($pluginoptionstable);
-        if ($dbman->field_exists($table, 'autofeedback')) {
+        $field = new xmldb_field('autofeedback')
+        if ($dbman->field_exists($table, $field)) {
             $select = 'autofeedback IS NOT NULL AND autofeedback <> ?';
             $DB->set_field_select($pluginoptionstable, 'showtextstats', 2, $select, array(''));
             $DB->execute('UPDATE {'.$pluginoptionstable.'} SET textstatitems = autofeedback');
-            $dbman->drop_field($table, 'autofeedback');
+            $dbman->drop_field($table, $field);
         }
     }
 
