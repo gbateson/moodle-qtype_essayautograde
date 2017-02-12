@@ -80,32 +80,29 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2017020915;
-    if ($oldversion < $newversion) {
-        $field = 'textstatitems';
-        if ($records = $DB->get_records_select($pluginoptionstable, $DB->sql_like($field, '?'), array('%hardword%'))) {
-            foreach ($records as $record) {
-                $value = str_replace('hardword', 'longword', $record->$field);
-                $DB->set_field($pluginoptionstable, $field, $value, array('id' => $record->id));
-            }
-        }
-        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
-    }
-
     $newversion = 2017021217;
     if ($oldversion < $newversion) {
         xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
         $table = new xmldb_table($pluginoptionstable);
-        $field = 'autofeedback';
-        if ($dbman->field_exists($table, $field) && $dbman->field_exists($table, 'textstatitems')) {
-            $select = "$field IS NOT NULL AND $field <> ?";
-            $DB->set_field_select($pluginoptionstable, 'showtextstats', 2, $select, array(''));
-            $DB->execute('UPDATE {'.$pluginoptionstable.'} SET textstatitems = '.$field);
-        }
-        if ($dbman->field_exists($table, $field)) {
-            $field = new xmldb_field($field);
-            $dbman->drop_field($table, $field);
+        if ($dbman->field_exists($table, 'textstatitems')) {
+            $field = 'autofeedback';
+            if ($dbman->field_exists($table, $field)) {
+                $select = "$field IS NOT NULL AND $field <> ?";
+                $DB->set_field_select($pluginoptionstable, 'showtextstats', 2, $select, array(''));
+                $DB->execute('UPDATE {'.$pluginoptionstable.'} SET textstatitems = '.$field);
+            }
+            if ($dbman->field_exists($table, $field)) {
+                $field = new xmldb_field($field);
+                $dbman->drop_field($table, $field);
+            }
+            $field = 'textstatitems';
+            if ($records = $DB->get_records_select($pluginoptionstable, $DB->sql_like($field, '?'), array('%hardword%'))) {
+                foreach ($records as $record) {
+                    $value = str_replace('hardword', 'longword', $record->$field);
+                    $DB->set_field($pluginoptionstable, $field, $value, array('id' => $record->id));
+                }
+            }
         }
     }
 
