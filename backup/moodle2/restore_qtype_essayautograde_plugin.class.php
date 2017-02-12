@@ -128,7 +128,7 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
                 'allowoverride'       => 1,
                 'itemtype'            => 2, // words
                 'itemcount'           => 0,
-                'autofeedback'        => '',
+                'textstatitems'        => '',
                 'correctfeedback'     => '',
                 'correctfeedbackformat' => FORMAT_HTML,
                 'incorrectfeedback'   => '',

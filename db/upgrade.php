@@ -41,20 +41,8 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
 
     $newversion = 2017020203;
     if ($oldversion < $newversion) {
-        $table = new xmldb_table($pluginoptionstable);
-        $fields = array(
-            new xmldb_field('enableautograde', XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1, 'responsetemplateformat'),
-            new xmldb_field('allowoverride',   XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1, 'enableautograde'),
-            new xmldb_field('itemtype',        XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0, 'allowoverride'),
-            new xmldb_field('itemcount',       XMLDB_TYPE_INTEGER, 6, null, XMLDB_NOTNULL, null, 0, 'itemtype')
-        );
-        foreach ($fields as $field) {
-            if ($dbman->field_exists($table, $field)) {
-                $dbman->change_field_type($table, $field);
-            } else {
-                $dbman->add_field($table, $field);
-            }
-        }
+        $fields = 'enableautograde,allowoverturn,itemtype,itemtype';
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fields);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
@@ -84,29 +72,17 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
 
     $newversion = 2017020914;
     if ($oldversion < $newversion) {
-        $table = new xmldb_table($pluginoptionstable);
-        $fields = array(
-            new xmldb_field('autofeedback',                   XMLDB_TYPE_CHAR,    255,  null, XMLDB_NOTNULL, null, null, 'itemcount'),
-            new xmldb_field('correctfeedback',                XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'autofeedback'),
-            new xmldb_field('correctfeedbackformat',          XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0,    'correctfeedback'),
-            new xmldb_field('incorrectfeedback',              XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'correctfeedbackformat'),
-            new xmldb_field('incorrectfeedbackformat',        XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0,    'incorrectfeedback'),
-            new xmldb_field('partiallycorrectfeedback',       XMLDB_TYPE_TEXT,    null, null, null,          null, null, 'incorrectfeedbackformat'),
-            new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0,    'partiallycorrectfeedback')
-        );
-        foreach ($fields as $field) {
-            if ($dbman->field_exists($table, $field)) {
-                $dbman->change_field_type($table, $field);
-            } else {
-                $dbman->add_field($table, $field);
-            }
-        }
+        $fields = 'textstatitems,'.
+                  'correctfeedback,correctfeedbackformat,'.
+                  'incorrectfeedback,incorrectfeedbackformat,'.
+                  'partiallycorrectfeedback,partiallycorrectfeedbackformat';
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fields);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
     $newversion = 2017020915;
     if ($oldversion < $newversion) {
-        $field = 'autofeedback';
+        $field = 'textstatitems';
         if ($records = $DB->get_records_select($pluginoptionstable, $DB->sql_like($field, '?'), array('%hardword%'))) {
             foreach ($records as $record) {
                 $value = str_replace('hardword', 'longword', $record->$field);
@@ -116,5 +92,72 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2017021216;
+    if ($oldversion < $newversion) {
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+        $table = new xmldb_table($pluginoptionstable);
+        if ($dbman->field_exists($table, 'autofeedback')) {
+            $select = 'autofeedback IS NOT NULL AND autofeedback <> ?';
+            $DB->set_field_select($pluginoptionstable, 'showtextstats', 2, $select, array(''));
+            $DB->execute('UPDATE {'.$pluginoptionstable.'} SET textstatitems = autofeedback');
+            $dbman->drop_field($table, 'autofeedback');
+        }
+    }
+
     return true;
+}
+
+/**
+ * Upgrade code for the essayautograde question type.
+ * @param int $oldversion the version we are upgrading from.
+ */
+function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fieldnames=null) {
+
+    static $addedfields = false;
+
+    if ($addedfields) {
+        return true;
+    }
+    $addedfields = true;
+
+    if (is_string($fieldnames)) {
+        $fieldnames = explode(',', $fieldnames);
+        $fieldnames = array_map('trim', $fieldnames);
+        $fieldnames = array_filter($fieldnames);
+    }
+
+    $table = new xmldb_table($pluginoptionstable);
+    $fields = array(
+        new xmldb_field('enableautograde',                XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 1),
+        new xmldb_field('allowoverride',                  XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 1),
+        new xmldb_field('itemtype',                       XMLDB_TYPE_INTEGER, 4,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('itemcount',                      XMLDB_TYPE_INTEGER, 6,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showcalculation',                XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showtextstats',                  XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('textstatitems',                  XMLDB_TYPE_CHAR,    255,  null, XMLDB_NOTNULL),
+        new xmldb_field('showgradebands',                 XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('addpartialgrades',               XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showtargetphrases',              XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('correctfeedback',                XMLDB_TYPE_TEXT),
+        new xmldb_field('correctfeedbackformat',          XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('incorrectfeedback',              XMLDB_TYPE_TEXT),
+        new xmldb_field('incorrectfeedbackformat',        XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('partiallycorrectfeedback',       XMLDB_TYPE_TEXT),
+        new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0)
+    );
+
+    $previousfieldname = 'responsetemplateformat';
+    foreach ($fields as $field) {
+        $currentfieldname = $field->getName();
+        if ($fieldnames===null || in_array($currentfieldname, $fieldnames)) {
+            $field->setPrevious($previousfieldname);
+            if ($dbman->field_exists($table, $field)) {
+                $dbman->change_field_type($table, $field);
+            } else {
+                $dbman->add_field($table, $field);
+            }
+        }
+        $previousfieldname = $currentfieldname;
+    }
 }

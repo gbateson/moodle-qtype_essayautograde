@@ -78,6 +78,13 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             $grade_options[$i] = get_string('percentofquestiongrade', $plugin, $i);
         }
 
+        // cache options for show/hide elements
+        $showhide_options = array(
+            $this->plugin_constant('SHOW_NONE') => get_string('no'),
+            $this->plugin_constant('SHOW_TEACHERS_ONLY') => get_string('showtoteachersonly', $plugin),
+            $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => get_string('showtoteachersandstudents', $plugin)
+        );
+
         // cache options for form elements to input text
         $short_text_options  = array('size' => 3,  'style' => 'width: auto');
         $medium_text_options = array('size' => 5,  'style' => 'width: auto');
@@ -125,9 +132,25 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_NONE'));
 
-        $name = 'autofeedback';
+        $name = 'showcalculation';
         $label = get_string($name, $plugin);
-        $options = $this->get_autofeedback_options(true);
+        $mform->addElement('select', $name, $label, $showhide_options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+
+        $name = 'showtextstats';
+        $label = get_string($name, $plugin);
+        $mform->addElement('select', $name, $label, $showhide_options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+
+        $name = 'textstatitems';
+        $label = get_string($name, $plugin);
+        $options = $this->get_textstatitems_options(true);
         $elements = array();
         foreach ($options as $value => $text) {
             $elements[] = $mform->createElement('checkbox', $name."[$value]",  '', $text);
@@ -135,6 +158,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addGroup($elements, $name, $label, html_writer::empty_tag('br'), false);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+        $mform->disabledIf($name, 'showtextstats', 'eq', $this->plugin_constant('SHOW_NONE'));
 
         // only use defaults on new record
         //$defaults = 'words,wordspersentence,uniquewords,longwords';
@@ -155,6 +179,22 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $label = get_string($name, $plugin);
         $mform->addElement('header', $name, $label);
         $mform->setExpanded($name, true);
+
+        $name = 'showgradebands';
+        $label = get_string($name, $plugin);
+        $mform->addElement('select', $name, $label, $showhide_options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+
+        $name = 'addpartialgrades';
+        $label = get_string($name, $plugin);
+        $mform->addElement('selectyesno', $name, $label);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $elements = array();
         $options = array();
@@ -177,7 +217,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
         $repeats = $this->plugin_constant('ANSWER_TYPE_BAND'); // type
         $repeats = $this->get_answer_repeats($this->question, $repeats);
-        $label = get_string('addmorebands', $plugin, self::NUM_ITEMS_ADD); // Button text.
+        $label = (self::NUM_ITEMS_ADD==1 ? 'addanotherband' : 'addmorebands');
+        $label = get_string($label, $plugin, self::NUM_ITEMS_ADD);
         $this->repeat_elements($elements, $repeats, $options, 'countbands', 'addbands', self::NUM_ITEMS_ADD, $label, true);
 
         // using the "repeat_elements" method we can only specify a single
@@ -194,6 +235,14 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $label = get_string($name, $plugin);
         $mform->addElement('header', $name, $label);
         $mform->setExpanded($name, true);
+
+        $name = 'showtargetphrases';
+        $label = get_string($name, $plugin);
+        $mform->addElement('select', $name, $label, $showhide_options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $elements = array();
         $options = array();
@@ -216,7 +265,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
         $repeats = $this->plugin_constant('ANSWER_TYPE_PHRASE'); // type
         $repeats = $this->get_answer_repeats($this->question, $repeats);
-        $label = get_string('addmorephrases', $plugin, self::NUM_ITEMS_ADD); // Button text.
+        $label = (self::NUM_ITEMS_ADD==1 ? 'addanotherphrase' : 'addmorephrases');
+        $label = get_string($label, $plugin, self::NUM_ITEMS_ADD);
         $this->repeat_elements($elements, $repeats, $options, 'countphrases', 'addphrases', self::NUM_ITEMS_ADD, $label, true);
 
         /////////////////////////////////////////////////
@@ -305,13 +355,13 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $question->allowoverride = $question->options->allowoverride;
         $question->itemtype = $question->options->itemtype;
         $question->itemcount = $question->options->itemcount;
-        $question->autofeedback = $question->options->autofeedback;
+        $question->textstatitems = $question->options->textstatitems;
 
-        $question->autofeedback = explode(',', $question->autofeedback);
-        $question->autofeedback = array_filter($question->autofeedback);
-        $question->autofeedback = array_flip($question->autofeedback);
-        foreach ($this->get_autofeedback_options(false) as $value) {
-            $question->autofeedback[$value] = array_key_exists($value, $question->autofeedback);
+        $question->textstatitems = explode(',', $question->textstatitems);
+        $question->textstatitems = array_filter($question->textstatitems);
+        $question->textstatitems = array_flip($question->textstatitems);
+        foreach ($this->get_textstatitems_options(false) as $value) {
+            $question->textstatitems[$value] = array_key_exists($value, $question->textstatitems);
         }
 
         /////////////////////////////////////////////////
@@ -432,7 +482,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      *
      * @return array(type => description)
      */
-    protected function get_autofeedback_options($returntext=true) {
+    protected function get_textstatitems_options($returntext=true) {
         $options = array('chars', 'words',
                          'sentences', 'paragraphs',
                          'uniquewords', 'longwords',

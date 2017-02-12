@@ -55,7 +55,7 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
                         'graderinfo', 'graderinfoformat',
                         'responsetemplate', 'responsetemplateformat',
                         'enableautograde', 'allowoverride',
-                        'itemtype', 'itemcount', 'autofeedback',
+                        'itemtype', 'itemcount', 'textstatitems',
                         'correctfeedback', 'correctfeedbackformat',
                         'incorrectfeedback', 'incorrectfeedbackformat',
                         'partiallycorrectfeedback', 'partiallycorrectfeedbackformat');

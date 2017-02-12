@@ -46,6 +46,11 @@ class qtype_essayautograde extends question_type {
     const ITEM_TYPE_SENTENCES = 3;
     const ITEM_TYPE_PARAGRAPHS = 4;
 
+    /** Show/hide values */
+    const SHOW_NONE                  = 0;
+    const SHOW_TEACHERS_ONLY         = 1;
+    const SHOW_TEACHERS_AND_STUDENTS = 2;
+
     /** @var array Combined feedback fields */
     public $feedbackfields = array('feedback',
                                    'correctfeedback',
@@ -83,10 +88,10 @@ class qtype_essayautograde extends question_type {
         $context    = $formdata->context;
         $graderinfo = $this->import_or_save_files($formdata->graderinfo, $context, $plugin, 'graderinfo', $questionid);
 
-        $autofeedback = $formdata->autofeedback;
-        $autofeedback = array_filter($autofeedback);
-        $autofeedback = array_keys($autofeedback);
-        $autofeedback = implode(',', $autofeedback);
+        $textstatitems = $formdata->textstatitems;
+        $textstatitems = array_filter($textstatitems);
+        $textstatitems = array_keys($textstatitems);
+        $textstatitems = implode(',', $textstatitems);
 
         $options = (object)array(
             'id'                  => $DB->get_field($optionstable, 'id', array('questionid' => $questionid)),
@@ -104,7 +109,12 @@ class qtype_essayautograde extends question_type {
             'allowoverride'       => $formdata->allowoverride,
             'itemtype'            => $formdata->itemtype,
             'itemcount'           => $formdata->itemcount,
-            'autofeedback'        => $autofeedback
+            'showcalculation'     => $formdata->showcalculation,
+            'showtextstats'       => $formdata->showtextstats,
+            'textstatitems'       => $textstatitems,
+            'showgradebands'      => $formdata->showgradebands,
+            'addpartialgrades'    => $formdata->addpartialgrades,
+            'showtargetphrases'   => $formdata->showtargetphrases
         );
 
         // add options for feedback fields
@@ -234,7 +244,7 @@ class qtype_essayautograde extends question_type {
         $question->allowoverride       = $questiondata->options->allowoverride;
         $question->itemtype            = $questiondata->options->itemtype;
         $question->itemcount           = $questiondata->options->itemcount;
-        $question->autofeedback        = $questiondata->options->autofeedback;
+        $question->textstatitems        = $questiondata->options->textstatitems;
         $this->initialise_combined_feedback($question, $questiondata);
     }
 

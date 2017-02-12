@@ -130,52 +130,65 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
             $plugin = $this->plugin_name();
             $question = $qa->get_question();
+
             $currentresponse = $question->get_current_response();
+            if ($currentresponse) {
 
-            // format $currentresponse->stats
-            $table = new html_table();
-            $table->caption = get_string('textstatistics', $plugin);
-            $table->attributes['class'] = 'generaltable essayautograde_stats';
-            $names = explode(',', $question->autofeedback);
-            $names = array_filter($names);
-            foreach ($names as $name) {
-                $label = get_string($name, $plugin);
-                $value = $currentresponse->stats->$name;
-                if (is_int($value)) {
-                    $value = number_format($value);
+                // format $currentresponse->stats
+                $table = new html_table();
+                $table->caption = get_string('textstatistics', $plugin);
+                $table->attributes['class'] = 'generaltable essayautograde_stats';
+
+                $names = explode(',', $question->textstatitems);
+                $names = array_filter($names);
+                foreach ($names as $name) {
+
+                    $label = get_string($name, $plugin);
+                    if (isset($currentresponse->stats->$name)) {
+                        $value = $currentresponse->stats->$name;
+                    } else {
+                        echo "$name is not set !! ($question->textstatitems)";
+                        print_object($currentresponse);
+                        die;
+                        $value = '';
+                    }
+                    if (is_int($value)) {
+                        $value = number_format($value);
+                    }
+                    $cells = array(new html_table_cell($label),
+                                   new html_table_cell($value));
+                    $table->data[] = new html_table_row($cells);
                 }
-                $cells = array(new html_table_cell($label),
-                               new html_table_cell($value));
-                $table->data[] = new html_table_row($cells);
-            }
-            if (count($table->data)) {
-                $output .= html_writer::table($table);
-            }
 
-            $state = $step->get_state();
-            if ($state == 'gradedpartial' || $state == 'gradedwrong') {
+                if (count($table->data)) {
+                    $output .= html_writer::table($table);
+                }
 
-                // show auto grading details if they are required
-                if ($question->enableautograde) {
+                $state = $step->get_state();
+                if ($state == 'gradedpartial' || $state == 'gradedwrong') {
 
-                    // Fetch grade details and score details.
-                    $details = array();
-                    if ($currentresponse->bands) {
-                        foreach ($currentresponse->bands as $count => $percent) {
-                            $details[] = get_string('bandcount', $plugin).' '.$count.' '.
-                                         get_string('bandpercent', $plugin).' '.
-                                         get_string('percentofquestiongrade', $plugin, $percent);
+                    // show auto grading details if they are required
+                    if ($question->enableautograde) {
+
+                        // Fetch grade details and score details.
+                        $details = array();
+                        if ($currentresponse->bands) {
+                            foreach ($currentresponse->bands as $count => $percent) {
+                                $details[] = get_string('bandcount', $plugin).' '.$count.' '.
+                                             get_string('bandpercent', $plugin).' '.
+                                             get_string('percentofquestiongrade', $plugin, $percent);
+                            }
                         }
-                    }
-                    if ($currentresponse->phrases) {
-                        foreach ($currentresponse->phrases as $match => $percent) {
-                            $details[] = get_string('phrasematch', $plugin).' "'.$match.'" '.
-                                         get_string('phrasepercent', $plugin).' '.
-                                         get_string('percentofquestiongrade', $plugin, $percent);
+                        if ($currentresponse->phrases) {
+                            foreach ($currentresponse->phrases as $match => $percent) {
+                                $details[] = get_string('phrasematch', $plugin).' "'.$match.'" '.
+                                             get_string('phrasepercent', $plugin).' '.
+                                             get_string('percentofquestiongrade', $plugin, $percent);
+                            }
                         }
-                    }
-                    if (count($details)) {
-                        $output .= html_writer::alist($details);
+                        if (count($details)) {
+                            $output .= html_writer::alist($details);
+                        }
                     }
                 }
             }
