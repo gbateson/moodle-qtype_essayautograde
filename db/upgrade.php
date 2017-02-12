@@ -97,7 +97,7 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
         $table = new xmldb_table($pluginoptionstable);
-        $field = new xmldb_field('autofeedback')
+        $field = new xmldb_field('autofeedback');
         if ($dbman->field_exists($table, $field)) {
             $select = 'autofeedback IS NOT NULL AND autofeedback <> ?';
             $DB->set_field_select($pluginoptionstable, 'showtextstats', 2, $select, array(''));
