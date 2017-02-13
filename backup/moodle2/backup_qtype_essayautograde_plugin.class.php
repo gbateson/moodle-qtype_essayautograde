@@ -49,13 +49,16 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         // to the tree before any other information that will use them.
         $this->add_question_question_answers($pluginwrapper);
 
+        
+
         // Now create the qtype own structures.
         $fields = array('responseformat', 'responserequired', 'responsefieldlines',
                         'attachments', 'attachmentsrequired',
                         'graderinfo', 'graderinfoformat',
                         'responsetemplate', 'responsetemplateformat',
-                        'enableautograde', 'allowoverride',
-                        'itemtype', 'itemcount', 'textstatitems',
+                        'enableautograde', 'allowoverride', 'itemtype', 'itemcount',
+                        'showcalculation', 'showtextstats', 'textstatitems', 
+                        'showgradebands', 'addpartialgrades', 'showtargetphrases',
                         'correctfeedback', 'correctfeedbackformat',
                         'incorrectfeedback', 'incorrectfeedbackformat',
                         'partiallycorrectfeedback', 'partiallycorrectfeedbackformat');

@@ -234,7 +234,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         return constant($plugin.'::'.$name);
     }
 
-    public function update_current_response($response) {
+    public function update_current_response($response, $displayoptions=null) {
 
         if (empty($response) || empty($response['answer'])) {
             return true;
@@ -244,6 +244,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $bands = array();
         $phrases = array();
         $myphrases = array();
+        $percent = 0;
         $fraction = 0.0;
         $currentcount = 0;
         $currentpercent = 0;
@@ -253,7 +254,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $text = question_utils::to_plain_text($response['answer'],
                                               $response['answerformat'],
                                               array('para' => false));
-        // standardize white space in $text
+
+        // Standardize white space in $text.
+        // html-entity for non-breaking space, $nbsp;,
+        // is converted to a unicode character, "\xc2\xa0",
+        // that can be simulated by two ascii chars (194,160)
+        $text = str_replace(chr(194).chr(160), ' ', $text);
         $text = preg_replace('/[ \t]+/', ' ', trim($text));
         $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
 
@@ -312,7 +318,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                         if ($search = trim($answer->feedback)) {
                             $search = preg_quote($search, '/');
                             $search = preg_replace('/ *(,|OR) */', '|', $search);
-                            $search = "/$search/s";
+                            $search = "/$search/is"; // case-insensitive match
                             if (preg_match($search, $text, $phrase)) {
                                 $phrase = $phrase[0];
                                 $fraction += ($answer->feedbackformat / 100);
@@ -322,6 +328,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                         }
                         break;
                 }
+            }
+
+            // update band counts for top grade band, if necessary
+            if ($checkbands) {
+                $completecount = $currentcount;
+                $completepercent = $currentpercent;
             }
 
             // set the item width of the current band
@@ -347,6 +359,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             }
         }
 
+        // we can now set the $percent from the $fraction
+        $percent = round($fraction * 100);
+
         // store this information, in case it is needed elswhere
         $this->save_current_response('text', $text);
         $this->save_current_response('stats', $stats);
@@ -354,11 +369,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $this->save_current_response('bands', $bands);
         $this->save_current_response('phrases', $phrases);
         $this->save_current_response('myphrases', $myphrases);
+        $this->save_current_response('percent', $percent);
         $this->save_current_response('fraction', $fraction);
         $this->save_current_response('partialcount', $partialcount);
         $this->save_current_response('partialpercent', $partialpercent);
         $this->save_current_response('completecount', $completecount);
         $this->save_current_response('completepercent', $completepercent);
+        $this->save_current_response('displayoptions', $displayoptions);
     }
 
     /**

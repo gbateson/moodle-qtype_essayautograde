@@ -39,7 +39,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
         $question = $qa->get_question();
         $response = $qa->get_last_qt_data();
-        $question->update_current_response($response);
+        $question->update_current_response($response, $options);
 
         // Answer field.
         $step = $qa->get_last_step_with_qt_var('answer');
@@ -118,6 +118,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
      * @return string HTML fragment.
      */
     public function specific_feedback(question_attempt $qa) {
+        global $DB;
 
         $output = '';
 
@@ -132,6 +133,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $question = $qa->get_question();
 
             $currentresponse = $question->get_current_response();
+            $displayoptions = $currentresponse->displayoptions;
+            if ($displayoptions && isset($displayoptions->markdp)) {
+                $precision = $displayoptions->markdp;
+            } else {
+                $precision = 0;
+            }
 
             $gradeband = array_values($currentresponse->bands); // percents
             $gradeband = array_search($currentresponse->completepercent, $gradeband);
@@ -146,7 +153,16 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             }
             $itemtype = core_text::strtolower($itemtype);
 
-            if ($question->showtextstats && $question->textstatitems) {
+            $show = has_capability('mod/quiz:grade', $displayoptions->context);
+            $show = array(
+                $this->plugin_constant('SHOW_NONE') => false,
+                $this->plugin_constant('SHOW_TEACHERS_ONLY') => $show,
+                $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => true,
+            );
+
+            $showgradebands = ($show[$question->showgradebands] && count($currentresponse->bands));
+
+            if ($show[$question->showtextstats] && $question->textstatitems) {
                 $table = new html_table();
                 $table->caption = get_string('textstatistics', $plugin);
                 $table->attributes['class'] = 'generaltable essayautograde_stats';
@@ -169,14 +185,16 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $output .= html_writer::table($table);
             }
 
-            if ($question->showcalculation) {
+            // show explanation of calculation, if required
+            if ($show[$question->showcalculation]) {
+
                 $details = array();
                 if ($currentresponse->completecount) {
                     $a = (object)array('percent'   => $currentresponse->completepercent,
                                        'count'     => $currentresponse->completecount,
                                        'gradeband' => $gradeband,
                                        'itemtype'  => $itemtype);
-                    if ($question->showgradebands) {
+                    if ($showgradebands) {
                         $details[] = get_string('explanationcompleteband', $plugin, $a);
                     } else {
                         $details[] = get_string('explanationfirstitems', $plugin, $a);
@@ -187,35 +205,72 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                                        'count'     => $currentresponse->partialcount,
                                        'gradeband' => ($gradeband + 1),
                                        'itemtype'  => $itemtype);
-                    if ($question->showgradebands) {
+                    if ($showgradebands) {
                         $details[] = get_string('explanationpartialband', $plugin, $a);
                     } else {
                         $details[] = get_string('explanationremainingitems', $plugin, $a);
                     }
                 }
+
                 foreach ($currentresponse->myphrases as $phrase => $percent) {
                     $a = (object)array('percent' => $percent,
                                        'phrase'  => $phrase);
                     $details[] = get_string('explanationtargetphrase', $plugin, $a);
                 }
+
                 if ($details = implode(') + (', $details)) {
+
+                    $maxgrade = $qa->format_max_mark($precision);
+                    $grade = $qa->format_mark($precision);
+
+                    $step = $qa->get_last_step_with_behaviour_var('finish');
+                    if ($step->get_id()) {
+                        $autograde = format_float($step->get_fraction() * $maxgrade, $precision);
+                    } else {
+                        $autograde = $grade;
+                    }
+
+                    $a = (object)array('maxgrade' => $maxgrade,
+                                       'grade'    => $autograde,
+                                       'percent'  => $currentresponse->percent,
+                                       'details'  => $details);
                     $output .= html_writer::tag('h5', get_string('gradecalculation', $plugin));
-                    $output .= html_writer::tag('p', round($currentresponse->fraction * 100)."% = ($details)");
+                    $output .= html_writer::tag('p', get_string('explanationmaxgrade', $plugin, $a));
+                    $output .= html_writer::tag('p', get_string('explanationpercent', $plugin, $a));
+                    $output .= html_writer::tag('p', get_string('explanationgrade', $plugin, $a));
+
+                    // add details of most recent manual override, if any
+                    $step = $qa->get_last_step_with_behaviour_var('mark');
+                    if ($step->get_id()) {
+                        $a = (object)array(
+                            'fullname' => fullname($DB->get_record('user', array('id' => $step->get_user_id()))),
+                            'datetime' => userdate($step->get_timecreated(), get_string('explanationdatetime', $plugin)),
+                            'grade'    => format_float($step->get_behaviour_var('mark'), $precision),
+                            'comment'  => format_text($step->get_behaviour_var('comment'), $step->get_behaviour_var('commentformat')),
+                        );
+                        $output .= html_writer::tag('p', get_string('explanationoverride', $plugin, $a));
+                    }
                 }
             }
 
-            if ($question->showgradebands && count($currentresponse->bands)) {
+            // show explanation of calculation, if required
+            if ($showgradebands) {
                 $details = array();
+                $i = 1; // grade band index
                 foreach ($currentresponse->bands as $count => $percent) {
-                    $details[] = get_string('bandcount', $plugin).' '.$count.' '.
-                                 get_string('bandpercent', $plugin).' '.
-                                 get_string('percentofquestiongrade', $plugin, $percent);
+                    $detail = get_string('gradeband', $plugin);
+                    $detail = str_replace('{no}', $i++, $detail);
+                    $details[] = html_writer::tag('dt', $detail);
+                    $detail =  get_string('bandcount', $plugin).' '.$count.' '.
+                               get_string('bandpercent', $plugin).' '.
+                               get_string('percentofquestiongrade', $plugin, $percent);
+                    $details[] = html_writer::tag('dd', $detail);
                 }
                 $output .= html_writer::tag('h5', get_string('gradebands', $plugin));
-                $output .= html_writer::alist($details, null, 'ol');
+                $output .= html_writer::tag('dl', implode('', $details), array('class' => 'gradebands'));
             }
 
-            if ($question->showtargetphrases && count($currentresponse->phrases)) {
+            if ($show[$question->showtargetphrases] && count($currentresponse->phrases)) {
                 $details = array();
                 foreach ($currentresponse->phrases as $match => $percent) {
                     $details[] = get_string('phrasematch', $plugin).' "'.$match.'" '.

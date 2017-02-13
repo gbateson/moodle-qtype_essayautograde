@@ -29,3 +29,17 @@
 .que.essayautograde div.qtype_essay_response textarea {
     width: 100%;
 }
+
+.que.essayautograde dl.gradebands {
+    overflow:     auto;
+}
+.que.essayautograde dl.gradebands dt {
+    float:        left;
+    clear:        left;
+    margin-right:  8px;
+}
+.que.essayautograde dl.gradebands dd {
+    float:        left;
+    margin-bottom: 0px;
+    margin-top:    2px;
+}
