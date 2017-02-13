@@ -163,13 +163,19 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $showgradebands = ($show[$question->showgradebands] && count($currentresponse->bands));
 
             if ($show[$question->showtextstats] && $question->textstatitems) {
+                $strman = get_string_manager();
+
                 $table = new html_table();
-                $table->caption = get_string('textstatistics', $plugin);
+                $table->caption = html_writer::tag('h5', get_string('textstatistics', $plugin));
                 $table->attributes['class'] = 'generaltable essayautograde_stats';
+
                 $names = explode(',', $question->textstatitems);
                 $names = array_filter($names);
                 foreach ($names as $name) {
                     $label = get_string($name, $plugin);
+                    if ($strman->string_exists($name.'_help', $plugin)) {
+                        $label .= $this->help_icon($name, $plugin);
+                    }
                     if (isset($currentresponse->stats->$name)) {
                         $value = $currentresponse->stats->$name;
                     } else {
@@ -243,10 +249,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $step = $qa->get_last_step_with_behaviour_var('mark');
                     if ($step->get_id()) {
                         $a = (object)array(
-                            'fullname' => fullname($DB->get_record('user', array('id' => $step->get_user_id()))),
+                            //'fullname' => fullname($DB->get_record('user', array('id' => $step->get_user_id()))),
                             'datetime' => userdate($step->get_timecreated(), get_string('explanationdatetime', $plugin)),
                             'grade'    => format_float($step->get_behaviour_var('mark'), $precision),
-                            'comment'  => format_text($step->get_behaviour_var('comment'), $step->get_behaviour_var('commentformat')),
                         );
                         $output .= html_writer::tag('p', get_string('explanationoverride', $plugin, $a));
                     }
@@ -283,6 +288,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         }
 
         if ($feedback = $this->combined_feedback($qa)) {
+            $output .= html_writer::tag('h5', get_string('generalfeedback', 'question'));
             $output .= html_writer::tag('p', $feedback);
         }
 

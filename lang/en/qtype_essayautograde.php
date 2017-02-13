@@ -47,17 +47,23 @@ $string['correctresponse'] = 'Your grade was calculated using the following crit
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
 $string['explanationcompleteband'] = '{$a->percent}% for completing Grade band [{$a->gradeband}]';
+$string['explanationseecomment'] = '(see comment below)';
 $string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% for the first {$a->count} {$a->itemtype}';
 $string['explanationgrade'] = 'Therefore, the computer-generated grade for this essay was set to {$a->grade} = ({$a->percent}% of {$a->maxgrade}).';
-$string['explanationoverride'] = 'However, the grade for this essay was manually set to {$a->grade} by {$a->fullname} {$a->datetime}.';
+$string['explanationoverride'] = 'However, the grade for this essay was manually set to {$a->grade} {$a->datetime}.';
 $string['explanationmaxgrade'] = 'The maximum grade for this question is {$a->maxgrade}.';
 $string['explanationpartialband'] = '{$a->percent}% for partially completing Grade band [{$a->gradeband}]';
 $string['explanationpercent'] = 'The percentage grade for this essay is {$a->percent}% = ({$a->details}).';
 $string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->count} {$a->itemtype}';
 $string['explanationtargetphrase'] = '{$a->percent}% for including the phrase "{$a->phrase}"';
+$string['fogindex_help'] = 'The Gunning fog index is a measure of readability. It is calculated using the following formula.
+
+* ((words per sentence) + (long words per sentence)) x 0.4
+
+For more information see: <https://en.wikipedia.org/wiki/Gunning_fog_index>';
 $string['fogindex'] = 'Fog index';
-$string['gradeband_help'] = 'Specify the maximum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
+$string['gradeband_help'] = 'Specify the minimum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
 $string['gradeband'] = 'Grade band [{no}]';
 $string['gradebands'] = 'Grade bands';
 $string['gradecalculation'] = 'Grade calculation';
@@ -67,7 +73,13 @@ Note, that this value may be rendered ineffective by the grade bands, if any, de
 $string['itemcount'] = 'Expected number of items';
 $string['itemtype_help'] = 'Select the type of items in the essay text that will contribute to the auto-grade.';
 $string['itemtype'] = 'Type of countable items';
+$string['lexicaldensity_help'] = 'The lexical density is a percentage calculated using the following formula.
+
+* 100 x (number of unique words) / (total number of words)
+
+Thus, an essay in which many words are repeated has a low lexical density, while a essay with many unique words has a high lexical density.';
 $string['lexicaldensity'] = 'Lexical density';
+$string['longwords_help'] = '"Long words" are words that have three or more syllables. Note that the algorithm for determining the number of syllables is very simple and yields only approximate results.';
 $string['longwords'] = 'Long words';
 $string['longwordspersentence'] = 'Long words per sentence';
 $string['paragraphs'] = 'Paragraphs';
