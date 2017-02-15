@@ -51,7 +51,7 @@ $string['explanationseecomment'] = '(see comment below)';
 $string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% for the first {$a->count} {$a->itemtype}';
 $string['explanationgrade'] = 'Therefore, the computer-generated grade for this essay was set to {$a->grade} = ({$a->percent}% of {$a->maxgrade}).';
-$string['explanationoverride'] = 'However, the grade for this essay was manually set to {$a->grade} {$a->datetime}.';
+$string['explanationoverride'] = 'However, {$a->datetime}, the grade for this essay was manually set to {$a->grade}.';
 $string['explanationmaxgrade'] = 'The maximum grade for this question is {$a->maxgrade}.';
 $string['explanationpartialband'] = '{$a->percent}% for partially completing Grade band [{$a->gradeband}]';
 $string['explanationpercent'] = 'The percentage grade for this essay is {$a->percent}% = ({$a->details}).';
