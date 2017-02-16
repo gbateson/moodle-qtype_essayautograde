@@ -41,8 +41,7 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
 
     $newversion = 2017020203;
     if ($oldversion < $newversion) {
-        $fields = 'enableautograde,allowoverturn,itemtype,itemtype';
-        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fields);
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
@@ -72,11 +71,7 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
 
     $newversion = 2017020914;
     if ($oldversion < $newversion) {
-        $fields = 'textstatitems,'.
-                  'correctfeedback,correctfeedbackformat,'.
-                  'incorrectfeedback,incorrectfeedbackformat,'.
-                  'partiallycorrectfeedback,partiallycorrectfeedbackformat';
-        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fields);
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
@@ -115,12 +110,15 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
  */
 function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fieldnames=null) {
 
-    static $addedfields = false;
+    static $allfieldsadded = false;
 
-    if ($addedfields) {
+    if ($allfieldsadded) {
         return true;
     }
-    $addedfields = true;
+
+    if ($fieldnames===null) {
+        $allfieldsadded = true;
+    }
 
     if (is_string($fieldnames)) {
         $fieldnames = explode(',', $fieldnames);
@@ -148,17 +146,19 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
         new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, 2,    null, XMLDB_NOTNULL, null, 0)
     );
 
-    $previousfieldname = 'responsetemplateformat';
+    $previousfield = 'responsetemplateformat';
     foreach ($fields as $field) {
-        $currentfieldname = $field->getName();
-        if ($fieldnames===null || in_array($currentfieldname, $fieldnames)) {
-            $field->setPrevious($previousfieldname);
+        $currentfield = $field->getName();
+        if ($fieldnames===null || in_array($currentfield, $fieldnames)) {
+            if ($dbman->field_exists($table, $previousfield)) {
+                $field->setPrevious($previousfield);
+            }
             if ($dbman->field_exists($table, $field)) {
                 $dbman->change_field_type($table, $field);
             } else {
                 $dbman->add_field($table, $field);
             }
         }
-        $previousfieldname = $currentfieldname;
+        $previousfield = $currentfield;
     }
 }
