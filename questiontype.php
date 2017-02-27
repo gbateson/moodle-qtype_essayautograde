@@ -88,10 +88,14 @@ class qtype_essayautograde extends question_type {
         $context    = $formdata->context;
         $graderinfo = $this->import_or_save_files($formdata->graderinfo, $context, $plugin, 'graderinfo', $questionid);
 
-        $textstatitems = $formdata->textstatitems;
-        $textstatitems = array_filter($textstatitems);
-        $textstatitems = array_keys($textstatitems);
-        $textstatitems = implode(',', $textstatitems);
+        if (empty($formdata->textstatitems)) {
+            $textstatitems = '';
+        } else {
+            $textstatitems = $formdata->textstatitems;
+            $textstatitems = array_filter($textstatitems);
+            $textstatitems = array_keys($textstatitems);
+            $textstatitems = implode(',', $textstatitems);
+        }
 
         $options = (object)array(
             'id'                  => $DB->get_field($optionstable, 'id', array('questionid' => $questionid)),
@@ -137,9 +141,9 @@ class qtype_essayautograde extends question_type {
         // add grade bands to $answers
         ///////////////////////////////////////////////////////
 
-        $repeats = $formdata->countbands;
-        $counts  = $formdata->bandcount;
-        $percent = $formdata->bandpercent;
+        $repeats = (empty($formdata->countbands)  ? 0       : $formdata->countbands);
+        $counts  = (empty($formdata->bandcount)   ? array() : $formdata->bandcount);
+        $percent = (empty($formdata->bandpercent) ? array() : $formdata->bandpercent);
 
         $items = array();
         foreach ($counts as $i => $count) {
@@ -166,9 +170,9 @@ class qtype_essayautograde extends question_type {
         // add target phrases to $answers
         ///////////////////////////////////////////////////////
 
-        $repeats = $formdata->countphrases;
-        $phrases = $formdata->phrasematch;
-        $percent = $formdata->phrasepercent;
+        $repeats = (empty($formdata->countphrases)  ? 0       : $formdata->countphrases);
+        $phrases = (empty($formdata->phrasematch)   ? array() : $formdata->phrasematch);
+        $percent = (empty($formdata->phrasepercent) ? array() : $formdata->phrasepercent);
 
         $items = array();
         foreach ($phrases as $i => $phrase) {

@@ -248,6 +248,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $fraction = 0.0;
         $currentcount = 0;
         $currentpercent = 0;
+        $partialcount = 0;
+        $partialpercent = 0;
         $completecount = 0;
         $completepercent = 0;
 
