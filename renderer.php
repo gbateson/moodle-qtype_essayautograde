@@ -37,6 +37,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
 
+        $plugin = $this->plugin_name();
         $question = $qa->get_question();
         $response = $qa->get_last_qt_data();
         $question->update_current_response($response, $options);
@@ -72,6 +73,83 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $result .= html_writer::tag('div', $answer, array('class' => 'answer'));
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
         $result .= html_writer::end_tag('div');
+
+        $itemtype = '';
+        switch ($question->itemtype) {
+            case $question->plugin_constant('ITEM_TYPE_CHARS'):
+                $itemtype = get_string('chars', $plugin);
+                $itemmatch = '.';
+                break;
+            case $question->plugin_constant('ITEM_TYPE_WORDS'):
+                $itemtype = get_string('words', $plugin);
+                $itemmatch = '\\\\w+';
+                break;
+            case $question->plugin_constant('ITEM_TYPE_SENTENCES'):
+                $itemtype = get_string('sentences', $plugin);
+                $itemmatch = '[^\\\\.]+[\\\\.]';
+                break;
+            case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'):
+                $itemtype = get_string('paragraphs', $plugin);
+                $itemmatch = '[^\\\\r\\\\n]+[\\\\r\\\\n]*';
+                break;
+        }
+
+        // escape string for javascript
+        $itemtype = json_encode($itemtype);
+        $itemtype = substr($itemtype, 1, -1);
+
+        $script = '';
+        if ($options->readonly) {
+            // reduce vertical height of disabled textarea
+            $script .= "if (window.$) {\n";
+            $script .= "    $(document).ready(function(){\n";
+            $script .= "       $('textarea.qtype_essayautograde_response').each(function(){\n";
+            $script .= "           $(this).height(1);\n";
+            $script .= "           $(this).height(this.scrollHeight);\n";
+            $script .= "       });\n";
+            $script .= "    });\n";
+            $script .= "}\n";
+        } else {
+            // add word counter underneath input textarea
+            $script .= "if (window.$) {\n";
+            $script .= "    $(document).ready(function(){\n";
+            $script .= "       $('textarea.qtype_essayautograde_response').each(function(){\n";
+            $script .= "           var name = $(this).attr('name');\n";
+            $script .= "           var id = 'id_' + name + '_itemcount';\n";
+            $script .= "           if ($(jquery_id(id)).length==0) {\n";
+            $script .= "               var p = document.createElement('P');\n";
+            $script .= "               p.setAttribute('id', id);\n";
+            $script .= "               p.setAttribute('class', 'wordcount');\n";
+            $script .= "               this.parentNode.insertBefore(p, this.nextSibling);\n";
+            $script .= "               $(this).keyup(function(){ show_item_count(this) });\n";
+            $script .= "           }";
+            $script .= "           show_item_count(this, id);\n";
+            $script .= "       });\n";
+            $script .= "    });\n";
+            $script .= "}\n";
+            $script .= "function show_item_count(txt, id) {\n";
+            $script .= "    var regexp = new RegExp('$itemmatch', 'g');\n";
+            $script .= "    var itemcount = $(txt).val().match(regexp);\n";
+            $script .= "    if (itemcount) {\n";
+            $script .= "        itemcount = itemcount.length;\n";
+            $script .= "    } else {\n";
+            $script .= "        itemcount = 0;\n";
+            $script .= "    }\n";
+            $script .= "    if (id==null) {\n";
+            $script .= "        var name = $(txt).attr('name');\n";
+            $script .= "        id = 'id_' + name + '_itemcount';\n";
+            $script .= "    }\n";
+            $script .= "    $(jquery_id(id)).text('$itemtype: ' + itemcount);";
+            $script .= "}\n";
+            $script .= "function jquery_id(id) {\n";
+            $script .= "    var regexp = new RegExp('(:|\\\\.|\\\\[|\\\\]|,|=|@)', 'g');\n";
+            $script .= "    return '#' + id.replace(regexp, '\\\\\$1');\n";
+            $script .= "}\n";
+        }
+
+        if ($script) {
+            $result .= html_writer::script($script);
+        }
 
         return $result;
     }
