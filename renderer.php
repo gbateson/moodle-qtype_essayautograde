@@ -213,8 +213,10 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                                        'itemtype'  => $itemtype);
                     if ($showgradebands) {
                         $details[] = get_string('explanationpartialband', $plugin, $a);
-                    } else {
+                    } else if (count($details)) {
                         $details[] = get_string('explanationremainingitems', $plugin, $a);
+                    } else {
+                        $details[] = get_string('explanationitems', $plugin, $a);
                     }
                 }
 
@@ -222,6 +224,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $a = (object)array('percent' => $percent,
                                        'phrase'  => $phrase);
                     $details[] = get_string('explanationtargetphrase', $plugin, $a);
+                }
+
+                if (empty($details) && $currentresponse->count) {
+                    $a = (object)array('count'    => $currentresponse->count,
+                                       'itemtype' => $itemtype);
+                    $details[] = get_string('explanationnotenough', $plugin, $a);
                 }
 
                 if ($details = implode(') + (', $details)) {

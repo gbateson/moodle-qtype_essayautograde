@@ -19,8 +19,8 @@
         <FIELD NAME="responsetemplateformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The text format for responsetemplate."/>
         <FIELD NAME="enableautograde" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Nonzero if auto-grading is enabled"/>
         <FIELD NAME="allowoverride" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Nonzero if teacher can override autotomaticall generated grade"/>
-        <FIELD NAME="itemtype" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Numeric code to represent the type of countable items to look for in the essay text"/>
-        <FIELD NAME="itemcount" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="The number of countable items expected to be present in the essay text."/>
+        <FIELD NAME="itemtype" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Numeric code to represent the type of countable items to look for in the essay text"/>
+        <FIELD NAME="itemcount" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The number of countable items expected to be present in the essay text."/>
         <FIELD NAME="showcalculation" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should the grade calculation be shown on the grading and review pages?"/>
         <FIELD NAME="showtextstats" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should the text statistics be shown on the grading and review pages?"/>
         <FIELD NAME="textstatitems" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="A comma separted list of auto-feedback items to be displayed"/>

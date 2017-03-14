@@ -51,8 +51,10 @@ $string['explanationseecomment'] = '(see comment below)';
 $string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% for the first {$a->count} {$a->itemtype}';
 $string['explanationgrade'] = 'Therefore, the computer-generated grade for this essay was set to {$a->grade} = ({$a->percent}% of {$a->maxgrade}).';
-$string['explanationoverride'] = 'However, {$a->datetime}, the grade for this essay was manually set to {$a->grade}.';
+$string['explanationitems'] = '{$a->count} {$a->itemtype}';
 $string['explanationmaxgrade'] = 'The maximum grade for this question is {$a->maxgrade}.';
+$string['explanationnotenough'] = '{$a->count} {$a->itemtype} is less than the minimum amount required to be given a grade.';
+$string['explanationoverride'] = 'However, {$a->datetime}, the grade for this essay was manually set to {$a->grade}.';
 $string['explanationpartialband'] = '{$a->percent}% for partially completing Grade band [{$a->gradeband}]';
 $string['explanationpercent'] = 'The percentage grade for this essay is {$a->percent}% = ({$a->details}).';
 $string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->count} {$a->itemtype}';
@@ -103,7 +105,7 @@ $string['targetphrase_help'] = 'Specify the grade that will be added if this tar
 
 > **e.g.** If [Finally] is used, award [10% of the question grade.]
 
-The target phrase can be a single phrase or a list phrases separated by either a comma "," or the word  "OR" (upper case).
+The target phrase can be a single phrase or a list phrases separated by either a comma "," or the word "OR" (upper case).
 
 > **e.g.** If [Finally OR Lastly] is used, award [10% of the question grade.]
 

@@ -134,7 +134,7 @@ class qtype_essayautograde extends question_type {
         // save hints
         $this->save_hints($formdata, false);
 
-        // initialize $anwers array
+        // initialize $answers array
         $answers = array();
 
         ///////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ class qtype_essayautograde extends question_type {
             }
             $items[$phrase] = $percent[$i];
         }
-        asort($items);
+        //asort($items);
 
         $fraction = floatval(self::ANSWER_TYPE_PHRASE);
         foreach ($items as $phrase => $percent) {
@@ -202,58 +202,85 @@ class qtype_essayautograde extends question_type {
         // save $answers i.e. grade bands and target phrases
         ///////////////////////////////////////////////////////
 
-        if ($answerids = $DB->get_records($answerstable, array('question' => $questionid), 'id ASC', 'id,question')) {
-            $answerids = array_keys($answerids);
-        } else {
-            $answerids = array();
+        if (! $oldanswers = $DB->get_records($answerstable, array('question' => $questionid), 'id ASC')) {
+            $oldanswers = array();
         }
 
+        $regrade = false;
         foreach ($answers as $answer) {
-            if ($answer->id = array_shift($answerids)) {
+            if ($oldanswer = array_shift($oldanswers)) {
+                $answer->id = $oldanswer->id;
+                $update = ($answer==$oldanswer ? false : true);
+                $insert = false;
+            } else {
+                $update = false;
+                $insert = true;
+            }
+            if ($update) {
                 if (! $DB->update_record($answerstable, $answer)) {
                     $result = get_string('cannotupdaterecord', 'error', "question_answers (id=$answer->id)");
                     $result = (object)array('error' => $result);
                     return $result;
                 }
-            } else {
-                unset($answer->id);
+                $regrade = true;
+            }
+            if ($insert) {
                 if (! $answer->id = $DB->insert_record($answerstable, $answer)) {
                     $result = get_string('cannotinsertrecord', 'error', 'question_answers');
                     $result = (object)array('error' => $result);
                     return $result;
                 }
+                $regrade = true;
             }
         }
 
         // Delete remaining old answer records, if any.
-        while ($answerid = array_shift($answerids)) {
-            $DB->delete_records($answerstable, array('id' => $answerid));
+        while ($oldanswer = array_shift($oldanswers)) {
+            $DB->delete_records($answerstable, array('id' => $oldanswer->id));
+        }
+
+        // regrade question if necessary
+        if ($regrade) {
+            $this->regrade_question($formdata->id);
         }
 
         return true;
     }
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
+
+        // initialize standard question fields
         parent::initialise_question_instance($question, $questiondata);
-        $question->responseformat      = $questiondata->options->responseformat;
-        $question->responserequired    = $questiondata->options->responserequired;
-        $question->responsefieldlines  = $questiondata->options->responsefieldlines;
-        $question->attachments         = $questiondata->options->attachments;
-        $question->attachmentsrequired = $questiondata->options->attachmentsrequired;
-        $question->graderinfo          = $questiondata->options->graderinfo;
-        $question->graderinfoformat    = $questiondata->options->graderinfoformat;
-        $question->responsetemplate    = $questiondata->options->responsetemplate;
-        $question->responsetemplateformat = $questiondata->options->responsetemplateformat;
-        $question->enableautograde     = $questiondata->options->enableautograde;
-        $question->allowoverride       = $questiondata->options->allowoverride;
-        $question->itemtype            = $questiondata->options->itemtype;
-        $question->itemcount           = $questiondata->options->itemcount;
-        $question->showcalculation     = $questiondata->options->showcalculation;
-        $question->showtextstats       = $questiondata->options->showtextstats;
-        $question->textstatitems       = $questiondata->options->textstatitems;
-        $question->showgradebands      = $questiondata->options->showgradebands;
-        $question->addpartialgrades    = $questiondata->options->addpartialgrades;
-        $question->showtargetphrases   = $questiondata->options->showtargetphrases;
+
+        // initialize "essayautograde" fields
+        $defaults = array('responseformat'      => 'editor',
+                          'responserequired'    =>  1,
+                          'responsefieldlines'  => 15,
+                          'attachments'         =>  0,
+                          'attachmentsrequired' =>  0,
+                          'graderinfo'          => '',
+                          'graderinfoformat'    =>  0,
+                          'responsetemplate'    => '',
+                          'responsetemplateformat' => 0,
+                          'enableautograde'     =>  1,
+                          'allowoverride'       =>  1,
+                          'itemtype'            =>  0,
+                          'itemcount'           =>  0,
+                          'showcalculation'     =>  0,
+                          'showtextstats'       =>  0,
+                          'textstatitems'       => '',
+                          'showgradebands'      =>  0,
+                          'addpartialgrades'    =>  0,
+                          'showtargetphrases'   =>  0);
+        foreach ($defaults as $name => $default) {
+            if (isset($questiondata->options->$name)) {
+                $question->$name = $questiondata->options->$name;
+            } else {
+                $question->$name = $default;
+            }
+        }
+
+        // initialize "feedback" fields
         $this->initialise_combined_feedback($question, $questiondata);
     }
 
@@ -341,5 +368,67 @@ class qtype_essayautograde extends question_type {
         $plugin = $this->plugin_name();
         $fs = get_file_storage();
         $fs->delete_area_files($contextid, $plugin, 'graderinfo', $questionid);
+    }
+
+    /**
+     * based on "regrade_attempt()" method
+     * in "mod/quiz/report/overview/report.php"
+     */
+    protected function regrade_question($questionid) {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot.'/mod/quiz/attemptlib.php');
+        require_once($CFG->dirroot.'/mod/quiz/locallib.php');
+
+        $moduleid = $DB->get_field('modules', 'id', array('name' => 'quiz'));
+
+        $sql = 'SELECT DISTINCT qs.quizid FROM {quiz_slots} qs WHERE qs.questionid = :questionid';
+        $sql = "SELECT cm.id FROM {course_modules} cm WHERE cm.module = :moduleid AND cm.instance IN ($sql)";
+        $sql = "SELECT ctx.id FROM {context} ctx WHERE ctx.contextlevel = :contextlevel AND ctx.instanceid IN ($sql)";
+        $sql = "SELECT qu.id FROM {question_usages} qu WHERE qu.contextid IN ($sql)";
+        $sql = "SELECT qa.* FROM {quiz_attempts} qa WHERE qa.uniqueid IN ($sql)";
+
+        $params = array('questionid'   => $questionid,
+                        'moduleid'     => $moduleid,
+                        'contextlevel' => CONTEXT_MODULE);
+
+        if (! $attempts = $DB->get_records_sql($sql, $params)) {
+            return true; // this question has not been attempted
+        }
+
+        foreach ($attempts as $attempt) {
+
+            // Need more time for a quiz with many questions.
+            core_php_time_limit::raise(300);
+
+            $transaction = $DB->start_delegated_transaction();
+            $quba = question_engine::load_questions_usage_by_activity($attempt->uniqueid);
+
+            $finished = ($attempt->state == quiz_attempt::FINISHED);
+
+            $slots = $quba->get_slots();
+            foreach ($slots as $slot) {
+                $quba->regrade_question($slot, $finished);
+            }
+
+            question_engine::save_questions_usage_by_activity($quba);
+            $transaction->allow_commit();
+
+            // reclaim some memory and tidy up
+            $quba = null;
+            $transaction = null;
+            gc_collect_cycles();
+        }
+
+        $sql = 'SELECT DISTINCT qs.quizid FROM {quiz_slots} qs WHERE qs.questionid = :questionid';
+        $sql = "SELECT q.* FROM {quiz} q WHERE q.id IN ($sql) ORDER BY q.id";
+        $params = array('questionid' => $questionid);
+        if ($quizzes = $DB->get_records_sql($sql, $params)) {
+            foreach ($quizzes as $quiz) {
+                quiz_update_all_attempt_sumgrades($quiz);
+                quiz_update_all_final_grades($quiz);
+                quiz_update_grades($quiz);
+            }
+        }
     }
 }

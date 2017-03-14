@@ -351,6 +351,17 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
+        $names = array('enableautograde', 'allowoverride',
+                       'showcalculation', 'showtextstats',
+                       'showgradebands', 'addpartialgrades',
+                       'showtargetphrases');
+
+        foreach ($names as $name) {
+            if (! isset($question->options->$name)) {
+                $question->options->$name = 0;
+            }
+        }
+
         $question->enableautograde = $question->options->enableautograde;
         $question->allowoverride = $question->options->allowoverride;
         $question->itemtype = $question->options->itemtype;

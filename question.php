@@ -84,6 +84,14 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     /**
+     * @param moodle_page the page we are outputting to.
+     * @return qtype_essay_format_renderer_base the response-format-specific renderer.
+     */
+    public function get_format_renderer(moodle_page $page) {
+        return $page->get_renderer('qtype_essayautograde', 'format_' . $this->responseformat);
+    }
+
+    /**
      * Use by many of the behaviours to determine whether the student has provided
      * enough of an answer for the question to be graded automatically, or whether
      * it must be considered aborted.
