@@ -74,6 +74,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
         $result .= html_writer::end_tag('div');
 
+        // take a look at https://github.com/RadLikeWhoa/Countable/blob/master/Countable.js
+        // for more ideas on how to count chars, words, sentences, and paragraphs
         $itemtype = '';
         switch ($question->itemtype) {
             case $question->plugin_constant('ITEM_TYPE_CHARS'):
@@ -99,53 +101,134 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $itemtype = substr($itemtype, 1, -1);
 
         $script = '';
+
+        $script .= "ESSAY = {\n";
+        $script .= "    'setup_count_max' : 10,\n";
+        $script .= "    'setup_count_timeout' : 200\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.setup_response_heights = function() {\n";
+        $script .= "   $('textarea.qtype_essayautograde_response').each(function(){\n";
+        $script .= "       $(this).height(1);\n";
+        $script .= "       $(this).height(this.scrollHeight);\n";
+        $script .= "   });\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.setup_itemcounts = function() {\n";
+        $script .= "    $('.qtype_essayautograde_response').each(function(){\n";
+        $script .= "        var id = ESSAY.get_itemcount_id(this);\n";
+        $script .= "        ESSAY.create_itemcount(this, id);\n";
+        $script .= "        ESSAY.setup_itemcount(this, id);\n";
+        $script .= "    });\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.create_itemcount = function(response, id) {\n";
+        $script .= "    if (document.getElementById(id)==null) {\n";
+        $script .= "        var p = document.createElement('P');\n";
+        $script .= "        p.setAttribute('id', id);\n";
+        $script .= "        p.setAttribute('class', 'itemcount');\n";
+        $script .= "        response.parentNode.insertBefore(p, response.nextSibling);\n";
+        $script .= "    }\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.setup_itemcount = function(response, id, setup_count) {\n";
+        $script .= "    if (setup_count) {\n";
+        $script .= "        setup_count++;\n";
+        $script .= "    } else {\n";
+        $script .= "        setup_count = 1;\n";
+        $script .= "    }\n";
+        $script .= "    var lasttime = (setup_count==ESSAY.setup_count_max);\n";
+        $script .= "    var editable = ESSAY.get_editable_element(response, lasttime);\n";
+        $script .= "    if (editable) {\n";
+        $script .= "        $(editable).keyup(function(){\n";
+        $script .= "            ESSAY.show_itemcount(this, id)\n";
+        $script .= "        });\n";
+        $script .= "        ESSAY.show_itemcount(editable, id);\n";
+        $script .= "    } else if (setup_count <= ESSAY.setup_count_max) {\n";
+        $script .= "        setTimeout(ESSAY.setup_itemcount.bind(null, response, id, setup_count), ESSAY.setup_count_timeout);\n";
+        $script .= "    }\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.get_editable_element = function(response, lasttime) {\n";
+        $script .= "    // search for plain text editor\n";
+        $script .= "    if ($(response).prop('tagName')=='TEXTAREA') {\n";
+        $script .= "        return response;\n";
+        $script .= "    }\n";
+        $script .= "    // search for Atto editor\n";
+        $script .= "    var editable = $(response).find('[contenteditable=true]');\n";
+        $script .= "    if (editable.length) {\n";
+        $script .= "        return editable.get(0);\n";
+        $script .= "    }\n";
+        $script .= "    // search for MCE editor\n";
+        $script .= "    var i = response.getElementsByTagName('IFRAME');\n";
+        $script .= "    if (i.length) {\n";
+        $script .= "        i = i[0];\n";
+        $script .= "        var d = (i.contentWindow || i.contentDocument);\n";
+        $script .= "        if (d.document) {\n";
+        $script .= "            d = d.document;\n";
+        $script .= "        }\n";
+        $script .= "        if (d.body && d.body.isContentEditable) {\n";
+        $script .= "            return d.body;\n"; // MCE editor
+        $script .= "        }\n";
+        $script .= "    }\n";
+        $script .= "    if (lasttime) {\n";
+        $script .= "        // search for disabled text editor\n";
+        $script .= "        var editable = $(response).find('textarea');\n";
+        $script .= "        if (editable.length) {\n";
+        $script .= "            return editable.get(0);\n";
+        $script .= "        }\n";
+        $script .= "    }\n";
+        $script .= "    return null;\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.get_textarea = function(response) {\n";
+        $script .= "    if ($(response).prop('tagName')=='TEXTAREA') {\n";
+        $script .= "        return response;\n";
+        $script .= "    }\n";
+        $script .= "    return $(response).find('textarea').get(0);\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.get_textarea_name = function(response) {\n";
+        $script .= "    var textarea = ESSAY.get_textarea(response);\n";
+        $script .= "    return $(textarea).attr('name');\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.get_itemcount_id = function(response) {\n";
+        $script .= "    var name = ESSAY.get_textarea_name(response);\n";
+        $script .= "    return 'id_' + name + '_itemcount';\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.escape = function(id) {\n";
+        $script .= "    var regexp = new RegExp('(:|\\\\.|\\\\[|\\\\]|,|=|@)', 'g');\n";
+        $script .= "    return '#' + id.replace(regexp, '\\\\\$1');\n";
+        $script .= "}\n";
+
+        $script .= "ESSAY.show_itemcount = function(response, id) {\n";
+        $script .= "    var regexp = new RegExp('$itemmatch', 'g');\n";
+        $script .= "    if ($(response).prop('tagName')=='TEXTAREA') {\n";
+        $script .= "        var itemcount = $(response).val().match(regexp);\n";
+        $script .= "    } else {\n";
+        $script .= "        var itemcount = $(response).text().match(regexp);\n";
+        $script .= "    }\n";
+        $script .= "    if (itemcount) {\n";
+        $script .= "        itemcount = itemcount.length;\n";
+        $script .= "    } else {\n";
+        $script .= "        itemcount = 0;\n";
+        $script .= "    }\n";
+        $script .= "    $(ESSAY.escape(id)).text('$itemtype: ' + itemcount);\n";
+        $script .= "}\n";
+
+        $script .= "if (window.$) {\n";
+        $script .= "    $(document).ready(function(){\n";
         if ($options->readonly) {
             // reduce vertical height of disabled textarea
-            $script .= "if (window.$) {\n";
-            $script .= "    $(document).ready(function(){\n";
-            $script .= "       $('textarea.qtype_essayautograde_response').each(function(){\n";
-            $script .= "           $(this).height(1);\n";
-            $script .= "           $(this).height(this.scrollHeight);\n";
-            $script .= "       });\n";
-            $script .= "    });\n";
-            $script .= "}\n";
+            $script .= "        ESSAY.setup_response_heights();\n";
         } else {
-            // add word counter underneath input textarea
-            $script .= "if (window.$) {\n";
-            $script .= "    $(document).ready(function(){\n";
-            $script .= "       $('textarea.qtype_essayautograde_response').each(function(){\n";
-            $script .= "           var name = $(this).attr('name');\n";
-            $script .= "           var id = 'id_' + name + '_itemcount';\n";
-            $script .= "           if ($(jquery_id(id)).length==0) {\n";
-            $script .= "               var p = document.createElement('P');\n";
-            $script .= "               p.setAttribute('id', id);\n";
-            $script .= "               p.setAttribute('class', 'wordcount');\n";
-            $script .= "               this.parentNode.insertBefore(p, this.nextSibling);\n";
-            $script .= "               $(this).keyup(function(){ show_item_count(this) });\n";
-            $script .= "           }";
-            $script .= "           show_item_count(this, id);\n";
-            $script .= "       });\n";
-            $script .= "    });\n";
-            $script .= "}\n";
-            $script .= "function show_item_count(txt, id) {\n";
-            $script .= "    var regexp = new RegExp('$itemmatch', 'g');\n";
-            $script .= "    var itemcount = $(txt).val().match(regexp);\n";
-            $script .= "    if (itemcount) {\n";
-            $script .= "        itemcount = itemcount.length;\n";
-            $script .= "    } else {\n";
-            $script .= "        itemcount = 0;\n";
-            $script .= "    }\n";
-            $script .= "    if (id==null) {\n";
-            $script .= "        var name = $(txt).attr('name');\n";
-            $script .= "        id = 'id_' + name + '_itemcount';\n";
-            $script .= "    }\n";
-            $script .= "    $(jquery_id(id)).text('$itemtype: ' + itemcount);";
-            $script .= "}\n";
-            $script .= "function jquery_id(id) {\n";
-            $script .= "    var regexp = new RegExp('(:|\\\\.|\\\\[|\\\\]|,|=|@)', 'g');\n";
-            $script .= "    return '#' + id.replace(regexp, '\\\\\$1');\n";
-            $script .= "}\n";
+            // add item counter underneath editable response element
+            $script .= "        ESSAY.setup_itemcounts();\n";
         }
+        $script .= "    });\n";
+        $script .= "}";
 
         if ($script) {
             $result .= html_writer::script($script);
@@ -244,7 +327,6 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $strman = get_string_manager();
 
                 $table = new html_table();
-                $table->caption = html_writer::tag('h5', get_string('textstatistics', $plugin));
                 $table->attributes['class'] = 'generaltable essayautograde_stats';
 
                 $names = explode(',', $question->textstatitems);
@@ -266,6 +348,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                                    new html_table_cell($value));
                     $table->data[] = new html_table_row($cells);
                 }
+                $output .= html_writer::tag('h5', get_string('textstatistics', $plugin));
                 $output .= html_writer::table($table);
             }
 
@@ -344,7 +427,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 }
             }
 
-            // show explanation of calculation, if required
+            // show grade bands, if required
             if ($showgradebands) {
                 $details = array();
                 $i = 1; // grade band index
@@ -361,6 +444,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $output .= html_writer::tag('dl', implode('', $details), array('class' => 'gradebands'));
             }
 
+            // show target phrases, if required
             if ($show[$question->showtargetphrases] && count($currentresponse->phrases)) {
                 $details = array();
                 foreach ($currentresponse->phrases as $match => $percent) {

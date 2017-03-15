@@ -43,3 +43,52 @@
     margin-bottom: 0px;
     margin-top:    2px;
 }
+
+table.essayautograde_stats {
+    border-collapse: separate;
+    border-spacing:         0;
+    color:            #7f4614;
+    max-width:          360px;
+}
+
+table.essayautograde_stats tr,
+table.essayautograde_stats td {
+    border: none;
+}
+
+table.essayautograde_stats tr:first-child td {
+    border-top: solid 1px #a65b1a;
+}
+table.essayautograde_stats tr td:first-child {
+    border-left: solid 1px #a65b1a;
+}
+table.essayautograde_stats tr td:last-child {
+    border-right: solid 1px #a65b1a;
+}
+table.essayautograde_stats tr:last-child td {
+    border-bottom: solid 1px #a65b1a;
+}
+
+table.essayautograde_stats tr:first-child td:first-child {
+    border-top-left-radius: 4px;
+}
+
+table.essayautograde_stats tr:first-child td:last-child {
+    border-top-right-radius: 4px;
+}
+
+table.essayautograde_stats tr:last-child td:first-child {
+    border-bottom-left-radius: 4px;
+}
+
+table.essayautograde_stats tr:last-child td:last-child {
+    border-bottom-right-radius: 4px;
+}
+
+table.essayautograde_stats tbody tr:nth-of-type(odd) {
+    background-color: #fafafa;
+}
+
+table.essayautograde_stats tbody tr:nth-of-type(even) {
+    background-color: #f0e5cc;
+}
