@@ -39,6 +39,8 @@ require_once($CFG->dirroot.'/question/type/essay/question.php');
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+// interface: question_automatically_gradable
+// class:     question_graded_automatically
 class qtype_essayautograde_question extends qtype_essay_question implements question_automatically_gradable {
 
     /** @var string */
@@ -172,10 +174,31 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                     return ($this->responseformat === 'editorfilepicker');
                 }
                 if ($filearea == 'hint') {
-                    return $this->check_hint_file_access($qa, $options, $args);
+                    //return $this->check_hint_file_access($qa, $options, $args);
+                    if ($options->feedback) {
+                        $hint = $qa->get_applicable_hint();
+                        return ($args[0] == $hint->id);
+                    }
+                    return false;
                 }
                 if (in_array($filearea, $this->qtype->feedbackfields)) {
-                    return $this->check_combined_feedback_file_access($qa, $options, $filearea);
+                    //return $this->check_combined_feedback_file_access($qa, $options, $filearea);
+                    if ($options->feedback) {
+                        $state = $qa->get_state();
+                        if (! $state->is_finished()) {
+                            $response = $qa->get_last_qt_data();
+                            if (! $this->is_gradable_response($response)) {
+                                return false;
+                            }
+                            list($notused, $state) = $this->grade_response($response);
+                        }
+                        if ($state->get_feedback_class().'feedback' == $filearea) {
+                            if ($args[0] == $this->id) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
                 }
                 break;
 
@@ -185,7 +208,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 }
                 break;
         }
-        parent::check_file_access($qa, $options, $component, $filearea, $args, $forcedownload);
+        return parent::check_file_access($qa, $options, $component, $filearea, $args, $forcedownload);
     }
 
     /**
