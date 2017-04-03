@@ -157,9 +157,13 @@ class qtype_essayautograde extends question_type {
             $textstatitems = implode(',', $textstatitems);
         }
 
+        $params = array('questionid' => $questionid);
+        $optionsid = $DB->get_field($optionstable, 'id', $params);
+        $addpartialgrades = $DB->get_field($optionstable, 'addpartialgrades', $params);
+
         $options = (object)array(
-            'id'                  => $DB->get_field($optionstable, 'id', array('questionid' => $questionid)),
-            'questionid'          => $formdata->id,
+            'id'                  => $optionsid,
+            'questionid'          => $questionid,
             'responseformat'      => $formdata->responseformat,
             'responserequired'    => $formdata->responserequired,
             'responsefieldlines'  => $formdata->responsefieldlines,
@@ -217,7 +221,7 @@ class qtype_essayautograde extends question_type {
         $fraction = floatval(self::ANSWER_TYPE_BAND);
         foreach ($items as $count => $percent) {
             $answers[] = (object)array(
-                'question'       => $formdata->id,
+                'question'       => $questionid,
                 'answer'         => $count,
                 'answerformat'   => $percent,
                 'fraction'       => $fraction,
@@ -249,7 +253,7 @@ class qtype_essayautograde extends question_type {
         $fraction = floatval(self::ANSWER_TYPE_PHRASE);
         foreach ($items as $phrase => $percent) {
             $answers[] = (object)array(
-                'question'       => $formdata->id,
+                'question'       => $questionid,
                 'answer'         => '',
                 'answerformat'   => 0,
                 'fraction'       => $fraction,
@@ -266,7 +270,12 @@ class qtype_essayautograde extends question_type {
             $oldanswers = array();
         }
 
-        $regrade = false;
+        if ($addpartialgrades==$formdata->addpartialgrades) {
+            $regrade =  true;
+        } else {
+            $regrade =  true;
+        }
+
         foreach ($answers as $answer) {
             if ($oldanswer = array_shift($oldanswers)) {
                 $answer->id = $oldanswer->id;

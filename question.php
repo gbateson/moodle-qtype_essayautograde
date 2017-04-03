@@ -164,8 +164,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return bool true if the user can access this file.
      */
     public function check_file_access($qa, $options, $component, $filearea, $args, $forcedownload) {
+        if (empty($options) || empty($args)) {
+            return false; // shoujdln't happen !!
+        }
         switch ($component) {
-
             case 'question':
                 if ($filearea == 'response_attachments') {
                     return ($this->attachments != 0);
@@ -174,37 +176,16 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                     return ($this->responseformat === 'editorfilepicker');
                 }
                 if ($filearea == 'hint') {
-                    //return $this->check_hint_file_access($qa, $options, $args);
-                    if ($options->feedback) {
-                        $hint = $qa->get_applicable_hint();
-                        return ($args[0] == $hint->id);
-                    }
-                    return false;
+                    return $this->check_hint_file_access($qa, $options, $args);
                 }
                 if (in_array($filearea, $this->qtype->feedbackfields)) {
-                    //return $this->check_combined_feedback_file_access($qa, $options, $filearea);
-                    if ($options->feedback) {
-                        $state = $qa->get_state();
-                        if (! $state->is_finished()) {
-                            $response = $qa->get_last_qt_data();
-                            if (! $this->is_gradable_response($response)) {
-                                return false;
-                            }
-                            list($notused, $state) = $this->grade_response($response);
-                        }
-                        if ($state->get_feedback_class().'feedback' == $filearea) {
-                            if ($args[0] == $this->id) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
+                    return $this->check_combined_feedback_file_access($qa, $options, $filearea, $args);
                 }
                 break;
 
             case $this->plugin_name():
-                if ($filearea == 'graderinfo') {
-                    return ($options->manualcomment && $args[0] == $this->id);
+                if ($filearea == 'graderinfo' && $options->manualcomment) {
+                    return ($this->id == reset($args));
                 }
                 break;
         }
@@ -224,6 +205,17 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             return null;
         }
         return $this->hints[$hintnumber];
+    }
+
+    /**
+     * format a hint for "multiple tries" behavior
+     *
+     * @param question_hint $hint
+     * @param question_attempt $qa
+     * @return string formatted hint text
+     */
+    public function format_hint(question_hint $hint, question_attempt $qa) {
+        return $this->format_text($hint->hint, $hint->hintformat, $qa, 'question', 'hint', $hint->id);
     }
 
     /**
@@ -327,6 +319,44 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
             $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
 
+            // human readable aliases for regexp strings
+            $aliases = array(' OR '  => '|',
+                             ' OR'   => '|',
+                             'OR '   => '|',
+                             ' , '   => '|',
+                             ' ,'    => '|',
+                             ', '    => '|',
+                             ' ANY ' => '\\b.*\\b',
+                             ' ANY'  => '\\b.*\\b',
+                             'ANY '  => '\\b.*\\b');
+
+            // allowable regexp strings and their internal aliases
+            $metachars = array('^' => 'CARET',
+                               '$' => 'DOLLAR',
+                               '.' => 'DOT',
+                               '?' => 'QUESTION_MARK',
+                               '*' => 'ASTERISK',
+                               '+' => 'PLUS_SIGN',
+                               '|' => 'VERTICAL_BAR',
+                               '-' => 'HYPHEN',
+                               ':' => 'COLON',
+                               '!' => 'EXCLAMATION_MARK',
+                               '=' => 'EQUALS_SIGN',
+                               '(' => 'OPEN_ROUND',
+                               ')' => 'CLOSE_ROUND',
+                               '[' => 'OPEN_SQUARE',
+                               ']' => 'CLOSE_SQUARE',
+                               '{' => 'OPEN_CURLY',
+                               '}' => 'CLOSE_CURLY',
+                               '<' => 'OPEN_ANGLE',
+                               '>' => 'CLOSE_ANGLE',
+                               '\\' => 'BACKSLASH');
+            $flipmetachars = array_flip($metachars);
+
+            // override "addpartialgrades" with incoming form data, if necessary
+            $addpartialgrades = $this->addpartialgrades;
+            $addpartialgrades = optional_param('addpartialgrades', $addpartialgrades, PARAM_INT);
+
             // set fractional grade from item count and target phrases
             $fraction = 0.0;
             $checkbands = true;
@@ -349,11 +379,17 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
                     case $ANSWER_TYPE_PHRASE:
                         if ($search = trim($answer->feedback)) {
+                            $search = strtr($search, $aliases);
+                            $search = strtr($search, $metachars);
                             $search = preg_quote($search, '/');
-                            $search = preg_replace('/ *(,|OR) */', '|', $search);
+                            $search = strtr($search, $flipmetachars);
                             $search = "/$search/is"; // case-insensitive match
                             if (preg_match($search, $text, $phrase)) {
-                                $phrase = $phrase[0];
+                                if (strlen($phrase[0]) <= strlen($answer->feedback)) {
+                                    $phrase = $phrase[0];
+                                } else {
+                                    $phrase = $answer->feedback;
+                                }
                                 $fraction += ($answer->feedbackformat / 100);
                                 $myphrases[$phrase] = $answer->feedbackformat;
                             }
@@ -376,7 +412,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
             // set the number of items to be graded by the current band
             // and thus calculate the percent awarded by the current band
-            if ($this->addpartialgrades && $currentcount) {
+            if ($addpartialgrades && $currentcount) {
                 $partialcount = ($count - $completecount);
                 $partialpercent = round(($partialcount / $currentcount) * $currentpercent);
             } else {
@@ -592,5 +628,46 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             };
         }
         return $count;
+    }
+
+    ///////////////////////////////////////////////////////
+    // methods from "question_graded_automatically" class
+    // see "question/type/questionbase.php"
+    ///////////////////////////////////////////////////////
+
+    /**
+     * Check a request for access to a file belonging to a combined feedback field.
+     * @param question_attempt $qa the question attempt being displayed.
+     * @param question_display_options $options the options that control display of the question.
+     * @param string $filearea the name of the file area.
+     * @param array $args the remaining bits of the file path.
+     * @return bool whether access to the file should be allowed.
+     */
+    protected function check_combined_feedback_file_access($qa, $options, $filearea, $args = null) {
+        $state = $qa->get_state();
+        if (! $state->is_finished()) {
+            $response = $qa->get_last_qt_data();
+            if (! $this->is_gradable_response($response)) {
+                return false;
+            }
+            list($fraction, $state) = $this->grade_response($response);
+        }
+        if ($state->get_feedback_class().'feedback' == $filearea) {
+            return ($this->id == reset($args));
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Check a request for access to a file belonging to a hint.
+     * @param question_attempt $qa the question attempt being displayed.
+     * @param question_display_options $options the options that control display of the question.
+     * @param array $args the remaining bits of the file path.
+     * @return bool whether access to the file should be allowed.
+     */
+    protected function check_hint_file_access($qa, $options, $args) {
+        $hint = $qa->get_applicable_hint();
+        return ($hint->id == reset($args));
     }
 }

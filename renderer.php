@@ -283,12 +283,16 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
         $output = '';
 
-        // If required, add explanation of grade calculation.
+        // Decide if we should show grade explanation for "partial" or "wrong" states.
+        // This should detect "^(graded|mangr)(partial|wrong)$" and possibly others.
         if ($step = $qa->get_last_step()) {
+            $show = preg_match('/(partial|wrong)$/', $step->get_state());
+        } else {
+            $show = false;
+        }
 
-            //$state = $step->get_state();
-            //if ($state == 'gradedpartial' || $state == 'gradedwrong') {
-            //}
+        // If required, show explanation of grade calculation.
+        if ($show) {
 
             $plugin = $this->plugin_name();
             $question = $qa->get_question();
@@ -376,7 +380,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                         $details[] = get_string('explanationpartialband', $plugin, $a);
                     } else if (count($details)) {
                         $details[] = get_string('explanationremainingitems', $plugin, $a);
-                    } else {
+                    } else if ($currentresponse->partialpercent) {
                         $details[] = get_string('explanationitems', $plugin, $a);
                     }
                 }
@@ -393,14 +397,16 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $details[] = get_string('explanationnotenough', $plugin, $a);
                 }
 
-                if ($details = implode(') + (', $details)) {
+                if ($details = implode(')<br /> + (', $details)) {
 
                     $maxgrade = $qa->format_max_mark($precision);
                     $grade = $qa->format_mark($precision);
 
                     $step = $qa->get_last_step_with_behaviour_var('finish');
                     if ($step->get_id()) {
-                        $autograde = format_float($step->get_fraction() * $maxgrade, $precision);
+                        //$autograde = ($currentresponse->percent * $maxgrade / 100);
+                        $autograde = ($step->get_fraction() * $maxgrade);
+                        $autograde = format_float($autograde, $precision);
                     } else {
                         $autograde = $grade;
                     }
