@@ -284,7 +284,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $output = '';
 
         // Decide if we should show grade explanation for "partial" or "wrong" states.
-        // This should detect "^(graded|mangr)(partial|wrong)$" and possibly others.
+        // This should detect "^(graded|mangr)(partial|wrong)$" and possibly others,
+        // but will skip "gaveup" and possibly others
         if ($step = $qa->get_last_step()) {
             $show = preg_match('/(partial|wrong)$/', $step->get_state());
         } else {
@@ -404,20 +405,47 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
                     $step = $qa->get_last_step_with_behaviour_var('finish');
                     if ($step->get_id()) {
-                        //$autograde = ($currentresponse->percent * $maxgrade / 100);
-                        $autograde = ($step->get_fraction() * $maxgrade);
-                        $autograde = format_float($autograde, $precision);
+                        $rawgrade = ($step->get_fraction() * $maxgrade);
+                        $rawgrade = format_float($rawgrade, $precision);
                     } else {
-                        $autograde = $grade;
+                        $rawgrade = $grade;
+                    }
+                    $rawpercent = $currentresponse->percent;
+                    $rawgrade = ($currentresponse->fraction * $maxgrade);
+                    $rawgrade = format_float($rawgrade, $precision);
+
+                    if ($penalty = $question->penalty) {
+                        $totaltries = $qa->get_step(0)->get_behaviour_var('_triesleft');
+                        $triesleft = $qa->get_last_behaviour_var('_triesleft');
+                        $penalty = max(0, $penalty * ($totaltries - $triesleft));
                     }
 
-                    $a = (object)array('maxgrade' => $maxgrade,
-                                       'grade'    => $autograde,
-                                       'percent'  => $currentresponse->percent,
-                                       'details'  => $details);
+                    if ($penalty) {
+                        $penaltygrade = format_float($penalty * $maxgrade, $precision);
+                        $penaltypercent = ($penalty * 100);
+                        $adjustedgrade = ($rawgrade - $penaltygrade);
+                        $adjustedpercent = ($rawpercent - $penaltypercent);
+                    } else {
+                        $penaltygrade = 0;
+                        $penaltypercent = 0;
+                        $adjustedgrade = $rawgrade;
+                        $adjustedpercent = $rawpercent;
+                    }
+
+                    $a = (object)array('maxgrade'   => $maxgrade,
+                                       'rawgrade'   => $rawgrade,
+                                       'rawpercent' => $rawpercent,
+                                       'penaltygrade' => $penaltygrade,
+                                       'penaltypercent' => $penaltypercent,
+                                       'adjustedgrade' => $adjustedgrade,
+                                       'adjustedpercent' => $adjustedpercent,
+                                       'details'    => $details);
                     $output .= html_writer::tag('h5', get_string('gradecalculation', $plugin));
                     $output .= html_writer::tag('p', get_string('explanationmaxgrade', $plugin, $a));
                     $output .= html_writer::tag('p', get_string('explanationpercent', $plugin, $a));
+                    if ($penalty) {
+                        $output .= html_writer::tag('p', get_string('explanationpenalty', $plugin, $a));
+                    }
                     $output .= html_writer::tag('p', get_string('explanationgrade', $plugin, $a));
 
                     // add details of most recent manual override, if any
@@ -490,9 +518,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
         if ($step = $qa->get_last_step()) {
             switch ($step->get_state()) {
-                case 'gradedright':   $showcorrect = false; break;
-                case 'gradedpartial': $showcorrect = true;  break;
-                case 'gradedwrong':   $showcorrect = true;  break;
+                case 'gradedright':
+                case 'mangrright':   $showcorrect = false; break;
+                case 'gradedpartial':
+                case 'mangrpartial': $showcorrect = true;  break;
+                case 'gradedwrong':
+                case 'mangrwrong':   $showcorrect = true;  break;
             }
         }
 

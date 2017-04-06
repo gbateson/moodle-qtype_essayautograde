@@ -470,10 +470,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return string
      */
     public function get_current_response($name='') {
-        if (empty($name)) {
+        if ($this->currentresponse===null) {
             return $this->currentresponse;
         }
-        if ($this->currentresponse===null) {
+        if (empty($name)) {
             return $this->currentresponse;
         }
         return $this->currentresponse->$name;
