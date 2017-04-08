@@ -283,11 +283,10 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
         $output = '';
 
-        // Decide if we should show grade explanation for "partial" or "wrong" states.
-        // This should detect "^(graded|mangr)(partial|wrong)$" and possibly others,
-        // but will skip "gaveup" and possibly others
+        // Decide if we should show grade explanation.
+        // This will skip "gaveup" and possibly others
         if ($step = $qa->get_last_step()) {
-            $show = preg_match('/(partial|wrong)$/', $step->get_state());
+            $show = preg_match('/(right|partial|wrong)$/', $step->get_state());
         } else {
             $show = false;
         }
@@ -414,18 +413,41 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $rawgrade = ($currentresponse->fraction * $maxgrade);
                     $rawgrade = format_float($rawgrade, $precision);
 
-                    if ($penalty = $question->penalty) {
-                        $totaltries = $qa->get_step(0)->get_behaviour_var('_triesleft');
-                        $triesleft = $qa->get_last_behaviour_var('_triesleft');
-                        $penalty = max(0, $penalty * ($totaltries - $triesleft));
+                    if ($trypenalty = $question->penalty) {
+                        // A "try" is actually a click of the "Check" button
+                        // in "interactive" mode with a less-than-perfect response.
+                        // A "Check" of a correct response does not count as a "try".
+                        $trycount = $qa->get_step(0)->get_behaviour_var('_triesleft');
+                        $trycount -= $qa->get_last_behaviour_var('_triesleft');
+                        $penalty = max(0, $trypenalty * $trycount);
+                    } else {
+                        $trypenalty = 0;
+                        $trycount = 0;
+                        $penalty = 0;
                     }
 
                     if ($penalty) {
                         $penaltygrade = format_float($penalty * $maxgrade, $precision);
                         $penaltypercent = ($penalty * 100);
+                        if (fmod($penaltypercent, 1)==0) {
+                            $penaltypercent = intval($penaltypercent);
+                        } else {
+                            $penaltypercent = format_float($penaltypercent, $precision);
+                        }
+                        $penaltytext = $penaltypercent.'%';
+                        if ($trycount > 1) {
+                            $trypenaltypercent = ($trypenalty * 100);
+                            if (fmod($trypenaltypercent, 1)==0) {
+                                $trypenaltypercent = intval($trypenaltypercent);
+                            } else {
+                                $trypenaltypercent = format_float($trypenaltypercent, $precision);
+                            }
+                            $penaltytext .= ' = ('.$trycount.' x '.$trypenaltypercent.'%)';
+                        }
                         $adjustedgrade = ($rawgrade - $penaltygrade);
                         $adjustedpercent = ($rawpercent - $penaltypercent);
                     } else {
+                        $penaltytext = '';
                         $penaltygrade = 0;
                         $penaltypercent = 0;
                         $adjustedgrade = $rawgrade;
@@ -433,10 +455,11 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     }
 
                     $a = (object)array('maxgrade'   => $maxgrade,
-                                       'rawgrade'   => $rawgrade,
+                                       //'rawgrade'   => $rawgrade, // not required
                                        'rawpercent' => $rawpercent,
-                                       'penaltygrade' => $penaltygrade,
-                                       'penaltypercent' => $penaltypercent,
+                                       'penaltytext' => $penaltytext,
+                                       //'penaltygrade' => $penaltygrade, // not required
+                                       //'penaltypercent' => $penaltypercent, // not required
                                        'adjustedgrade' => $adjustedgrade,
                                        'adjustedpercent' => $adjustedpercent,
                                        'details'    => $details);
@@ -452,11 +475,40 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $step = $qa->get_last_step_with_behaviour_var('mark');
                     if ($step->get_id()) {
                         $a = (object)array(
-                            //'fullname' => fullname($DB->get_record('user', array('id' => $step->get_user_id()))),
                             'datetime' => userdate($step->get_timecreated(), get_string('explanationdatetime', $plugin)),
                             'grade'    => format_float($step->get_behaviour_var('mark'), $precision),
                         );
                         $output .= html_writer::tag('p', get_string('explanationoverride', $plugin, $a));
+
+                        // add manual override details
+                        $details = array();
+
+                        // add manual comment, if any
+                        $comment = $step->get_behaviour_var('comment');
+                        $commentformat  = $step->get_behaviour_var('commentformat');
+                        $commentoptions = (object)array('noclean' => true, 'para' => false);
+                        if (is_null($comment)) {
+                            list($comment, $commentformat) = $qa->get_manual_comment();
+                        }
+                        if ($comment = format_text($comment, $commentformat, $commentoptions)) {
+                            $comment = shorten_text(html_to_text($comment), 80);
+                            $comment = html_writer::tag('i', $comment);
+                            $header = get_string('comment', 'quiz');
+                            $details[] = html_writer::tag('b', $header.': ').$comment;
+                        }
+
+                        // add manual grader info, if available
+                        //if ($grader = $step->get_user_id()) {
+                        //    if ($grader = $DB->get_record('user', array('id' => $grader))) {
+                        //        $grader = fullname($grader);
+                        //        $header = get_string('grader', 'gradereport_history');
+                        //        $details[] = html_writer::tag('b', $header.': ').$grader;
+                        //    }
+                        //}
+
+                        if (count($details)) {
+                            $output .= html_writer::alist($details);
+                        }
                     }
                 }
             }
@@ -510,24 +562,17 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
     public function correct_response(question_attempt $qa) {
         global $DB;
 
-        $plugin = $this->plugin_name();
         $output = '';
-
-        $showcorrect = false;
+        $plugin = $this->plugin_name();
         $question = $qa->get_question();
 
         if ($step = $qa->get_last_step()) {
-            switch ($step->get_state()) {
-                case 'gradedright':
-                case 'mangrright':   $showcorrect = false; break;
-                case 'gradedpartial':
-                case 'mangrpartial': $showcorrect = true;  break;
-                case 'gradedwrong':
-                case 'mangrwrong':   $showcorrect = true;  break;
-            }
+            $show = preg_match('/(partial|wrong)$/', $step->get_state());
+        } else {
+            $show = false;
         }
 
-        if ($showcorrect) {
+        if ($show) {
 
             // cache plugin constants
             $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
@@ -571,7 +616,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
             if ($output) {
                 $name = 'correctresponse';
-                $output = html_writer::tag('p', get_string($name, $plugin), array('class' => $name)).$output;
+                $output = html_writer::tag('h5', get_string('corrresp', 'quiz')).
+                          html_writer::tag('p', get_string($name, $plugin), array('class' => $name)).
+                          $output;
             }
         }
 

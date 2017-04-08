@@ -43,7 +43,7 @@ $string['bandcount'] = 'For';
 $string['bandpercent'] = 'or more items, award';
 $string['chars'] = 'Characters';
 $string['charspersentence'] = 'Characters per sentence';
-$string['correctresponse'] = 'Your grade was calculated using the following criteria:';
+$string['correctresponse'] = 'To get full marks for this question, you must satisfy the following criteria:';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
 $string['explanationcompleteband'] = '{$a->percent}% for completing Grade band [{$a->gradeband}]';
@@ -56,7 +56,7 @@ $string['explanationmaxgrade'] = 'The maximum grade for this question is {$a->ma
 $string['explanationnotenough'] = '{$a->count} {$a->itemtype} is less than the minimum amount required to be given a grade.';
 $string['explanationoverride'] = 'Later, {$a->datetime}, the grade for this essay was manually set to {$a->grade}.';
 $string['explanationpartialband'] = '{$a->percent}% for partially completing Grade band [{$a->gradeband}]';
-$string['explanationpenalty'] = 'However, {$a->penaltypercent}% was deducted for checking the response before submission.';
+$string['explanationpenalty'] = 'However, {$a->penaltytext} was deducted for checking the response before submission.';
 $string['explanationpercent'] = 'The raw percentage grade for this essay is {$a->rawpercent}% <br /> = ({$a->details}).';
 $string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->count} {$a->itemtype}';
 $string['explanationtargetphrase'] = '{$a->percent}% for including the phrase "{$a->phrase}"';

@@ -117,7 +117,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         // Otherwise, we check that the answer is not simply
         // the unaltered response template.
-        return ($response['answer']==$this->responsetemplate);
+        return ($response['answer']==$this->responsetemplate ? false : true);
     }
 
     /**
@@ -144,11 +144,20 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     public function grade_response(array $response) {
         $this->update_current_response($response);
         $fraction = $this->get_current_response('fraction');
-        if (empty($this->allowoverride)) {
-            $state = question_state::graded_state_for_fraction($fraction);
-        } else {
-            $state = question_state::manually_graded_state_for_fraction($fraction);
-        }
+
+        // In order for the quiz module to correctly handle "tries"
+        // in the "interactive" behavior, we need to return one of
+        // the "graded" states: graded(right|partial|wrong)
+        $state = question_state::graded_state_for_fraction($fraction);
+
+        // In order to trigger the "not yet graded" link and message in the
+        // Quiz attempts report, we should return the "needsgrading" state,
+        // by passing a NULL fraction to "manually_graded_state_for_fraction".
+        // However, this then leaves the state of the whole quiz as unfinished.
+        // Therefore, we return the graded state and allow the teacher to
+        // override it manually in the normal way, via the "review" page.
+        // $state = question_state::manually_graded_state_for_fraction(null);
+
         return array($fraction, $state);
     }
 
