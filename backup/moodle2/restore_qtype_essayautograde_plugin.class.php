@@ -125,7 +125,6 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
                 'responsetemplate'    => '',
                 'responsetemplateformat' => FORMAT_HTML,
                 'enableautograde'     => 1,
-                'allowoverride'       => 1,
                 'itemtype'            => 2, // words
                 'itemcount'           => 0,
                 'showcalculation'     => 0,

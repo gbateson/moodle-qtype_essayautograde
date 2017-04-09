@@ -497,7 +497,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                             $details[] = html_writer::tag('b', $header.': ').$comment;
                         }
 
-                        // add manual grader info, if available
+                        // add manual grader (user who manually graded the essay) info, if available
                         //if ($grader = $step->get_user_id()) {
                         //    if ($grader = $DB->get_record('user', array('id' => $grader))) {
                         //        $grader = fullname($grader);

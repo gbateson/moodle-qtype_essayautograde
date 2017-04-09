@@ -106,14 +106,6 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setType($name, PARAM_INT);
         $mform->setDefault($name, $this->get_default_value($name, 1));
 
-        $name = 'allowoverride';
-        $label = get_string($name, $plugin);
-        $mform->addElement('selectyesno', $name, $label);
-        $mform->addHelpButton($name, $name, $plugin);
-        $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 1));
-        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
-
         $name = 'itemtype';
         $label = get_string($name, $plugin);
         $options = $this->get_itemtype_options();
@@ -351,10 +343,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
-        $names = array('enableautograde', 'allowoverride',
-                       'showcalculation', 'showtextstats',
-                       'showgradebands', 'addpartialgrades',
-                       'showtargetphrases');
+        $names = array('enableautograde', 'showcalculation',  'showtextstats',
+                       'showgradebands',  'addpartialgrades', 'showtargetphrases');
 
         foreach ($names as $name) {
             if (! isset($question->options->$name)) {
@@ -363,7 +353,6 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         }
 
         $question->enableautograde = $question->options->enableautograde;
-        $question->allowoverride = $question->options->allowoverride;
         $question->itemtype = $question->options->itemtype;
         $question->itemcount = $question->options->itemcount;
         $question->showcalculation = $question->options->showcalculation;

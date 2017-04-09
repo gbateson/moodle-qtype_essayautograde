@@ -55,7 +55,6 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
             foreach ($records as $record) {
                 $DB->delete_records('qtype_essay_options', array('id' => $record->id));
                 $record->enableautograde = 1;
-                $record->allowoverride   = 1;
                 $record->itemtype        = 2; // 2=words
                 $record->itemcount       = 100;
                 if ($record->id = $DB->get_field($pluginoptionstable, 'id', array('questionid' => $record->questionid))) {
@@ -101,8 +100,14 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2017031424;
+    $newversion = 2017040931;
     if ($oldversion < $newversion) {
+        $table = new xmldb_table($pluginoptionstable);
+        $field = 'allowoverride';
+        if ($dbman->field_exists($table, $field)) {
+            $field = new xmldb_field($field);
+            $dbman->drop_field($table, $field);
+        }
         xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable);
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
@@ -135,7 +140,6 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
     $table = new xmldb_table($pluginoptionstable);
     $fields = array(
         new xmldb_field('enableautograde',                XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1),
-        new xmldb_field('allowoverride',                  XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1),
         new xmldb_field('itemtype',                       XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('itemcount',                      XMLDB_TYPE_INTEGER, 6, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('showcalculation',                XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
