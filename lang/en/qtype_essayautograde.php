@@ -48,14 +48,15 @@ $string['explanationcompleteband'] = '{$a->percent}% for completing Grade band [
 $string['explanationseecomment'] = '(see comment below)';
 $string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% for the first {$a->count} {$a->itemtype}';
-$string['explanationgrade'] = 'Therefore, the computer-generated grade for this essay was set to {$a->adjustedgrade} = ({$a->adjustedpercent}% of {$a->maxgrade}).';
+$string['explanationgrade'] = 'Therefore, the computer-generated grade for this essay was set to {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
 $string['explanationitems'] = '{$a->percent}% for {$a->count} {$a->itemtype}';
 $string['explanationmaxgrade'] = 'The maximum grade for this question is {$a->maxgrade}.';
 $string['explanationnotenough'] = '{$a->count} {$a->itemtype} is less than the minimum amount required to be given a grade.';
-$string['explanationoverride'] = 'Later, {$a->datetime}, the grade for this essay was manually set to {$a->grade}.';
+$string['explanationoverride'] = 'Later, {$a->datetime}, the grade for this essay was manually set to {$a->manualgrade}.';
 $string['explanationpartialband'] = '{$a->percent}% for partially completing Grade band [{$a->gradeband}]';
 $string['explanationpenalty'] = 'However, {$a->penaltytext} was deducted for checking the response before submission.';
-$string['explanationpercent'] = 'The raw percentage grade for this essay is {$a->rawpercent}% <br /> = ({$a->details}).';
+$string['explanationrawpercent'] = 'The raw percentage grade for this essay is {$a->rawpercent}% <br /> = ({$a->details}).';
+$string['explanationautopercent'] = 'This is outside the normal percentage range, so it was adjusted to {$a->autopercent}%.';
 $string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->count} {$a->itemtype}';
 $string['explanationtargetphrase'] = '{$a->percent}% for including the phrase "{$a->phrase}"';
 $string['fogindex_help'] = 'The Gunning fog index is a measure of readability. It is calculated using the following formula.

@@ -144,7 +144,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     public function grade_response(array $response) {
         $this->update_current_response($response);
         if ($this->enableautograde) {
-            $fraction = $this->get_current_response('fraction');
+            $fraction = $this->get_current_response('autofraction');
             $state = question_state::graded_state_for_fraction($fraction);
         } else {
             // use manual grading, as per the "essay" question type
@@ -269,8 +269,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $bands = array();
         $phrases = array();
         $myphrases = array();
-        $percent = 0;
-        $fraction = 0.0;
+        $rawpercent = 0;
+        $rawfraction = 0.0;
+        $autopercent = 0;
+        $autofraction = 0.0;
         $currentcount = 0;
         $currentpercent = 0;
         $partialcount = 0;
@@ -308,11 +310,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
             // set fractional grade from number of items
             if (empty($this->itemcount)) {
-                $fraction = 0.0;
-            } else if ($count > $this->itemcount) {
-                $fraction = 1.0;
+                $rawfraction = 0.0;
             } else {
-                $fraction = ($count / $this->itemcount);
+                $rawfraction = ($count / $this->itemcount);
             }
 
         } else {
@@ -360,7 +360,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $addpartialgrades = optional_param('addpartialgrades', $addpartialgrades, PARAM_INT);
 
             // set fractional grade from item count and target phrases
-            $fraction = 0.0;
+            $rawfraction = 0.0;
             $checkbands = true;
             foreach ($answers as $answer) {
                 switch (intval($answer->fraction)) {
@@ -392,7 +392,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                                 } else {
                                     $phrase = $answer->feedback;
                                 }
-                                $fraction += ($answer->feedbackformat / 100);
+                                $rawfraction += ($answer->feedbackformat / 100);
                                 $myphrases[$phrase] = $answer->feedbackformat;
                             }
                             $phrases[$answer->feedback] = $answer->feedbackformat;
@@ -422,16 +422,16 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 $partialpercent = 0;
             }
 
-            $fraction += (($completepercent + $partialpercent) / 100);
+            $rawfraction += (($completepercent + $partialpercent) / 100);
 
-            // don't allow grades over 100%
-            if ($fraction > 1.0) {
-                $fraction = 1.0;
-            }
         }
 
-        // we can now set the $percent from the $fraction
-        $percent = round($fraction * 100);
+        // make sure $autofraction is in range 0.0 - 1.0
+        $autofraction = min(1.0, max(0.0, $rawfraction));
+
+        // we can now set $autopercent and $rawpercent
+        $rawpercent = round($rawfraction * 100);
+        $autopercent = round($autofraction * 100);
 
         // store this information, in case it is needed elswhere
         $this->save_current_response('text', $text);
@@ -440,8 +440,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $this->save_current_response('bands', $bands);
         $this->save_current_response('phrases', $phrases);
         $this->save_current_response('myphrases', $myphrases);
-        $this->save_current_response('percent', $percent);
-        $this->save_current_response('fraction', $fraction);
+        $this->save_current_response('rawpercent', $rawpercent);
+        $this->save_current_response('rawfraction', $rawfraction);
+        $this->save_current_response('autopercent', $autopercent);
+        $this->save_current_response('autofraction', $autofraction);
         $this->save_current_response('partialcount', $partialcount);
         $this->save_current_response('partialpercent', $partialpercent);
         $this->save_current_response('completecount', $completecount);

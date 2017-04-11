@@ -4,29 +4,29 @@
     class names.
 ***************************************************************************/
 
-.que.essayautograde textarea.qtype_essay_response {
+.que.essayautograde textarea.qtype_essayautograde_response {
     width: 100%;
 }
 
-.que.essayautograde textarea.qtype_essay_response.qtype_essay_plain {
+.que.essayautograde textarea.qtype_essayautograde_response.qtype_essayautograde_plain {
     white-space: pre-wrap;
     font: inherit;
 }
 
-.que.essayautograde textarea.qtype_essay_response.qtype_essayautograde_monospaced {
+.que.essayautograde textarea.qtype_essayautograde_response.qtype_essayautograde_monospaced {
     white-space: pre;
     font-family: Andale Mono, Monaco, Courier New, DejaVu Sans Mono, monospace;
 }
 
-.que.essayautograde .qtype_essay_response {
+.que.essayautograde .qtype_essayautograde_response {
     min-height: 3em;
 }
 
-.que.essayautograde .qtype_essay_response.readonly {
+.que.essayautograde .qtype_essayautograde_response.readonly {
     background-color: white;
 }
 
-.que.essayautograde div.qtype_essay_response textarea {
+.que.essayautograde div.qtype_essayautograde_response textarea {
     width: 100%;
 }
 

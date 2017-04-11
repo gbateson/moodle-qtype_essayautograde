@@ -400,18 +400,17 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 if ($details = implode(')<br /> + (', $details)) {
 
                     $maxgrade = $qa->format_max_mark($precision);
-                    $grade = $qa->format_mark($precision);
 
                     $step = $qa->get_last_step_with_behaviour_var('finish');
                     if ($step->get_id()) {
-                        $rawgrade = ($step->get_fraction() * $maxgrade);
-                        $rawgrade = format_float($rawgrade, $precision);
+                        $rawgrade = format_float($step->get_fraction() * $maxgrade, $precision);
                     } else {
-                        $rawgrade = $grade;
+                        $rawgrade = $qa->format_mark($precision);
                     }
-                    $rawpercent = $currentresponse->percent;
-                    $rawgrade = ($currentresponse->fraction * $maxgrade);
-                    $rawgrade = format_float($rawgrade, $precision);
+                    $rawpercent = $currentresponse->rawpercent;
+
+                    $autopercent = $currentresponse->autopercent;
+                    $autograde = format_float($currentresponse->autofraction * $maxgrade, $precision);
 
                     if ($trypenalty = $question->penalty) {
                         // A "try" is actually a click of the "Check" button
@@ -444,28 +443,30 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                             }
                             $penaltytext .= ' = ('.$trycount.' x '.$trypenaltypercent.'%)';
                         }
-                        $adjustedgrade = ($rawgrade - $penaltygrade);
-                        $adjustedpercent = ($rawpercent - $penaltypercent);
                     } else {
                         $penaltytext = '';
                         $penaltygrade = 0;
                         $penaltypercent = 0;
-                        $adjustedgrade = $rawgrade;
-                        $adjustedpercent = $rawpercent;
                     }
 
+                    $finalgrade = max(0.0, $autograde - $penaltygrade);
+                    $finalpercent = max(0, $autopercent - $penaltypercent);
+
+                    // numeric values used by explanation strings
                     $a = (object)array('maxgrade'   => $maxgrade,
-                                       //'rawgrade'   => $rawgrade, // not required
                                        'rawpercent' => $rawpercent,
+                                       'autopercent' => $autopercent,
                                        'penaltytext' => $penaltytext,
-                                       //'penaltygrade' => $penaltygrade, // not required
-                                       //'penaltypercent' => $penaltypercent, // not required
-                                       'adjustedgrade' => $adjustedgrade,
-                                       'adjustedpercent' => $adjustedpercent,
+                                       'finalgrade' => $finalgrade,
+                                       'finalpercent' => $finalpercent,
                                        'details'    => $details);
+
                     $output .= html_writer::tag('h5', get_string('gradecalculation', $plugin));
                     $output .= html_writer::tag('p', get_string('explanationmaxgrade', $plugin, $a));
-                    $output .= html_writer::tag('p', get_string('explanationpercent', $plugin, $a));
+                    $output .= html_writer::tag('p', get_string('explanationrawpercent', $plugin, $a));
+                    if ($rawpercent != $autopercent) {
+                        $output .= html_writer::tag('p', get_string('explanationautopercent', $plugin, $a));
+                    }
                     if ($penalty) {
                         $output .= html_writer::tag('p', get_string('explanationpenalty', $plugin, $a));
                     }
@@ -476,7 +477,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     if ($step->get_id()) {
                         $a = (object)array(
                             'datetime' => userdate($step->get_timecreated(), get_string('explanationdatetime', $plugin)),
-                            'grade'    => format_float($step->get_behaviour_var('mark'), $precision),
+                            'manualgrade' => format_float($step->get_behaviour_var('mark'), $precision),
                         );
                         $output .= html_writer::tag('p', get_string('explanationoverride', $plugin, $a));
 
@@ -681,8 +682,8 @@ class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_edi
     }
 
     public function response_area_read_only($name, $qa, $step, $lines, $context) {
-        return html_writer::tag('div', $this->prepare_response($name, $qa, $step, $context),
-                array('class' => $this->class_name() . ' qtype_essayautograde_response readonly'));
+        $params = array('class' => $this->class_name().' qtype_essayautograde_response readonly');
+        return html_writer::tag('div', $this->prepare_response($name, $qa, $step, $context), $params);
     }
 
     public function response_area_input($name, $qa, $step, $lines, $context) {
@@ -741,8 +742,7 @@ class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_edi
      * @param object $context the context the attempt belongs to.
      * @return string the response prepared for display.
      */
-    protected function prepare_response($name, question_attempt $qa,
-            question_attempt_step $step, $context) {
+    protected function prepare_response($name, question_attempt $qa, question_attempt_step $step, $context) {
         if (!$step->has_qt_var($name)) {
             return '';
         }
@@ -760,8 +760,7 @@ class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_edi
      * @param object $context the context the attempt belongs to.
      * @return string the response prepared for display.
      */
-    protected function prepare_response_for_editing($name,
-            question_attempt_step $step, $context) {
+    protected function prepare_response_for_editing($name, question_attempt_step $step, $context) {
         return array(0, $step->get_qt_var($name));
     }
 
@@ -806,23 +805,22 @@ class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essaya
         return 'qtype_essayautograde_editorfilepicker';
     }
 
-    protected function prepare_response($name, question_attempt $qa,
-            question_attempt_step $step, $context) {
-        if (!$step->has_qt_var($name)) {
-            return '';
+    protected function prepare_response($name, question_attempt $qa, question_attempt_step $step, $context) {
+        if ($step->has_qt_var($name)) {
+            $response = $step->get_qt_var($name);
+            $format = $step->get_qt_var($name.'format');
+            $options = (object)array('para' => false);
+            $response = $qa->rewrite_response_pluginfile_urls($response, $context->id, 'answer', $step);
+            $response = format_text($response, $format, $options);
+        } else {
+            $response = '';
         }
-
-        $formatoptions = new stdClass();
-        $formatoptions->para = false;
-        $text = $qa->rewrite_response_pluginfile_urls($step->get_qt_var($name),
-                $context->id, 'answer', $step);
-        return format_text($text, $step->get_qt_var($name . 'format'), $formatoptions);
+        return $response;
     }
 
-    protected function prepare_response_for_editing($name,
-            question_attempt_step $step, $context) {
-        return $step->prepare_response_files_draft_itemid_with_text(
-                $name, $context->id, $step->get_qt_var($name));
+    protected function prepare_response_for_editing($name, question_attempt_step $step, $context) {
+        $response = $step->get_qt_var($name);
+        return $step->prepare_response_files_draft_itemid_with_text($name, $context->id, $response);
     }
 
     protected function get_editor_options($context) {
@@ -863,34 +861,39 @@ class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essaya
     }
 
     protected function get_filepicker_options($context, $draftitemid) {
-        global $CFG;
-
         return array(
-            'image' => $this->specific_filepicker_options(array('image'),
-                            $draftitemid, $context),
-            'media' => $this->specific_filepicker_options(array('video', 'audio'),
-                            $draftitemid, $context),
-            'link'  => $this->specific_filepicker_options('*',
-                            $draftitemid, $context),
+            'image' => $this->specific_filepicker_options(array('image'), $draftitemid, $context),
+            'media' => $this->specific_filepicker_options(array('video', 'audio'), $draftitemid, $context),
+            'link'  => $this->specific_filepicker_options('*', $draftitemid, $context),
         );
     }
 
     protected function filepicker_html($inputname, $draftitemid) {
-        $nonjspickerurl = new moodle_url('/repository/draftfiles_manager.php', array(
-            'action' => 'browse',
-            'env' => 'editor',
-            'itemid' => $draftitemid,
-            'subdirs' => false,
-            'maxfiles' => -1,
-            'sesskey' => sesskey(),
-        ));
+        // INPUT tag for filepicker
+        $params = array('type' => 'hidden',
+                        'name' => $inputname.':itemid',
+                        'value' => $draftitemid);
+        $output = html_writer::empty_tag('input', $params);
 
-        return html_writer::empty_tag('input', array('type' => 'hidden',
-                'name' => $inputname . ':itemid', 'value' => $draftitemid)) .
-                html_writer::tag('noscript', html_writer::tag('div',
-                    html_writer::tag('object', '', array('type' => 'text/html',
-                        'data' => $nonjspickerurl, 'height' => 160, 'width' => 600,
-                        'style' => 'border: 1px solid #000;'))));
+        // generate URL for noscript filepicker
+        $params = array('action' => 'browse',
+                        'env' => 'editor',
+                        'itemid' => $draftitemid,
+                        'subdirs' => false,
+                        'maxfiles' => -1,
+                        'sesskey' => sesskey());
+        $noscript = new moodle_url('/repository/draftfiles_manager.php', $params);
+
+        // generate OBJECT for noscript filepicker
+        $params = array('type' => 'text/html',
+                        'data' => $noscript, // URL
+                        'height' => 160,
+                        'width' => 600,
+                        'style' => 'border: 1px solid #000;');
+        $noscript = html_writer::tag('object', '', $params);
+
+        // append noscript file picker to output
+        $output .= html_writer::tag('noscript', html_writer::tag('div', $noscript));
     }
 }
 
