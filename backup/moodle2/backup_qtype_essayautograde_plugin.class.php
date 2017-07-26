@@ -49,19 +49,9 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         // to the tree before any other information that will use them.
         $this->add_question_question_answers($pluginwrapper);
 
-
-
         // Now create the qtype own structures.
-        $fields = array('responseformat', 'responserequired', 'responsefieldlines',
-                        'attachments', 'attachmentsrequired',
-                        'graderinfo', 'graderinfoformat',
-                        'responsetemplate', 'responsetemplateformat',
-                        'enableautograde', 'itemtype', 'itemcount',
-                        'showcalculation', 'showtextstats', 'textstatitems',
-                        'showgradebands', 'addpartialgrades', 'showtargetphrases',
-                        'correctfeedback', 'correctfeedbackformat',
-                        'incorrectfeedback', 'incorrectfeedbackformat',
-                        'partiallycorrectfeedback', 'partiallycorrectfeedbackformat');
+        $fields = array('id', 'questionid'); // excluded fields
+        $fields = $this->get_fieldnames('qtype_essayautograde_options', $fields);
         $essayautograde = new backup_nested_element('essayautograde', array('id'), $fields);
 
         // Now the own qtype tree.
@@ -88,5 +78,19 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
                      'correctfeedback'   => 'question_created',
                      'incorrectfeedback' => 'question_created',
                      'partiallycorrectfeedback' => 'question_created');
+    }
+
+    /**
+     * get_fieldnames
+     *
+     * @uses $DB
+     * @param string $tablename the name of the Moodle table (without prefix)
+     * @param array $excluded_fieldnames these field names will be excluded
+     * @return array of field names
+     */
+    protected function get_fieldnames($tablename, array $excluded_fieldnames)   {
+        global $DB;
+        $fieldnames = array_keys($DB->get_columns($tablename));
+        return array_diff($fieldnames, $excluded_fieldnames);
     }
 }

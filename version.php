@@ -29,8 +29,8 @@ $plugin->cron      = 0;
 $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2015111600; // Moodle 3.0
-$plugin->version   = 2017041132;
-$plugin->release   = '2017-04-11 (32)';
+$plugin->version   = 2017072634;
+$plugin->release   = '2017-07-26 (34)';
 
 // https://docs.moodle.org/dev/Releases
 // Moodle 3.2 2016120500  5 Dec 2016

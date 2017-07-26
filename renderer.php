@@ -244,18 +244,41 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
      *      not be displayed. Used to get the context.
      */
     public function files_read_only(question_attempt $qa, question_display_options $options) {
-        return parent::files_read_only($qa, $options);
+        $files = $qa->get_last_qt_files('attachments', $options->context->id);
+        $output = array();
+
+        foreach ($files as $file) {
+            $output[] = html_writer::tag('p', html_writer::link($qa->get_response_file_url($file),
+                    $this->output->pix_icon(file_file_icon($file), get_mimetype_description($file),
+                    'moodle', array('class' => 'icon')) . ' ' . s($file->get_filename())));
+        }
+        return implode($output);
     }
 
     /**
      * Displays the input control for when the student should upload a single file.
      * @param question_attempt $qa the question attempt to display.
-     * @param int $numallowed the maximum number of attachments allowed. -1 = unlimited.
+     * @param int $maxfiles the maximum number of attachments allowed. -1 = unlimited.
      * @param question_display_options $options controls what should and should
      *      not be displayed. Used to get the context.
      */
-    public function files_input(question_attempt $qa, $numallowed, question_display_options $options) {
-        return files_input($qa, $numallowed, $options);
+    public function files_input(question_attempt $qa, $maxfiles, question_display_options $options) {
+        global $CFG;
+        require_once($CFG->dirroot.'/lib/form/filemanager.php');
+
+		$name = 'attachments';
+        $itemid = $qa->prepare_response_files_draft_itemid($name, $options->context->id);
+        $pickeroptions = (object)array('mainfile' => null,
+                                       'maxfiles' => $maxfiles,
+                                       'itemid'   => $itemid,
+                                       'context'  => $options->context,
+                                       'return_types' => FILE_INTERNAL);
+        $fm = new form_filemanager($pickeroptions);
+        $filesrenderer = $this->page->get_renderer('core', 'files');
+        $params = array('type'  => 'hidden',
+                        'value' => $itemid,
+                        'name'  => $qa->get_qt_field_name($name));
+        return $filesrenderer->render($fm).html_writer::empty_tag('input', $params);
     }
 
     public function manual_comment(question_attempt $qa, question_display_options $options) {
