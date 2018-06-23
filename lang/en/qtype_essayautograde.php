@@ -30,6 +30,8 @@ $string['pluginnameadding'] = 'Adding an Essay (auto-grade) question';
 $string['pluginnameediting'] = 'Editing an Essay (auto-grade) question';
 $string['pluginnamesummary'] = 'Allows an essay of several sentences or paragraphs to be submitted as a question response. The essay is graded automatically. The grade may be overridden later.';
 
+$string['privacy:metadata'] = 'The Essay (auto-grade) question type plugin does not store any personal data.';
+
 $string['addanotherband'] = 'Add another grade band';
 $string['addanotherphrase'] = 'Add another target phrase';
 $string['addmorebands'] = 'Add {$a} more grade bands';
