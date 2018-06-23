@@ -167,7 +167,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     public function check_file_access($qa, $options, $component, $filearea, $args, $forcedownload) {
         if (empty($options) || empty($args)) {
-            return false; // shoujdln't happen !!
+            return false; // shouldn't happen !!
         }
         switch ($component) {
             case 'question':
@@ -328,6 +328,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                              ' , '   => '|',
                              ' ,'    => '|',
                              ', '    => '|',
+                             ' AND ' => '\\b.*\\b',
+                             ' AND'  => '\\b.*\\b',
+                             'AND '  => '\\b.*\\b',
                              ' ANY ' => '\\b.*\\b',
                              ' ANY'  => '\\b.*\\b',
                              'ANY '  => '\\b.*\\b');
@@ -385,7 +388,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                             $search = strtr($search, $metachars);
                             $search = preg_quote($search, '/');
                             $search = strtr($search, $flipmetachars);
-                            $search = "/$search/is"; // case-insensitive match
+                            $search = "/$search/isu"; // case-insensitive unicode match
                             if (preg_match($search, $text, $phrase)) {
                                 if (strlen($phrase[0]) <= strlen($answer->feedback)) {
                                     $phrase = $phrase[0];
@@ -393,7 +396,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                                     $phrase = $answer->feedback;
                                 }
                                 $rawfraction += ($answer->feedbackformat / 100);
-                                $myphrases[$phrase] = $answer->feedbackformat;
+                                $myphrases[$phrase] = $answer->feedback;
                             }
                             $phrases[$answer->feedback] = $answer->feedbackformat;
                         }

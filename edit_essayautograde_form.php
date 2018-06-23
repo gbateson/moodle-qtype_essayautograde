@@ -81,6 +81,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         // cache options for show/hide elements
         $showhide_options = array(
             $this->plugin_constant('SHOW_NONE') => get_string('no'),
+            $this->plugin_constant('SHOW_STUDENTS_ONLY') => get_string('showtostudentsonly', $plugin),
             $this->plugin_constant('SHOW_TEACHERS_ONLY') => get_string('showtoteachersonly', $plugin),
             $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => get_string('showtoteachersandstudents', $plugin)
         );
@@ -123,6 +124,14 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setDefault($name, $this->get_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_NONE'));
+
+        $name = 'showfeedback';
+        $label = get_string($name, $plugin);
+        $mform->addElement('select', $name, $label, $showhide_options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'showcalculation';
         $label = get_string($name, $plugin);
@@ -343,8 +352,10 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
-        $names = array('enableautograde', 'showcalculation',  'showtextstats',
-                       'showgradebands',  'addpartialgrades', 'showtargetphrases');
+        $names = array('enableautograde', 'showfeedback',
+                       'showcalculation', 'showtextstats',
+                       'showgradebands', 'addpartialgrades',
+                       'showtargetphrases');
 
         foreach ($names as $name) {
             if (! isset($question->options->$name)) {
@@ -355,6 +366,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $question->enableautograde = $question->options->enableautograde;
         $question->itemtype = $question->options->itemtype;
         $question->itemcount = $question->options->itemcount;
+        $question->showfeedback = $question->options->showfeedback;
         $question->showcalculation = $question->options->showcalculation;
         $question->showtextstats = $question->options->showtextstats;
         $question->textstatitems = $question->options->textstatitems;

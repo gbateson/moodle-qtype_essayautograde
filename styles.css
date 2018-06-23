@@ -4,30 +4,40 @@
     class names.
 ***************************************************************************/
 
-.que.essayautograde textarea.qtype_essayautograde_response {
+.que.essayautograde textarea.qtype_essay_response {
     width: 100%;
 }
 
-.que.essayautograde textarea.qtype_essayautograde_response.qtype_essayautograde_plain {
+.que.essayautograde textarea.qtype_essay_response.qtype_essayautograde_plain {
     white-space: pre-wrap;
     font: inherit;
 }
 
-.que.essayautograde textarea.qtype_essayautograde_response.qtype_essayautograde_monospaced {
+.que.essayautograde textarea.qtype_essay_response.qtype_essayautograde_monospaced {
     white-space: pre;
     font-family: Andale Mono, Monaco, Courier New, DejaVu Sans Mono, monospace;
 }
 
-.que.essayautograde .qtype_essayautograde_response {
+.que.essayautograde .qtype_essay_response {
     min-height: 3em;
 }
 
-.que.essayautograde .qtype_essayautograde_response.readonly {
+.que.essayautograde .qtype_essay_response.readonly {
     background-color: white;
+    border-radius: 4px;
+    padding: 6px 12px;
 }
 
-.que.essayautograde div.qtype_essayautograde_response textarea {
+.que.essayautograde div.qtype_essay_response textarea {
     width: 100%;
+}
+
+.que.essayautograde div.qtype_essay_response select {
+    margin-bottom: 0px;
+}
+
+.que.essayautograde p.itemcount {
+    margin-top: 6px;
 }
 
 .que.essayautograde dl.gradebands {
@@ -44,51 +54,99 @@
     margin-top:    2px;
 }
 
-table.essayautograde_stats {
+table.essayautograde.review {
     border-collapse: separate;
     border-spacing:         0;
     color:            #7f4614;
+}
+table.essayautograde.review.stats {
     max-width:          360px;
 }
+table.essayautograde.review.feedback .c0 {
+    max-width:          200px;
+}
 
-table.essayautograde_stats tr,
-table.essayautograde_stats td {
+table.essayautograde.review tr,
+table.essayautograde.review th,
+table.essayautograde.review td {
     border: none;
 }
 
-table.essayautograde_stats tr:first-child td {
+table.essayautograde.review tr:first-child th,
+table.essayautograde.review tr:first-child td {
     border-top: solid 1px #a65b1a;
 }
-table.essayautograde_stats tr td:first-child {
+table.essayautograde.review tr th:first-child,
+table.essayautograde.review tr td:first-child {
     border-left: solid 1px #a65b1a;
 }
-table.essayautograde_stats tr td:last-child {
+table.essayautograde.review tr th:last-child,
+table.essayautograde.review tr td:last-child {
     border-right: solid 1px #a65b1a;
 }
-table.essayautograde_stats tr:last-child td {
+table.essayautograde.review tr:last-child th,
+table.essayautograde.review tr:last-child td {
     border-bottom: solid 1px #a65b1a;
 }
 
-table.essayautograde_stats tr:first-child td:first-child {
+table.essayautograde.review tr:first-child th:first-child,
+table.essayautograde.review tr:first-child td:first-child {
     border-top-left-radius: 4px;
 }
 
-table.essayautograde_stats tr:first-child td:last-child {
+table.essayautograde.review tr:first-child th:last-child,
+table.essayautograde.review tr:first-child td:last-child {
     border-top-right-radius: 4px;
 }
 
-table.essayautograde_stats tr:last-child td:first-child {
+table.essayautograde.review tr:last-child th:first-child,
+table.essayautograde.review tr:last-child td:first-child {
     border-bottom-left-radius: 4px;
 }
 
-table.essayautograde_stats tr:last-child td:last-child {
+table.essayautograde.review tr:last-child th:last-child,
+table.essayautograde.review tr:last-child td:last-child {
     border-bottom-right-radius: 4px;
 }
 
-table.essayautograde_stats tbody tr:nth-of-type(odd) {
-    background-color: #fafafa;
+table.essayautograde.review tbody tr:nth-of-type(odd) {
+    background-color:       #fafafa;
 }
 
-table.essayautograde_stats tbody tr:nth-of-type(even) {
-    background-color: #f0e5cc;
+table.essayautograde.review tbody tr:nth-of-type(even) {
+    background-color:       #f0e5cc;
+}
+
+table.essayautograde.review ol,
+table.essayautograde.review ul {
+    margin:        0px 0px 0px 16px;
+    padding:                    0px;
+}
+
+table.essayautograde.review .missing,
+table.essayautograde.review .partial,
+table.essayautograde.review .present {
+    border-width:               2px;
+    border-style:             solid;
+    border-radius:              4px;
+    display:           inline-block;
+    padding:                2px 6px;
+    min-width:   calc(16px + 4.5em);
+    white-space:             nowrap;
+}
+
+table.essayautograde.review .missing {
+    background-color:  #ffdddd; /* light red */
+    border-color:      #ff7373; /* gentle red */
+    color:             #990000; /* dark red */
+}
+table.essayautograde.review .partial {
+    background-color : #ffebcc; /* light orange */
+    border-color     : #ff9900; /* gentle orange */
+    color:             #cc6600; /* dark orange */
+}
+table.essayautograde.review .present {
+    background-color:  #dff4d8; /* light green */
+    border-color:      #99ff66; /* gentle green */
+    color:             #009900; /* dark green */
 }

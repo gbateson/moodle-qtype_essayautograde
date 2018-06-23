@@ -112,6 +112,27 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2018061535;
+    if ($oldversion < $newversion) {
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, 'showfeedback');
+        // increment constant values to make space for new SHOW_STUDENTS_ONLY (=1)
+        // SHOW_TEACHERS_AND_STUDENTS (2 => 3)
+        // SHOW_TEACHERS_ONLY (1 => 2)
+        $fields = array('showcalculation', 'showtextstats', 'showgradebands', 'showtargetphrases');
+        foreach ($fields as $field) {
+            $DB->set_field_select($pluginoptionstable, $field, 3, "$field = ?", array(2));
+            $DB->set_field_select($pluginoptionstable, $field, 2, "$field = ?", array(1));
+        }
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
+    $newversion = 2018062239;
+    if ($oldversion < $newversion) {
+        // Add "filetypeslist" column to save the allowed file types.
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, 'filetypeslist');
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
     return true;
 }
 
@@ -139,9 +160,11 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
 
     $table = new xmldb_table($pluginoptionstable);
     $fields = array(
+        new xmldb_field('filetypeslist',                  XMLDB_TYPE_TEXT),
         new xmldb_field('enableautograde',                XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1),
         new xmldb_field('itemtype',                       XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('itemcount',                      XMLDB_TYPE_INTEGER, 6, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showfeedback',                   XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('showcalculation',                XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('showtextstats',                  XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('textstatitems',                  XMLDB_TYPE_CHAR,  255, null, XMLDB_NOTNULL),

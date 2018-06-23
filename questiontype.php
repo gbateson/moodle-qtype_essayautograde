@@ -48,8 +48,9 @@ class qtype_essayautograde extends question_type {
 
     /** Show/hide values */
     const SHOW_NONE                  = 0;
-    const SHOW_TEACHERS_ONLY         = 1;
-    const SHOW_TEACHERS_AND_STUDENTS = 2;
+    const SHOW_STUDENTS_ONLY         = 1;
+    const SHOW_TEACHERS_ONLY         = 2;
+    const SHOW_TEACHERS_AND_STUDENTS = 3;
 
     /** @var array Combined feedback fields */
     public $feedbackfields = array('feedback',
@@ -57,68 +58,23 @@ class qtype_essayautograde extends question_type {
                                    'partiallycorrectfeedback',
                                    'incorrectfeedback');
 
-    /**
-     * Utility method used by {@link qtype_renderer::head_code()}
-     * It looks for any of the files script.js or script.php that
-     * exist in the plugin folder and ensures they get included.
-     * It also includes the jquery files required for this plugin
-     */
-    public function find_standard_scripts() {
-        global $CFG, $PAGE;
-
-        // Include "script.js" and/or "script.php" in the normal way.
-        parent::find_standard_scripts();
-
-        $version = '';
-        $minversion = '1.11.0'; // Moodle 2.7.
-        $search = '/jquery-([0-9.]+)(\.min)?\.js$/';
-
-        // Make sure jQuery version is high enough
-        // (required if Quiz is in a popup window)
-        // Moodle 2.5 has jQuery 1.9.1.
-        // Moodle 2.6 has jQuery 1.10.2.
-        // Moodle 2.7 has jQuery 1.11.0.
-        // Moodle 2.8 has jQuery 1.11.1.
-        // Moodle 2.9 has jQuery 1.11.1.
-        if (method_exists($PAGE->requires, 'jquery')) {
-            // Moodle >= 2.5.
-            if ($version == '') {
-                include($CFG->dirroot.'/lib/jquery/plugins.php');
-                if (isset($plugins['jquery']['files'][0])) {
-                    if (preg_match($search, $plugins['jquery']['files'][0], $matches)) {
-                        $version = $matches[1];
-                    }
-                }
-            }
-            if ($version == '') {
-                $filename = $CFG->dirroot.'/lib/jquery/jquery*.js';
-                foreach (glob($filename) as $filename) {
-                    if (preg_match($search, $filename, $matches)) {
-                        $version = $matches[1];
-                        break;
-                    }
-                }
-            }
-            if (version_compare($version, $minversion) < 0) {
-                $version = '';
-            }
-        }
-
-        // Include JQuery files.
-        if ($version) {
-            // Moodle >= 2.7.
-            $PAGE->requires->jquery();
-            $PAGE->requires->jquery_plugin('ui');
-        } else {
-            // Moodle <= 2.6.
-            $jquery = '/question/type/' . $this->name().'/jquery';
-            $PAGE->requires->js($jquery.'/jquery.js', true);
-            $PAGE->requires->js($jquery.'/jquery-ui.js', true);
-        }
-    }
-
     public function is_manual_graded() {
         return true;
+    }
+
+    public function extra_question_fields() {
+        return array($this->plugin_name().'_options', // DB table name
+                     'responseformat', 'responserequired', 'responsefieldlines',
+                     'attachments', 'attachmentsrequired', 'filetypeslist',
+                     'graderinfo', 'graderinfoformat',
+                     'responsetemplate', 'responsetemplateformat',
+                     'enableautograde', 'itemtype', 'itemcount',
+                     'showfeedback', 'showcalculation',
+                     'showtextstats', 'textstatitems',
+                     'showgradebands', 'addpartialgrades','showtargetphrases',
+                     'correctfeedback', 'correctfeedbackformat',
+                     'incorrectfeedback', 'incorrectfeedbackformat',
+                     'partiallycorrectfeedback', 'partiallycorrectfeedbackformat');
     }
 
     public function response_file_areas() {
@@ -126,10 +82,6 @@ class qtype_essayautograde extends question_type {
     }
 
     public function get_question_options($question) {
-        global $DB;
-        $plugin = $this->plugin_name();
-        $optionstable = $plugin.'_options';
-        $question->options = $DB->get_record($optionstable, array('questionid' => $question->id), '*', MUST_EXIST);
         parent::get_question_options($question);
     }
 
@@ -176,6 +128,7 @@ class qtype_essayautograde extends question_type {
             'enableautograde'     => $formdata->enableautograde,
             'itemtype'            => $formdata->itemtype,
             'itemcount'           => $formdata->itemcount,
+            'showfeedback'        => $formdata->showfeedback,
             'showcalculation'     => $formdata->showcalculation,
             'showtextstats'       => $formdata->showtextstats,
             'textstatitems'       => $textstatitems,
@@ -321,24 +274,7 @@ class qtype_essayautograde extends question_type {
         parent::initialise_question_instance($question, $questiondata);
 
         // initialize "essayautograde" fields
-        $defaults = array('responseformat'      => 'editor',
-                          'responserequired'    =>  1,
-                          'responsefieldlines'  => 15,
-                          'attachments'         =>  0,
-                          'attachmentsrequired' =>  0,
-                          'graderinfo'          => '',
-                          'graderinfoformat'    =>  0,
-                          'responsetemplate'    => '',
-                          'responsetemplateformat' => 0,
-                          'enableautograde'     =>  1,
-                          'itemtype'            =>  0,
-                          'itemcount'           =>  0,
-                          'showcalculation'     =>  0,
-                          'showtextstats'       =>  0,
-                          'textstatitems'       => '',
-                          'showgradebands'      =>  0,
-                          'addpartialgrades'    =>  0,
-                          'showtargetphrases'   =>  0);
+        $defaults = $this->get_default_values();
         foreach ($defaults as $name => $default) {
             if (isset($questiondata->options->$name)) {
                 $question->$name = $questiondata->options->$name;
@@ -497,5 +433,232 @@ class qtype_essayautograde extends question_type {
                 quiz_update_grades($quiz);
             }
         }
+    }
+
+    /**
+     * Import question from GIFT format
+     *
+     * @param array $lines
+     * @param object $question
+     * @param qformat_gift $format
+     * @param string $extra (optional, default=null)
+     * @return object Question instance
+     */
+    public function import_from_gift($lines, $question, $format, $extra=null) {
+
+        // the $question object will later be passed to the "save_question_options()" method
+        // so it should fields should match those returned by the edit form for this plugin
+
+        if (! $extra) {
+            return false;
+        }
+
+        $options = preg_split('/[\r\n]+/', $extra);
+        $options = array_filter($options);
+
+        // regular expressions to parse item count and type
+        // we must have this as the first line of the $extra value
+        $search = '/^(\s*\d*)?\s*(none|chars|words|sentences|paragraphs)/';
+        if (! preg_match($search, array_shift($options), $matches)) {
+            return false;
+        }
+
+        $question->qtype = 'essayautograde';
+        $question->itemcount = trim($matches[1]);
+        $question->itemtype = trim($matches[2]);
+        switch ($question->itemtype) {
+            case 'none': $question->itemtype = self::ITEM_TYPE_NONE; break;
+            case 'chars': $question->itemtype = self::ITEM_TYPE_CHARS; break;
+            case 'words': $question->itemtype = self::ITEM_TYPE_WORDS; break;
+            case 'sentences': $question->itemtype = self::ITEM_TYPE_SENTENCES; break;
+            case 'paragraphs': $question->itemtype = self::ITEM_TYPE_PARAGRAPHS; break;
+            default: $question->itemtype = self::ITEM_TYPE_NONE;
+        }
+
+
+        // regular expression to detect question option
+        $search = $this->get_gift_fields();
+        $search[] = 'gradebands';
+        $search[] = 'targetphrases';
+        $search = implode('|', $search);
+        $search = '/^('.$search.')\s*=\s*(.*?)$/i';
+
+        // regular expressions to parse GRADEBANDS and TARGETPHRASES
+        $gradeband = '/\(\s*(\d+)\s*,\s*(\d+)\s*%?\s*\)/';
+        $targetphrase = '/\(\s*"(.*?)"\s*,\s*(\d+)\s*%?\s*\)/';
+
+        $question->itemtype = '';
+        $question->itemcount = 0;
+
+        $question->countbands = 0;
+        $question->bandcount = array();
+        $question->bandpercent = array();
+
+        $question->countphrases = 0;
+        $question->phrasematch = array();
+        $question->phrasepercent = array();
+
+        foreach ($options as $option) {
+
+            if (preg_match($search, $option, $matches)) {
+
+                $name = $matches[1];
+                $value = $matches[2];
+
+                $name = strtolower($name);
+                switch ($name) {
+
+                    case 'gradebands':
+                        if (preg_match_all($gradeband, $value, $matches)) {
+                            $i_max = count($matches[0]);
+                            for ($i=0; $i<$i_max; $i++) {
+                                $question->countbands++;
+                                array_push($question->bandcount, $matches[1][$i]);
+                                array_push($question->bandpercent, $matches[2][$i]);
+                            }
+                        }
+                        break;
+
+                    case 'targetphrases':
+                        if (preg_match_all($targetphrase, $value, $matches)) {
+                            $i_max = count($matches[0]);
+                            for ($i=0; $i<$i_max; $i++) {
+                                $question->countphrases++;
+                                array_push($question->phrasematch, $matches[1][$i]);
+                                array_push($question->phrasepercent, $matches[2][$i]);
+                            }
+                        }
+                        break;
+
+                    default:
+                        $question->$name = $value;
+                }
+            }
+        }
+
+        // set default values
+        $values = $this->get_default_values();
+        foreach ($values as $name => $value) {
+            if (isset($question->$name)) {
+                continue;
+            }
+            $question->$name = $value;
+        }
+
+        // fields to mimic HTML editors
+        $question->graderinfo = array('text' => '', 'format' => FORMAT_MOODLE, 'itemid' => '', 'files' => null);
+        $question->responsetemplate = array('text' => '', 'format' => FORMAT_MOODLE);
+
+        return $question;
+    }
+
+    /**
+     * Exports question to GIFT format
+     *
+     * @param object $question
+     * @param qformat_gift $format
+     * @param string $extra (optional, default=null)
+     * @return string GIFT representation of question
+     */
+    public function export_to_gift($question, $format, $extra=null) {
+
+        $output = '';
+
+        if ($question->name) {
+            $output .= '::'.$question->name.'::';
+        }
+
+        switch ($question->questiontextformat) {
+            case FORMAT_HTML:     $output .= '[html]';     break;
+            case FORMAT_PLAIN:    $output .= '[plain]';    break;
+            case FORMAT_MARKDOWN: $output .= '[markdown]'; break;
+            case FORMAT_MOODLE:   $output .= '[moodle]';   break;
+        }
+
+        $output .= $question->questiontext.'{'.PHP_EOL;
+
+        if ($question->options->itemcount) {
+            $output .= $question->options->itemcount.' ';
+        }
+
+        switch ($question->options->itemtype) {
+            case self::ITEM_TYPE_CHARS: $output .= 'chars'.PHP_EOL; break;
+            case self::ITEM_TYPE_WORDS: $output .= 'words'.PHP_EOL; break;
+            case self::ITEM_TYPE_SENTENCES: $output .= 'sentences'.PHP_EOL; break;
+            case self::ITEM_TYPE_PARAGRAPHS: $output .= 'paragraphs'.PHP_EOL; break;
+            default: $output .= 'none';
+        }
+
+        $fields = $this->get_gift_fields();
+        foreach ($fields as $field) {
+            if ($question->options->$field) {
+                $output .= strtoupper($field).'='.$question->options->$field.''.PHP_EOL;
+            }
+        }
+
+        $bands = array();
+        $phrases = array();
+        foreach ($question->options->answers as $answer) {
+            switch (intval($answer->fraction)) {
+                case self::ANSWER_TYPE_BAND:
+                    $bands[] = '('.$answer->answer.','.$answer->answerformat.'%)';
+                    break;
+                case self::ANSWER_TYPE_PHRASE:
+                    $phrases[] = '("'.$answer->feedback.'",'.$answer->feedbackformat.'%)';
+                    break;
+            }
+        }
+
+        if ($bands = implode('', $bands)) {
+            $output .= 'GRADEBANDS='.$bands.PHP_EOL;
+        }
+
+        if ($phrases = implode('', $phrases)) {
+            $output .= 'TARGETPHRASES='.$phrases.PHP_EOL;
+        }
+
+        $output .= '}';
+        return $output;
+    }
+
+    /**
+     * get_gift_fields
+     *
+     * @return array of fields used in GIFT format
+     */
+    public function get_gift_fields() {
+        $fields = $this->extra_question_fields();
+        array_shift($fields); // omit table name
+        $fields = preg_grep('/^item(type|count)$/', $fields, PREG_GREP_INVERT);
+        $fields = preg_grep('/feedback(format)?$/', $fields, PREG_GREP_INVERT);
+        $fields = preg_grep('/^(response|attachment|grader)/', $fields, PREG_GREP_INVERT);
+        return $fields;
+    }
+
+    /**
+     * get_default_values
+     *
+     * @return array of default values for a new question
+     */
+    public function get_default_values() {
+        return array('responseformat'      => 'editor',
+                     'responserequired'    =>  1,
+                     'responsefieldlines'  => 15,
+                     'attachments'         =>  0,
+                     'attachmentsrequired' =>  0,
+                     'graderinfo'          => '',
+                     'graderinfoformat'    =>  0,
+                     'responsetemplate'    => '',
+                     'responsetemplateformat' => 0,
+                     'enableautograde'     =>  1,
+                     'itemtype'            =>  0,
+                     'itemcount'           =>  0,
+                     'showfeedback'        =>  0,
+                     'showcalculation'     =>  0,
+                     'showtextstats'       =>  0,
+                     'textstatitems'       => '',
+                     'showgradebands'      =>  0,
+                     'addpartialgrades'    =>  0,
+                     'showtargetphrases'   =>  0);
     }
 }

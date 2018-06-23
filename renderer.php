@@ -36,11 +36,15 @@ require_once($CFG->dirroot.'/question/type/essay/renderer.php');
 class qtype_essayautograde_renderer extends qtype_with_combined_feedback_renderer {
 
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
+        global $PAGE;
 
         $plugin = $this->plugin_name();
         $question = $qa->get_question();
         $response = $qa->get_last_qt_data();
         $question->update_current_response($response, $options);
+
+        // cache read-only flag
+        $readonly = ($options->readonly ? 1 : 0);
 
         // Answer field.
         $step = $qa->get_last_step_with_qt_var('answer');
@@ -51,19 +55,20 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         }
 
         $renderer = $question->get_format_renderer($this->page);
-        $answer = $question->responsefieldlines;
-        if (empty($options->readonly)) {
-            $answer = $renderer->response_area_input('answer', $qa, $step, $answer, $options->context);
+        $linecount = $question->responsefieldlines;
+
+        if ($readonly) {
+            $answer = $renderer->response_area_read_only('answer', $qa, $step, $linecount, $options->context);
         } else {
-            $answer = $renderer->response_area_read_only('answer', $qa, $step, $answer, $options->context);
+            $answer = $renderer->response_area_input('answer', $qa, $step, $linecount, $options->context);
         }
 
         $files = '';
         if ($question->attachments) {
-            if (empty($options->readonly)) {
-                $files = $this->files_input($qa, $question->attachments, $options);
-            } else {
+            if ($readonly) {
                 $files = $this->files_read_only($qa, $options);
+            } else {
+                $files = $this->files_input($qa, $question->attachments, $options);
             }
         }
 
@@ -74,165 +79,21 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
         $result .= html_writer::end_tag('div');
 
-        // take a look at https://github.com/RadLikeWhoa/Countable/blob/master/Countable.js
-        // for more ideas on how to count chars, words, sentences, and paragraphs
         $itemtype = '';
         switch ($question->itemtype) {
-            case $question->plugin_constant('ITEM_TYPE_CHARS'):
-                $itemtype = get_string('chars', $plugin);
-                $itemmatch = '.';
-                break;
-            case $question->plugin_constant('ITEM_TYPE_WORDS'):
-                $itemtype = get_string('words', $plugin);
-                $itemmatch = '\\\\w+';
-                break;
-            case $question->plugin_constant('ITEM_TYPE_SENTENCES'):
-                $itemtype = get_string('sentences', $plugin);
-                $itemmatch = '[^\\\\.]+[\\\\.]';
-                break;
-            case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'):
-                $itemtype = get_string('paragraphs', $plugin);
-                $itemmatch = '[^\\\\r\\\\n]+[\\\\r\\\\n]*';
-                break;
+            case $question->plugin_constant('ITEM_TYPE_CHARS'): $itemtype = 'chars'; break;
+            case $question->plugin_constant('ITEM_TYPE_WORDS'): $itemtype = 'words'; break;
+            case $question->plugin_constant('ITEM_TYPE_SENTENCES'): $itemtype = 'sentences'; break;
+            case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'): $itemtype = 'paragraphs'; break;
         }
 
-        // escape string for javascript
-        $itemtype = json_encode($itemtype);
-        $itemtype = substr($itemtype, 1, -1);
+        // get editor name (remove trailing"_texteditor")
+        // e.g. textarea, atto, tinymce
+        $editor = editors_get_preferred_editor();
+        $editor = substr(get_class($editor), 0, -11);
 
-        $script = '';
-
-        $script .= "ESSAY = {\n";
-        $script .= "    'setup_count_max' : 10,\n";
-        $script .= "    'setup_count_timeout' : 200\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.setup_response_heights = function() {\n";
-        $script .= "   $('textarea.qtype_essayautograde_response').each(function(){\n";
-        $script .= "       $(this).height(1);\n";
-        $script .= "       $(this).height(this.scrollHeight);\n";
-        $script .= "   });\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.setup_itemcounts = function() {\n";
-        $script .= "    $('.qtype_essayautograde_response').each(function(){\n";
-        $script .= "        var id = ESSAY.get_itemcount_id(this);\n";
-        $script .= "        ESSAY.create_itemcount(this, id);\n";
-        $script .= "        ESSAY.setup_itemcount(this, id);\n";
-        $script .= "    });\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.create_itemcount = function(response, id) {\n";
-        $script .= "    if (document.getElementById(id)==null) {\n";
-        $script .= "        var p = document.createElement('P');\n";
-        $script .= "        p.setAttribute('id', id);\n";
-        $script .= "        p.setAttribute('class', 'itemcount');\n";
-        $script .= "        response.parentNode.insertBefore(p, response.nextSibling);\n";
-        $script .= "    }\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.setup_itemcount = function(response, id, setup_count) {\n";
-        $script .= "    if (setup_count) {\n";
-        $script .= "        setup_count++;\n";
-        $script .= "    } else {\n";
-        $script .= "        setup_count = 1;\n";
-        $script .= "    }\n";
-        $script .= "    var lasttime = (setup_count==ESSAY.setup_count_max);\n";
-        $script .= "    var editable = ESSAY.get_editable_element(response, lasttime);\n";
-        $script .= "    if (editable) {\n";
-        $script .= "        $(editable).keyup(function(){\n";
-        $script .= "            ESSAY.show_itemcount(this, id)\n";
-        $script .= "        });\n";
-        $script .= "        ESSAY.show_itemcount(editable, id);\n";
-        $script .= "    } else if (setup_count <= ESSAY.setup_count_max) {\n";
-        $script .= "        setTimeout(ESSAY.setup_itemcount.bind(null, response, id, setup_count), ESSAY.setup_count_timeout);\n";
-        $script .= "    }\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.get_editable_element = function(response, lasttime) {\n";
-        $script .= "    // search for plain text editor\n";
-        $script .= "    if ($(response).prop('tagName')=='TEXTAREA') {\n";
-        $script .= "        return response;\n";
-        $script .= "    }\n";
-        $script .= "    // search for Atto editor\n";
-        $script .= "    var editable = $(response).find('[contenteditable=true]');\n";
-        $script .= "    if (editable.length) {\n";
-        $script .= "        return editable.get(0);\n";
-        $script .= "    }\n";
-        $script .= "    // search for MCE editor\n";
-        $script .= "    var i = response.getElementsByTagName('IFRAME');\n";
-        $script .= "    if (i.length) {\n";
-        $script .= "        i = i[0];\n";
-        $script .= "        var d = (i.contentWindow || i.contentDocument);\n";
-        $script .= "        if (d.document) {\n";
-        $script .= "            d = d.document;\n";
-        $script .= "        }\n";
-        $script .= "        if (d.body && d.body.isContentEditable) {\n";
-        $script .= "            return d.body;\n"; // MCE editor
-        $script .= "        }\n";
-        $script .= "    }\n";
-        $script .= "    if (lasttime) {\n";
-        $script .= "        // search for disabled text editor\n";
-        $script .= "        var editable = $(response).find('textarea');\n";
-        $script .= "        if (editable.length) {\n";
-        $script .= "            return editable.get(0);\n";
-        $script .= "        }\n";
-        $script .= "    }\n";
-        $script .= "    return null;\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.get_textarea = function(response) {\n";
-        $script .= "    if ($(response).prop('tagName')=='TEXTAREA') {\n";
-        $script .= "        return response;\n";
-        $script .= "    }\n";
-        $script .= "    return $(response).find('textarea').get(0);\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.get_textarea_name = function(response) {\n";
-        $script .= "    var textarea = ESSAY.get_textarea(response);\n";
-        $script .= "    return $(textarea).attr('name');\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.get_itemcount_id = function(response) {\n";
-        $script .= "    var name = ESSAY.get_textarea_name(response);\n";
-        $script .= "    return 'id_' + name + '_itemcount';\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.escape = function(id) {\n";
-        $script .= "    var regexp = new RegExp('(:|\\\\.|\\\\[|\\\\]|,|=|@)', 'g');\n";
-        $script .= "    return '#' + id.replace(regexp, '\\\\\$1');\n";
-        $script .= "}\n";
-
-        $script .= "ESSAY.show_itemcount = function(response, id) {\n";
-        $script .= "    var regexp = new RegExp('$itemmatch', 'g');\n";
-        $script .= "    if ($(response).prop('tagName')=='TEXTAREA') {\n";
-        $script .= "        var itemcount = $(response).val().match(regexp);\n";
-        $script .= "    } else {\n";
-        $script .= "        var itemcount = $(response).text().match(regexp);\n";
-        $script .= "    }\n";
-        $script .= "    if (itemcount) {\n";
-        $script .= "        itemcount = itemcount.length;\n";
-        $script .= "    } else {\n";
-        $script .= "        itemcount = 0;\n";
-        $script .= "    }\n";
-        $script .= "    $(ESSAY.escape(id)).text('$itemtype: ' + itemcount);\n";
-        $script .= "}\n";
-
-        $script .= "if (window.$) {\n";
-        $script .= "    $(document).ready(function(){\n";
-        if ($options->readonly) {
-            // reduce vertical height of disabled textarea
-            $script .= "        ESSAY.setup_response_heights();\n";
-        } else {
-            // add item counter underneath editable response element
-            $script .= "        ESSAY.setup_itemcounts();\n";
-        }
-        $script .= "    });\n";
-        $script .= "}";
-
-        if ($script) {
-            $result .= html_writer::script($script);
-        }
+        $params = array($readonly, $itemtype, $editor);
+        $PAGE->requires->js_call_amd('qtype_essayautograde/essayautograde', 'init', $params);
 
         return $result;
     }
@@ -341,10 +202,16 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             }
             $itemtype = core_text::strtolower($itemtype);
 
-            $show = has_capability('mod/quiz:grade', $displayoptions->context);
+            if ($showteacher = has_capability('mod/quiz:grade', $displayoptions->context)) {
+                $showstudent = false;
+            } else {
+                $showstudent = has_capability('mod/quiz:attempt', $displayoptions->context);
+            }
+
             $show = array(
                 $this->plugin_constant('SHOW_NONE') => false,
-                $this->plugin_constant('SHOW_TEACHERS_ONLY') => $show,
+                $this->plugin_constant('SHOW_STUDENTS_ONLY') => $showstudent,
+                $this->plugin_constant('SHOW_TEACHERS_ONLY') => $showteacher,
                 $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => true,
             );
 
@@ -354,7 +221,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $strman = get_string_manager();
 
                 $table = new html_table();
-                $table->attributes['class'] = 'generaltable essayautograde_stats';
+                $table->attributes['class'] = 'generaltable essayautograde review stats';
 
                 $names = explode(',', $question->textstatitems);
                 $names = array_filter($names);
@@ -408,9 +275,10 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     }
                 }
 
-                foreach ($currentresponse->myphrases as $phrase => $percent) {
+                foreach ($currentresponse->myphrases as $myphrase => $phrase) {
+                    $percent = $currentresponse->phrases[$phrase];
                     $a = (object)array('percent' => $percent,
-                                       'phrase'  => $phrase);
+                                       'phrase'  => $myphrase);
                     $details[] = get_string('explanationtargetphrase', $plugin, $a);
                 }
 
@@ -476,13 +344,13 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $finalpercent = max(0, $autopercent - $penaltypercent);
 
                     // numeric values used by explanation strings
-                    $a = (object)array('maxgrade'   => $maxgrade,
+                    $a = (object)array('maxgrade' => $maxgrade,
                                        'rawpercent' => $rawpercent,
                                        'autopercent' => $autopercent,
                                        'penaltytext' => $penaltytext,
                                        'finalgrade' => $finalgrade,
                                        'finalpercent' => $finalpercent,
-                                       'details'    => $details);
+                                       'details' => $details);
 
                     $output .= html_writer::tag('h5', get_string('gradecalculation', $plugin));
                     $output .= html_writer::tag('p', get_string('explanationmaxgrade', $plugin, $a));
@@ -564,6 +432,95 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 }
                 $output .= html_writer::tag('h5', get_string('targetphrases', $plugin));
                 $output .= html_writer::alist($details);
+            }
+
+            // show student feedback, if required
+            if ($show[$question->showfeedback]) {
+                $hints = array();
+
+                $output .= html_writer::tag('h5', get_string('feedback', $plugin));
+                $output .= html_writer::start_tag('table', array('class' => 'generaltable essayautograde review feedback'));
+
+                // Overall grade
+                $maxgrade = $qa->format_max_mark($precision);
+                $step = $qa->get_last_step_with_behaviour_var('finish');
+                if ($step->get_id()) {
+                    $rawgrade = format_float($step->get_fraction() * $maxgrade, $precision);
+                } else {
+                    $rawgrade = $qa->format_mark($precision);
+                }
+
+                $output .= html_writer::start_tag('tr');
+                $output .= html_writer::tag('th', get_string('gradeforthisquestion', $plugin), array('class' => 'cell c0'));
+                $output .= html_writer::tag('td', html_writer::tag('b', $rawgrade.' / '.$maxgrade), array('class' => 'cell c1'));
+                $output .= html_writer::end_tag('tr');
+
+                // Item count
+                if ($maxcount = $question->itemcount) {
+                    $count = $currentresponse->count;
+                    if ($count < $maxcount) {
+                        $hints['words'] = get_string('feedbackhintwords', $plugin);
+                    }
+                    switch ($question->itemtype) {
+                        case $question->plugin_constant('ITEM_TYPE_CHARS'):
+                            $itemtype = get_string('chars', $plugin);
+                            break;
+                        case $question->plugin_constant('ITEM_TYPE_WORDS'):
+                            $itemtype = get_string('words', $plugin);
+                            break;
+                        case $question->plugin_constant('ITEM_TYPE_SENTENCES'):
+                            $itemtype = get_string('sentences', $plugin);
+                            break;
+                        case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'):
+                            $itemtype = get_string('paragraphs', $plugin);
+                            break;
+                        default:
+                            $itemtype = $question->itemtype; // shouldn't happen !!
+                    }
+                    $output .= html_writer::start_tag('tr', array('class' => 'items'));
+                    $output .= html_writer::tag('th', $itemtype, array('class' => 'cell c0'));
+                    $output .= html_writer::tag('td', $count.' / '.$maxcount, array('class' => 'cell c1'));
+                    $output .= html_writer::end_tag('tr');
+                }
+
+                // Target phrases
+                if ($maxcount = count($currentresponse->phrases)) {
+                    $count = count($currentresponse->myphrases);
+                    if ($count < $maxcount) {
+                        $hints['phrases'] = get_string('feedbackhintphrases', $plugin);
+                    }
+                    $output .= html_writer::start_tag('tr', array('class' => 'phrases'));
+                    $output .= html_writer::tag('th', get_string('targetphrases', $plugin), array('class' => 'cell c0'));
+                    $output .= html_writer::tag('td', $count.' / '.$maxcount, array('class' => 'cell c1'));
+                    $output .= html_writer::end_tag('tr');
+                    $i = 0;
+                    foreach ($currentresponse->phrases as $phrase => $percent) {
+                        if (in_array($phrase, $currentresponse->myphrases)) {
+                            $status = 'present';
+                            $img = $this->feedback_image(100.00);
+                        } else {
+                            $status = 'missing';
+                            $img = $this->feedback_image(0.00);
+                        }
+                        $phrase = html_writer::alist(array($phrase), array('start' => (++$i)), 'ol');
+                        $status = html_writer::tag('span', $img.get_string($status, $plugin), array('class' => $status));
+                        $output .= html_writer::start_tag('tr', array('class' => 'phrase'));
+                        $output .= html_writer::tag('td', $phrase, array('class' => 'cell c0'));
+                        $output .= html_writer::tag('td', $status, array('class' => 'cell c1'));
+                        $output .= html_writer::end_tag('tr');
+                    }
+                }
+
+                // Hints
+                if (count($hints)) {
+                    $hints['rewriteresubmit'] = get_string('rewriteresubmit'.implode('', array_keys($hints)), $plugin);
+                    $output .= html_writer::start_tag('tr');
+                    $output .= html_writer::tag('th', get_string('feedbackhints', $plugin), array('class' => 'cell c0'));
+                    $output .= html_writer::tag('td', html_writer::alist($hints), array('class' => 'cell c1'));
+                    $output .= html_writer::end_tag('tr');
+                }
+
+                $output .= html_writer::end_tag('table');
             }
         }
 
@@ -699,119 +656,8 @@ class qtype_essayautograde_format_noinline_renderer extends qtype_essay_format_n
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_editor_renderer {
-
     protected function class_name() {
         return 'qtype_essayautograde_editor';
-    }
-
-    public function response_area_read_only($name, $qa, $step, $lines, $context) {
-        $params = array('class' => $this->class_name().' qtype_essayautograde_response readonly');
-        return html_writer::tag('div', $this->prepare_response($name, $qa, $step, $context), $params);
-    }
-
-    public function response_area_input($name, $qa, $step, $lines, $context) {
-        global $CFG;
-        require_once($CFG->dirroot . '/repository/lib.php');
-
-        $inputname = $qa->get_qt_field_name($name);
-        $responseformat = $step->get_qt_var($name . 'format');
-        $id = $inputname . '_id';
-
-        $editor = editors_get_preferred_editor($responseformat);
-        $strformats = format_text_menu();
-        $formats = $editor->get_supported_formats();
-        foreach ($formats as $fid) {
-            $formats[$fid] = $strformats[$fid];
-        }
-
-        list($draftitemid, $response) = $this->prepare_response_for_editing(
-                $name, $step, $context);
-
-        $editor->set_text($response);
-        $editor->use_editor($id, $this->get_editor_options($context),
-                $this->get_filepicker_options($context, $draftitemid));
-
-        $output = '';
-        $output .= html_writer::start_tag('div', array('class' =>
-                $this->class_name() . ' qtype_essayautograde_response'));
-
-        $output .= html_writer::tag('div', html_writer::tag('textarea', s($response),
-                array('id' => $id, 'name' => $inputname, 'rows' => $lines, 'cols' => 60)));
-
-        $output .= html_writer::start_tag('div');
-        if (count($formats) == 1) {
-            reset($formats);
-            $output .= html_writer::empty_tag('input', array('type' => 'hidden',
-                    'name' => $inputname . 'format', 'value' => key($formats)));
-
-        } else {
-            $output .= html_writer::label(get_string('format'), 'menu' . $inputname . 'format', false);
-            $output .= ' ';
-            $output .= html_writer::select($formats, $inputname . 'format', $responseformat, '');
-        }
-        $output .= html_writer::end_tag('div');
-
-        $output .= $this->filepicker_html($inputname, $draftitemid);
-
-        $output .= html_writer::end_tag('div');
-        return $output;
-    }
-
-    /**
-     * Prepare the response for read-only display.
-     * @param string $name the variable name this input edits.
-     * @param question_attempt $qa the question attempt being display.
-     * @param question_attempt_step $step the current step.
-     * @param object $context the context the attempt belongs to.
-     * @return string the response prepared for display.
-     */
-    protected function prepare_response($name, question_attempt $qa, question_attempt_step $step, $context) {
-        if (!$step->has_qt_var($name)) {
-            return '';
-        }
-
-        $formatoptions = new stdClass();
-        $formatoptions->para = false;
-        return format_text($step->get_qt_var($name), $step->get_qt_var($name . 'format'),
-                $formatoptions);
-    }
-
-    /**
-     * Prepare the response for editing.
-     * @param string $name the variable name this input edits.
-     * @param question_attempt_step $step the current step.
-     * @param object $context the context the attempt belongs to.
-     * @return string the response prepared for display.
-     */
-    protected function prepare_response_for_editing($name, question_attempt_step $step, $context) {
-        return array(0, $step->get_qt_var($name));
-    }
-
-    /**
-     * @param object $context the context the attempt belongs to.
-     * @return array options for the editor.
-     */
-    protected function get_editor_options($context) {
-        // Disable the text-editor autosave because quiz has it's own auto save function.
-        return array('context' => $context, 'autosave' => false);
-    }
-
-    /**
-     * @param object $context the context the attempt belongs to.
-     * @param int $draftitemid draft item id.
-     * @return array filepicker options for the editor.
-     */
-    protected function get_filepicker_options($context, $draftitemid) {
-        return array('return_types'  => FILE_INTERNAL | FILE_EXTERNAL);
-    }
-
-    /**
-     * @param string $inputname input field name.
-     * @param int $draftitemid draft file area itemid.
-     * @return string HTML for the filepicker, if used.
-     */
-    protected function filepicker_html($inputname, $draftitemid) {
-        return '';
     }
 }
 
@@ -823,100 +669,9 @@ class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_edi
  * @copyright  2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essayautograde_format_editor_renderer {
+class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essay_format_editorfilepicker_renderer {
     protected function class_name() {
         return 'qtype_essayautograde_editorfilepicker';
-    }
-
-    protected function prepare_response($name, question_attempt $qa, question_attempt_step $step, $context) {
-        if ($step->has_qt_var($name)) {
-            $response = $step->get_qt_var($name);
-            $format = $step->get_qt_var($name.'format');
-            $options = (object)array('para' => false);
-            $response = $qa->rewrite_response_pluginfile_urls($response, $context->id, 'answer', $step);
-            $response = format_text($response, $format, $options);
-        } else {
-            $response = '';
-        }
-        return $response;
-    }
-
-    protected function prepare_response_for_editing($name, question_attempt_step $step, $context) {
-        $response = $step->get_qt_var($name);
-        return $step->prepare_response_files_draft_itemid_with_text($name, $context->id, $response);
-    }
-
-    protected function get_editor_options($context) {
-        // Disable the text-editor autosave because quiz has it's own auto save function.
-        return array(
-            'subdirs' => 0,
-            'maxbytes' => 0,
-            'maxfiles' => -1,
-            'context' => $context,
-            'noclean' => 0,
-            'trusttext'=> 0,
-            'autosave' => false
-        );
-    }
-
-    /**
-     * Get the options required to configure the filepicker for one of the editor
-     * toolbar buttons.
-     * @param mixed $acceptedtypes array of types of '*'.
-     * @param int $draftitemid the draft area item id.
-     * @param object $context the context.
-     * @return object the required options.
-     */
-    protected function specific_filepicker_options($acceptedtypes, $draftitemid, $context) {
-        $filepickeroptions = new stdClass();
-        $filepickeroptions->accepted_types = $acceptedtypes;
-        $filepickeroptions->return_types = FILE_INTERNAL | FILE_EXTERNAL;
-        $filepickeroptions->context = $context;
-        $filepickeroptions->env = 'filepicker';
-
-        $options = initialise_filepicker($filepickeroptions);
-        $options->context = $context;
-        $options->client_id = uniqid();
-        $options->env = 'editor';
-        $options->itemid = $draftitemid;
-
-        return $options;
-    }
-
-    protected function get_filepicker_options($context, $draftitemid) {
-        return array(
-            'image' => $this->specific_filepicker_options(array('image'), $draftitemid, $context),
-            'media' => $this->specific_filepicker_options(array('video', 'audio'), $draftitemid, $context),
-            'link'  => $this->specific_filepicker_options('*', $draftitemid, $context),
-        );
-    }
-
-    protected function filepicker_html($inputname, $draftitemid) {
-        // INPUT tag for filepicker
-        $params = array('type' => 'hidden',
-                        'name' => $inputname.':itemid',
-                        'value' => $draftitemid);
-        $output = html_writer::empty_tag('input', $params);
-
-        // generate URL for noscript filepicker
-        $params = array('action' => 'browse',
-                        'env' => 'editor',
-                        'itemid' => $draftitemid,
-                        'subdirs' => false,
-                        'maxfiles' => -1,
-                        'sesskey' => sesskey());
-        $noscript = new moodle_url('/repository/draftfiles_manager.php', $params);
-
-        // generate OBJECT for noscript filepicker
-        $params = array('type' => 'text/html',
-                        'data' => $noscript, // URL
-                        'height' => 160,
-                        'width' => 600,
-                        'style' => 'border: 1px solid #000;');
-        $noscript = html_writer::tag('object', '', $params);
-
-        // append noscript file picker to output
-        $output .= html_writer::tag('noscript', html_writer::tag('div', $noscript));
     }
 }
 
@@ -929,29 +684,8 @@ class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essaya
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_plain_renderer extends qtype_essay_format_plain_renderer {
-    /**
-     * @return string the HTML for the textarea.
-     */
-    protected function textarea($response, $lines, $attributes) {
-        $attributes['class'] = $this->class_name() . ' qtype_essayautograde_response';
-        $attributes['rows'] = $lines;
-        $attributes['cols'] = 60;
-        return html_writer::tag('textarea', s($response), $attributes);
-    }
-
     protected function class_name() {
         return 'qtype_essayautograde_plain';
-    }
-
-    public function response_area_read_only($name, $qa, $step, $lines, $context) {
-        return $this->textarea($step->get_qt_var($name), $lines, array('readonly' => 'readonly'));
-    }
-
-    public function response_area_input($name, $qa, $step, $lines, $context) {
-        $inputname = $qa->get_qt_field_name($name);
-        return $this->textarea($step->get_qt_var($name), $lines, array('name' => $inputname)) .
-                html_writer::empty_tag('input', array('type' => 'hidden',
-                    'name' => $inputname . 'format', 'value' => FORMAT_PLAIN));
     }
 }
 
@@ -964,7 +698,7 @@ class qtype_essayautograde_format_plain_renderer extends qtype_essay_format_plai
  * @copyright  2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class qtype_essayautograde_format_monospaced_renderer extends qtype_essayautograde_format_plain_renderer {
+class qtype_essayautograde_format_monospaced_renderer extends qtype_essay_format_plain_renderer {
     protected function class_name() {
         return 'qtype_essayautograde_monospaced';
     }
