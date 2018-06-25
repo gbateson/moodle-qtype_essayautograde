@@ -41,7 +41,6 @@ define(["jquery", "core/str"], function($, STR) {
      * initialize this AMD module
      */
     ESSAY.init = function(readonly, itemtype, editortype) {
-window.console.log("readonly: " + readonly + ", itemtype=" + itemtype + ", editortype=" + editortype);
 
         // get RegExp expression for this item type
         var itemmatch = "";
