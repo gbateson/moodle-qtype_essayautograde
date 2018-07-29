@@ -46,7 +46,7 @@ $string['explanationcompleteband'] = '{$a->percent}% por completar Banda de cali
 $string['explanationseecomment'] = '(vea comentario debajo)';
 $string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% por el primer(a) {$a->count} {$a->itemtype}';
-$string['explanationgrade'] = 'Por lo tanto, la calificación generada por computadora para este ensayo fue ajustada a {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
+$string['explanationgrade'] = 'Por lo tanto, la calificación generada por el ordenador para este ensayo fue ajustada a {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
 $string['explanationitems'] = '{$a->percent}% por {$a->count} {$a->itemtype}';
 $string['explanationmaxgrade'] = 'La calificación máxima para esta pregunta es {$a->maxgrade}.';
 $string['explanationnotenough'] = '{$a->count} {$a->itemtype} es menor que la calificación mínima requerida para que se le otorgue una calificación.';
