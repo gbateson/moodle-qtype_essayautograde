@@ -519,7 +519,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                                'longwordspersentence' => 0,
                                'sentencesperparagraph' => 0);
         if ($stats->words) {
-            $stats->lexicaldensity = round(($stats->uniquewords / $stats->words) * 100, $precision);
+            $stats->lexicaldensity = round(($stats->uniquewords / $stats->words) * 100, 0).'%';
         }
         if ($stats->sentences) {
             $stats->charspersentence = round($stats->chars / $stats->sentences, $precision);

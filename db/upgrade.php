@@ -126,7 +126,7 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
-    $newversion = 2018062239;
+    $newversion = 2018073044;
     if ($oldversion < $newversion) {
         // Add "filetypeslist" column to save the allowed file types.
         xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, 'filetypeslist');

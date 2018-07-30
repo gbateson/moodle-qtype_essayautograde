@@ -88,7 +88,7 @@ $string['lexicaldensity_help'] = 'The lexical density is a percentage calculated
 
 Thus, an essay in which many words are repeated has a low lexical density, while a essay with many unique words has a high lexical density.';
 $string['lexicaldensity'] = 'Lexical density';
-$string['longwords_help'] = '"Long words" are words that have three or more syllables. Note that the algorithm for determining the number of syllables is very simple and yields only approximate results.';
+$string['longwords_help'] = '"Long words" are words that have three or more syllables. Note that the algorithm for determining the number of syllables yields only approximate results.';
 $string['longwords'] = 'Long words';
 $string['longwordspersentence'] = 'Long words per sentence';
 $string['missing'] = 'Missing';
