@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Strings for component 'qtype_essayautograde', language 'es', branch 'MOODLE_20_STABLE'
  *
@@ -21,13 +22,16 @@
  * @copyright  1999 onwards Martin Dougiamas  {@link http://moodle.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 $string['pluginname'] = 'Ensayo (auto-calificar)';
 $string['pluginname_help'] = 'En respuesta a una pregunta que puede incluir una imagen, el respondente escribe una respuesta de uno o más párrafos. Inicialmente, una calificación es otorgada automáticamente basada en el número de caracteres, palabras, oraciones o párrafos, y la presencia de ciertas frases clave. La calificación automática puede ser anulada más tarde por el profesor.';
 $string['pluginname_link'] = 'question/type/essayautograde';
 $string['pluginnameadding'] = 'Añadiendo una pregunta de Ensayo (auto-calificar)';
 $string['pluginnameediting'] = 'Editando una pregunta de Ensayo (auto-calificar)';
 $string['pluginnamesummary'] = 'Permite que un ensayo de varias oraciones o párrafos sea enviado como una respuesta a pregunta. El ensayo es calificado automáticamente. La calificación puede ser anulada más tarde.';
+
 $string['privacy:metadata'] = 'El plugin de tipo de pregunta Ensayo (auto-calificar) no almacena ningún dato personal.';
+
 $string['addanotherband'] = 'Añadir otra banda de calificación';
 $string['addanotherphrase'] = 'Añadir otra frase clave';
 $string['addmorebands'] = 'Añadir {$a} más bandas de calificación';
@@ -46,7 +50,7 @@ $string['explanationcompleteband'] = '{$a->percent}% por completar Banda de cali
 $string['explanationseecomment'] = '(vea comentario debajo)';
 $string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% por el primer(a) {$a->count} {$a->itemtype}';
-$string['explanationgrade'] = 'Por lo tanto, la calificación generada por computadora para este ensayo fue ajustada a {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
+$string['explanationgrade'] = 'Por lo tanto, la calificación generada por la computadora para este ensayo fue ajustada a {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
 $string['explanationitems'] = '{$a->percent}% por {$a->count} {$a->itemtype}';
 $string['explanationmaxgrade'] = 'La calificación máxima para esta pregunta es {$a->maxgrade}.';
 $string['explanationnotenough'] = '{$a->count} {$a->itemtype} es menor que la calificación mínima requerida para que se le otorgue una calificación.';
@@ -62,7 +66,9 @@ $string['feedbackhints'] = 'Pistas para mejorar su calificación';
 $string['feedbackhintphrases'] = '¿Incluyó todas las frases clave?';
 $string['feedbackhintwords'] = '¿Alcanzó la meta de número de palabras?';
 $string['fogindex_help'] = 'El índice de niebla de Gunning es una medida de legibilidad. Es calculado usando la siguiente fórmula.
+
 * ((palabras por oración) + (palabras largas por oración)) x 0.4
+
 Para más invormación, ver: <https://en.wikipedia.org/wiki/Gunning_fog_index>';
 $string['fogindex'] = 'Índice de niebla';
 $string['gradeband_help'] = 'Especifica el número mínimo de ítems contables para que esta banda sea aplicada, y la calificación que va a ser otorgada si esta banda es aplicada.';
@@ -71,12 +77,15 @@ $string['gradebands'] = 'Bandas de calificación';
 $string['gradecalculation'] = 'Cálculo de calificación';
 $string['gradeforthisquestion'] = 'Calificación por esta pregunta';
 $string['itemcount_help'] = 'El número mínimo de ítems contables que deben estar en el texto del ensayo para obtener la calificación máxima para esta pregunta.
+
 Tenga en cuenta, que este valor puede tornarse inefectivo por las bandas de calificación, si hubiera, definidas debajo.';
 $string['itemcount'] = 'Número esperado de ítems';
 $string['itemtype_help'] = 'Seleccione el tipo de ítems en el texto del ensayo que contribuirán a la auto-calificación.';
 $string['itemtype'] = 'Tipo de ítems contables';
 $string['lexicaldensity_help'] = 'La densidad léxica es un porcentaje calculado usando la fórmula siguiente.
+
 * 100 x (número de palabras únicas) / (número total de palabras)
+
 Así, un ensayo en el cual muchas palabras están repetidas tiene una densidad léxica baja, mientras que un ensayo con muchas palabras únicas tiene una alta densidad léxica.';
 $string['lexicaldensity'] = 'Densidad léxica';
 $string['longwords_help'] = '"Palabras largas" son palabras que tienen tres o más sílabas. Tenga en cuenta que el algoritmo para determinar el número de sílabas es muy simple y solamente proporciona resultados aproximados.';
@@ -108,10 +117,15 @@ $string['showtostudentsonly'] = 'Si, mostrar solamente a estudiantes';
 $string['showtoteachersonly'] = 'Si, mostrar solamente a profesores';
 $string['showtoteachersandstudents'] = 'Si, mostrar a profesores y a estudiantes';
 $string['targetphrase_help'] = 'Especificar la calificación que será añadida si esta frase clave aparece en el ensayo.
+
 > **por ejemplo** Si [Finalmente] es usada, otorgar [10% de la calificación de la pregunta.]
+
 La frase clave puede ser una sola frase o una lista de frases separadas ya sea por una coma "," o la palabra "OR" (en MAYÚSCULAS).
+
 > **por ejemplo** Si [Finalmente OR Al final] es usada, otorgar [10% de la calificación de la pregunta.]
+
 Un signo de interrogación de cierre "?" en una frase concuerda con cualquier caracter único, mientras que un asterisco "*" concuerda con un número arbitrario de caracteres (incluyendo cero caracteres).
+
 > **por ejemplo** Si [Primero\*Después\*Finalmente] es usado, otorgar [50% de la calificación de la pregunta.]';
 $string['targetphrase'] = 'Frase clave [{no}]';
 $string['targetphrases'] = 'Frases clave';
