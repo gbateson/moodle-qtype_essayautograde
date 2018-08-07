@@ -52,12 +52,6 @@ class qtype_essayautograde extends question_type {
     const SHOW_TEACHERS_ONLY         = 2;
     const SHOW_TEACHERS_AND_STUDENTS = 3;
 
-    /** @var array Combined feedback fields */
-    public $feedbackfields = array('feedback',
-                                   'correctfeedback',
-                                   'partiallycorrectfeedback',
-                                   'incorrectfeedback');
-
     public function is_manual_graded() {
         return true;
     }
@@ -104,8 +98,9 @@ class qtype_essayautograde extends question_type {
             $textstatitems = '';
         } else {
             $textstatitems = $formdata->textstatitems;
-            $textstatitems = array_filter($textstatitems);
             $textstatitems = array_keys($textstatitems);
+            $textstatitems = array_map('trim', $textstatitems);
+            $textstatitems = array_filter($textstatitems);
             $textstatitems = implode(',', $textstatitems);
         }
 
@@ -436,6 +431,215 @@ class qtype_essayautograde extends question_type {
     }
 
     /**
+     * Exports question to XML format
+     *
+     * @param object $question
+     * @param qformat_xml $format
+     * @param string $extra (optional, default=null)
+     * @return string XML representation of question
+     */
+    public function export_to_xml($question, qformat_xml $format, $extra=null) {
+        $output = '';
+
+        $fs = get_file_storage();
+        $textfields = $this->get_text_fields();;
+        $formatfield = '/^('.implode('|', $textfields).')format$/';
+
+        $fields = $this->extra_question_fields();
+        array_shift($fields); // remove table name
+
+        foreach ($fields as $field) {
+            if (preg_match($formatfield, $field)) {
+                continue;
+            }
+            if (in_array($field, $textfields)) {
+                $files = $fs->get_area_files($contextid, 'question', $field, $questionid);
+                $output .= "    <$field ".$format->format($question->options->{$field.'format'}).">\n";
+                $output .= '      '.$format->writetext($question->options->$field);
+                $output .= $format->write_files($files);
+                $output .= "    </$field>\n";
+            } else {
+                $output .= "    <$field>".$format->xml_escape($question->options->$field)."</$field>\n";
+            }
+        }
+
+        $output .= "    <answers>\n";
+        foreach ($question->options->answers as $answer) {
+            switch (intval($answer->fraction)) {
+                case self::ANSWER_TYPE_BAND:
+                    $tag = 'gradeband';
+                    $text = 'answer';
+                    break;
+                case self::ANSWER_TYPE_PHRASE:
+                    $tag = 'targetphrase';
+                    $text = 'feedback';
+                    break;
+                default:
+                    continue; // shouldn't happen !!
+            }
+            $percent = intval($answer->{$text.'format'});
+            $text = $format->xml_escape($answer->$text);
+            $output .= "        <$tag percent=\"$percent\">$text</$tag>\n";;
+        }
+        $output .= "    </answers>\n";
+
+        return $output;
+    }
+
+    /**
+     * Imports question from the Moodle XML format
+     *
+     * Imports question using information from extra_question_fields function
+     * If some of you fields contains id's you'll need to reimplement this
+     *
+     * @param array $data
+     * @param qtype_essayautograde $question (or null)
+     * @param qformat_xml $format
+     * @param string $extra (optional, default=null)
+     * @return object New question object
+     */
+    public function import_from_xml($data, $question, qformat_xml $format, $extra=null) {
+
+        $questiontype = $format->getpath($data, array('@', 'type'), '');
+        if ($questiontype != 'essayautograde') {
+            return false;
+        }
+
+        $newquestion = $format->import_headers($data);
+        $newquestion->qtype = $questiontype;
+
+        $textfields = $this->get_text_fields();
+        $textfield = '/^('.implode('|', $textfields).')$/';
+        $formatfield = '/^('.implode('|', $textfields).')format$/';
+
+		$defaults = $this->get_default_values();
+        foreach ($defaults as $field => $default) {
+            if (preg_match($textfield, $field) || preg_match($formatfield, $field)) {
+                continue;
+            }
+			$value = $format->getpath($data, array('#', $field, 0, '#'), $default);
+			switch ($field) {
+				case 'textstatitems':
+					$value = explode(',', $value);
+					$value = array_map('trim', $value);
+					$value = array_filter($value);
+					$value = array_combine($value, array_fill(0, count($value), 1));
+					break;
+			}
+			$newquestion->$field =$value;
+        }
+
+		foreach ($textfields as $field) {
+			$fmt = $format->get_format($format->getpath($data, array('#', $field.'format', 0, '#'), 0));
+			$newquestion->$field = $format->import_text_with_files($data, array('#', $field, 0), '', $fmt);
+		}
+
+        $newquestion->answer = array();
+        $newquestion->answerformat = array();
+        $newquestion->fraction = array();
+        $newquestion->feedback = array();
+        $newquestion->feedbackformat = array();
+
+		$a = 0; // answer index
+
+        $i = 0; // gradeband index
+		while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'gradeband', $i), null)) {
+			$newquestion->answer[$a] = $answer['#'];
+			$newquestion->answerformat[$a] = $answer['@']['percent'];
+			$newquestion->fraction[$a] = self::ANSWER_TYPE_BAND;
+			$newquestion->feedback[$a] = '';
+			$newquestion->feedbackformat[$a] = 0;
+            $i++;
+			$a++;
+		}
+
+        $i = 0; // targetphrase index
+		while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'targetphrase', $i), null)) {
+			$newquestion->answer[$a] = '';
+			$newquestion->answerformat[$a] = 0;
+			$newquestion->fraction[$a] = self::ANSWER_TYPE_PHRASE;
+			$newquestion->feedback[$a] = $answer['#'];
+			$newquestion->feedbackformat[$a] = $answer['@']['percent'];
+            $i++;
+			$a++;
+		}
+
+        //$format->import_combined_feedback($newquestion, $data, false);
+        $format->import_hints($newquestion, $data, false);
+
+        return $newquestion;
+    }
+
+    /**
+     * Exports question to GIFT format
+     *
+     * @param object $question
+     * @param qformat_gift $format
+     * @param string $extra (optional, default=null)
+     * @return string GIFT representation of question
+     */
+    public function export_to_gift($question, $format, $extra=null) {
+
+        $output = '';
+
+        if ($question->name) {
+            $output .= '::'.$question->name.'::';
+        }
+
+        switch ($question->questiontextformat) {
+            case FORMAT_HTML:     $output .= '[html]';     break;
+            case FORMAT_PLAIN:    $output .= '[plain]';    break;
+            case FORMAT_MARKDOWN: $output .= '[markdown]'; break;
+            case FORMAT_MOODLE:   $output .= '[moodle]';   break;
+        }
+
+        $output .= $question->questiontext.'{'.PHP_EOL;
+
+        if ($question->options->itemcount) {
+            $output .= $question->options->itemcount.' ';
+        }
+
+        switch ($question->options->itemtype) {
+            case self::ITEM_TYPE_CHARS: $output .= 'chars'.PHP_EOL; break;
+            case self::ITEM_TYPE_WORDS: $output .= 'words'.PHP_EOL; break;
+            case self::ITEM_TYPE_SENTENCES: $output .= 'sentences'.PHP_EOL; break;
+            case self::ITEM_TYPE_PARAGRAPHS: $output .= 'paragraphs'.PHP_EOL; break;
+            default: $output .= 'none';
+        }
+
+        $fields = $this->get_gift_fields();
+        foreach ($fields as $field) {
+            if ($question->options->$field) {
+                $output .= strtoupper($field).'='.$question->options->$field.''.PHP_EOL;
+            }
+        }
+
+        $bands = array();
+        $phrases = array();
+        foreach ($question->options->answers as $answer) {
+            switch (intval($answer->fraction)) {
+                case self::ANSWER_TYPE_BAND:
+                    $bands[] = '('.$answer->answer.','.$answer->answerformat.'%)';
+                    break;
+                case self::ANSWER_TYPE_PHRASE:
+                    $phrases[] = '("'.$answer->feedback.'",'.$answer->feedbackformat.'%)';
+                    break;
+            }
+        }
+
+        if ($bands = implode('', $bands)) {
+            $output .= 'GRADEBANDS='.$bands.PHP_EOL;
+        }
+
+        if ($phrases = implode('', $phrases)) {
+            $output .= 'TARGETPHRASES='.$phrases.PHP_EOL;
+        }
+
+        $output .= '}';
+        return $output;
+    }
+
+    /**
      * Import question from GIFT format
      *
      * @param array $lines
@@ -553,72 +757,16 @@ class qtype_essayautograde extends question_type {
     }
 
     /**
-     * Exports question to GIFT format
+     * get_gift_fields
      *
-     * @param object $question
-     * @param qformat_gift $format
-     * @param string $extra (optional, default=null)
-     * @return string GIFT representation of question
+     * @return array of fields used in GIFT format
      */
-    public function export_to_gift($question, $format, $extra=null) {
-
-        $output = '';
-
-        if ($question->name) {
-            $output .= '::'.$question->name.'::';
-        }
-
-        switch ($question->questiontextformat) {
-            case FORMAT_HTML:     $output .= '[html]';     break;
-            case FORMAT_PLAIN:    $output .= '[plain]';    break;
-            case FORMAT_MARKDOWN: $output .= '[markdown]'; break;
-            case FORMAT_MOODLE:   $output .= '[moodle]';   break;
-        }
-
-        $output .= $question->questiontext.'{'.PHP_EOL;
-
-        if ($question->options->itemcount) {
-            $output .= $question->options->itemcount.' ';
-        }
-
-        switch ($question->options->itemtype) {
-            case self::ITEM_TYPE_CHARS: $output .= 'chars'.PHP_EOL; break;
-            case self::ITEM_TYPE_WORDS: $output .= 'words'.PHP_EOL; break;
-            case self::ITEM_TYPE_SENTENCES: $output .= 'sentences'.PHP_EOL; break;
-            case self::ITEM_TYPE_PARAGRAPHS: $output .= 'paragraphs'.PHP_EOL; break;
-            default: $output .= 'none';
-        }
-
-        $fields = $this->get_gift_fields();
-        foreach ($fields as $field) {
-            if ($question->options->$field) {
-                $output .= strtoupper($field).'='.$question->options->$field.''.PHP_EOL;
-            }
-        }
-
-        $bands = array();
-        $phrases = array();
-        foreach ($question->options->answers as $answer) {
-            switch (intval($answer->fraction)) {
-                case self::ANSWER_TYPE_BAND:
-                    $bands[] = '('.$answer->answer.','.$answer->answerformat.'%)';
-                    break;
-                case self::ANSWER_TYPE_PHRASE:
-                    $phrases[] = '("'.$answer->feedback.'",'.$answer->feedbackformat.'%)';
-                    break;
-            }
-        }
-
-        if ($bands = implode('', $bands)) {
-            $output .= 'GRADEBANDS='.$bands.PHP_EOL;
-        }
-
-        if ($phrases = implode('', $phrases)) {
-            $output .= 'TARGETPHRASES='.$phrases.PHP_EOL;
-        }
-
-        $output .= '}';
-        return $output;
+    public function get_text_fields() {
+        return array('graderinfo',
+        			 'responsetemplate',
+                     'correctfeedback',
+                     'incorrectfeedback',
+                     'partiallycorrectfeedback');
     }
 
     /**
@@ -650,6 +798,7 @@ class qtype_essayautograde extends question_type {
                      'graderinfoformat'    =>  0,
                      'responsetemplate'    => '',
                      'responsetemplateformat' => 0,
+                     'filetypeslist'       => '',
                      'enableautograde'     =>  1,
                      'itemtype'            =>  0,
                      'itemcount'           =>  0,
