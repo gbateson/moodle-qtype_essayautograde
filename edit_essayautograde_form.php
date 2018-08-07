@@ -67,10 +67,16 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     protected function definition_inner($mform) {
+        global $PAGE;
+
         parent::definition_inner($mform);
 
         // cache the plugin name
         $plugin = $this->plugin_name();
+
+        // add Javascript to expand/contract text input fields
+        $params = array();
+        $PAGE->requires->js_call_amd('qtype_essayautograde/form', 'init', $params);
 
         // cache options for form elements to select a grade
         $grade_options = array();
@@ -215,18 +221,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $elements = array($mform->createElement('group', $name, $label, $elements, ' ', false));
         $options[$name] = array('helpbutton' => array($name, $plugin),
                                 'disabledif' => array('enableautograde', 'eq', 0));
-
-        $repeats = $this->plugin_constant('ANSWER_TYPE_BAND'); // type
-        $repeats = $this->get_answer_repeats($this->question, $repeats);
-        $label = (self::NUM_ITEMS_ADD==1 ? 'addanotherband' : 'addmorebands');
-        $label = get_string($label, $plugin, self::NUM_ITEMS_ADD);
-        $this->repeat_elements($elements, $repeats, $options, 'countbands', 'addbands', self::NUM_ITEMS_ADD, $label, true);
-
-        // using the "repeat_elements" method we can only specify a single
-        // "disabledIf" condition, so we add a further condition separately
-        for ($i=0; $i<$repeats; $i++) {
-            $mform->disabledIf($name."[$i]", 'itemtype', 'eq', 0);
-        }
+        $this->add_repeat_elements($mform, 'band', $elements, $options, $name);
 
         /////////////////////////////////////////////////
         // add target phrases
@@ -263,12 +258,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $elements = array($mform->createElement('group', $name, $label, $elements, ' ', false));
         $options[$name] = array('helpbutton' => array($name, $plugin),
                                 'disabledif' => array('enableautograde', 'eq', 0));
-
-        $repeats = $this->plugin_constant('ANSWER_TYPE_PHRASE'); // type
-        $repeats = $this->get_answer_repeats($this->question, $repeats);
-        $label = (self::NUM_ITEMS_ADD==1 ? 'addanotherphrase' : 'addmorephrases');
-        $label = get_string($label, $plugin, self::NUM_ITEMS_ADD);
-        $this->repeat_elements($elements, $repeats, $options, 'countphrases', 'addphrases', self::NUM_ITEMS_ADD, $label, true);
+        $this->add_repeat_elements($mform, 'phrase', $elements, $options, $name);
 
         /////////////////////////////////////////////////
         // Add feedback fields (= Combined feedback).
@@ -514,5 +504,81 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             }
         }
         return $options;
+    }
+
+    /**
+     * Get array of countable item types
+     *
+     * @return array(type => description)
+     */
+    protected function get_addcount_options($type, $max=10) {
+
+        // cache string names and plugin name
+        $addanother = 'addanother'.$type;
+        $addmore = 'addmore'.$type.'s';
+        $plugin = $this->plugin_name();
+
+        // generate options
+        $options = array();
+        for ($i=1; $i<=$max; $i++) {
+            if ($i==1) {
+                $options[$i] = get_string($addanother, $plugin);
+            } else {
+                $options[$i] = get_string($addmore, $plugin, $i);
+            }
+        }
+        return $options;
+    }
+
+    /**
+     * Add repeated elements with a button allowing a selectable number of new elements
+     *
+     * @param object $mform the Moodle form object
+     * @param string the $type of elements being added (e.g. "band" or "phrase")
+     * @return voide, but will update $mform
+     */
+    protected function add_repeat_elements($mform, $type, $elements, $options, $name) {
+        $types = $type.'s';
+        $TYPE = strtoupper($type);
+        $plugin = $this->plugin_name();
+
+        // cache element names
+        $additems = 'add'.$types;
+        $countitems = 'count'.$types;
+        $additemscount = $additems.'count';
+        $additemsgroup = $additems.'group';
+
+        $repeats = $this->plugin_constant('ANSWER_TYPE_'.$TYPE); // type
+        $repeats = $this->get_answer_repeats($this->question, $repeats);
+
+        $count = optional_param($additemscount, self::NUM_ITEMS_ADD, PARAM_INT);
+
+        $label = (self::NUM_ITEMS_ADD==1 ? 'addanother'.$type : 'addmore'.$types);
+        $label = get_string($label, $plugin, self::NUM_ITEMS_ADD);
+
+        $this->repeat_elements($elements, $repeats, $options, $countitems, $additems, $count, $label, true);
+
+        // remove the original "Add" button
+        $mform->removeElement($additems);
+
+        // replace with button + select group
+        $options = $this->get_addcount_options($type);
+        $mform->addGroup(array(
+            $mform->createElement('submit', $additems, get_string('add')),
+            $mform->createElement('select', $additemscount, '', $options)
+        ), $additemsgroup, '', ' ', false);
+
+        // set default value and type of select element
+        $mform->setDefault($additemscount, $count);
+        $mform->setType($additemscount, PARAM_INT);
+
+        // special post-processing, depending on $type
+        if ($type=='band') {
+            // using the "repeat_elements" method we can only specify a single
+            // "disabledIf" condition, so we add further conditions separately
+            for ($i=0; $i<$repeats; $i++) {
+                $mform->disabledIf($name."[$i]", 'itemtype', 'eq', 0);
+            }
+        }
     }
 }
