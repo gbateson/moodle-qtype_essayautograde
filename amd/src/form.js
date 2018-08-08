@@ -27,6 +27,9 @@ define(["jquery"], function($) {
     /** @alias module:qtype_essayautograde/form */
     var FORM = {};
 
+    // cache for standard width of TEXT input elements
+    FORM.sizewidths = new Array();
+
     /*
      * initialize this AMD module
      */
@@ -34,15 +37,30 @@ define(["jquery"], function($) {
         // Make the target phrase text boxes "expandable",
         // i.e. they adjust to fit the width of the content
         $("input[id^=id_phrasematch_]").each(function(){
-            $(this).data("minwidth", $(this).outerWidth());
             $(this).keyup(function(){
+                // get min width for a box with this size
+                var sizewidth = 0;
+                var size = $(this).attr("size");
+                if (size) {
+                    if (size in FORM.sizewidths) {
+                        sizewidth = FORM.sizewidths[size];
+                    } else {
+                        var elm = document.createElement("INPUT");
+                        $(elm).attr("size", size);
+                        $(elm).css("width", "auto");
+                        $(elm).hide().appendTo("BODY");
+                        sizewidth = $(elm).outerWidth();
+                        $(elm).remove();
+                        FORM.sizewidths[size] = sizewidth;
+                    }
+                }
+                // get required width for this text value
                 var txt = document.createTextNode($(this).val());
                 var elm = document.createElement("SPAN");
                 $(elm).append(txt).hide().appendTo("BODY");
-                var w = $(elm).width();
+                var w = Math.max($(elm).width(), sizewidth);
                 $(elm).remove();
-                var minwidth = $(this).data("minwidth");
-                $(this).width(Math.max(w, minwidth));
+                $(this).width(w);
             });
             $(this).triggerHandler("keyup");
         });
