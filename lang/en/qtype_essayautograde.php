@@ -32,10 +32,10 @@ $string['pluginnamesummary'] = 'Allows an essay of several sentences or paragrap
 
 $string['privacy:metadata'] = 'The Essay (auto-grade) question type plugin does not store any personal data.';
 
-$string['addanotherband'] = 'Add another grade band';
-$string['addanotherphrase'] = 'Add another target phrase';
-$string['addmorebands'] = 'Add {$a} more grade bands';
-$string['addmorephrases'] = 'Add {$a} more target phrases';
+$string['addsingleband'] = 'Add 1 more grade band';
+$string['addsinglephrase'] = 'Add 1 more target phrase';
+$string['addmultiplebands'] = 'Add {$a} more grade bands';
+$string['addmultiplephrases'] = 'Add {$a} more target phrases';
 $string['addpartialgrades_help'] = 'If this option is enabled, grades will be added for partially completed grade bands.';
 $string['addpartialgrades'] = 'Award partial grades?';
 $string['autograding'] = 'Auto-grading';

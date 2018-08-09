@@ -30,15 +30,23 @@ define(["jquery"], function($) {
     // cache for standard width of TEXT input elements
     FORM.sizewidths = new Array();
 
-    /*
+    /**
      * initialize this AMD module
      */
     FORM.init = function() {
-        // Make the target phrase text boxes "expandable",
-        // i.e. they adjust to fit the width of the content
+        FORM.init_target_phrases();
+        FORM.init_add_button("addbands", "id_gradebands");
+        FORM.init_add_button("addphrases", "id_targetphrases");
+    };
+
+    /**
+     * Make the target phrase text boxes "expandable",
+     * i.e. expand/contract to fit the width of the content
+     */
+    FORM.init_target_phrases = function() {
         $("input[id^=id_phrasematch_]").each(function(){
             $(this).keyup(function(){
-                // get min width for a box with this size
+                // get min width for a box with this "size"
                 var sizewidth = 0;
                 var size = $(this).attr("size");
                 if (size) {
@@ -63,6 +71,18 @@ define(["jquery"], function($) {
                 $(this).width(w);
             });
             $(this).triggerHandler("keyup");
+        });
+    };
+
+    /**
+     * modify an "add" button so that the page scrolls down
+     * to the appropriate anchor when it reloads
+     */
+    FORM.init_add_button = function(name, anchor) {
+        $("input[name=" + name + "]").click(function(){
+            var url = $(this).closest("form").prop("action");
+            url = url.replace(new RegExp("#.*$"), "");
+            $(this).closest("form").prop("action", url + "#" + anchor);
         });
     };
 

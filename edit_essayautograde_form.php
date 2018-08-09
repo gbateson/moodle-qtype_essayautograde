@@ -78,24 +78,16 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $params = array();
         $PAGE->requires->js_call_amd('qtype_essayautograde/form', 'init', $params);
 
-        // cache options for form elements to select a grade
-        $grade_options = array();
-        for ($i=0; $i<=100; $i++) {
-            $grade_options[$i] = get_string('percentofquestiongrade', $plugin, $i);
-        }
-
-        // cache options for show/hide elements
-        $showhide_options = array(
-            $this->plugin_constant('SHOW_NONE') => get_string('no'),
-            $this->plugin_constant('SHOW_STUDENTS_ONLY') => get_string('showtostudentsonly', $plugin),
-            $this->plugin_constant('SHOW_TEACHERS_ONLY') => get_string('showtoteachersonly', $plugin),
-            $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => get_string('showtoteachersandstudents', $plugin)
-        );
-
         // cache options for form elements to input text
         $short_text_options  = array('size' => 3,  'style' => 'width: auto');
         $medium_text_options = array('size' => 5,  'style' => 'width: auto');
         $long_text_options   = array('size' => 10, 'style' => 'width: auto');
+
+        // cache options for show/hide elements
+        $showhide_options = $this->get_showhide_options($plugin);
+
+        // cache options for form elements to select a grade
+        $grade_options = $this->get_grade_options($plugin);
 
         /////////////////////////////////////////////////
         // add main form elements
@@ -115,7 +107,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
         $name = 'itemtype';
         $label = get_string($name, $plugin);
-        $options = $this->get_itemtype_options();
+        $options = $this->get_itemtype_options($plugin);
         $mform->addElement('select', $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
@@ -222,6 +214,13 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $options[$name] = array('helpbutton' => array($name, $plugin),
                                 'disabledif' => array('enableautograde', 'eq', 0));
         $this->add_repeat_elements($mform, 'band', $elements, $options, $name);
+
+        // disable gradebands if no itemtype is specified
+        $i = 0;
+        while ($mform->elementExists($name."[$i]")) {
+            $mform->disabledIf($name."[$i]", 'itemtype', 'eq', 0);
+            $i++;
+        }
 
         /////////////////////////////////////////////////
         // add target phrases
@@ -473,15 +472,42 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     /**
      * Get array of countable item types
      *
+     * @param string $plugin name
      * @return array(type => description)
      */
-    protected function get_itemtype_options() {
-        $plugin = $this->plugin_name();
+    protected function get_itemtype_options($plugin) {
         return array($this->plugin_constant('ITEM_TYPE_NONE') => get_string('none'),
                      $this->plugin_constant('ITEM_TYPE_CHARS') => get_string('chars', $plugin),
                      $this->plugin_constant('ITEM_TYPE_WORDS') => get_string('words', $plugin),
                      $this->plugin_constant('ITEM_TYPE_SENTENCES') => get_string('sentences', $plugin),
                      $this->plugin_constant('ITEM_TYPE_PARAGRAPHS') => get_string('paragraphs', $plugin));
+    }
+
+    /**
+     * Get array of show/hide options
+     *
+     * @param string $plugin name
+     * @return array(type => description)
+     */
+    protected function get_showhide_options($plugin) {
+        return array($this->plugin_constant('SHOW_NONE') => get_string('no'),
+                     $this->plugin_constant('SHOW_STUDENTS_ONLY') => get_string('showtostudentsonly', $plugin),
+                     $this->plugin_constant('SHOW_TEACHERS_ONLY') => get_string('showtoteachersonly', $plugin),
+                     $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => get_string('showtoteachersandstudents', $plugin));
+    }
+
+    /**
+     * Get array of grade options
+     *
+     * @param string $plugin name
+     * @return array(grade => description)
+     */
+    protected function get_grade_options($plugin) {
+        $options = array();
+        for ($i=0; $i<=100; $i++) {
+            $options[$i] = get_string('percentofquestiongrade', $plugin, $i);
+        }
+        return $options;
     }
 
     /**
@@ -513,18 +539,16 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      */
     protected function get_addcount_options($type, $max=10) {
 
-        // cache string names and plugin name
-        $addanother = 'addanother'.$type;
-        $addmore = 'addmore'.$type.'s';
+        // cache plugin name
         $plugin = $this->plugin_name();
 
         // generate options
         $options = array();
         for ($i=1; $i<=$max; $i++) {
             if ($i==1) {
-                $options[$i] = get_string($addanother, $plugin);
+                $options[$i] = get_string('addsingle'.$type, $plugin);
             } else {
-                $options[$i] = get_string($addmore, $plugin, $i);
+                $options[$i] = get_string('addmultiple'.$type.'s', $plugin, $i);
             }
         }
         return $options;
@@ -543,42 +567,33 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $plugin = $this->plugin_name();
 
         // cache element names
-        $additems = 'add'.$types;
-        $countitems = 'count'.$types;
-        $additemscount = $additems.'count';
-        $additemsgroup = $additems.'group';
+        $addtypes = 'add'.$types;
+        $counttypes = 'count'.$types;
+        $addtypescount = $addtypes.'count';
+        $addtypesgroup = $addtypes.'group';
 
         $repeats = $this->plugin_constant('ANSWER_TYPE_'.$TYPE); // type
         $repeats = $this->get_answer_repeats($this->question, $repeats);
 
-        $count = optional_param($additemscount, self::NUM_ITEMS_ADD, PARAM_INT);
+        $count = optional_param($addtypescount, self::NUM_ITEMS_ADD, PARAM_INT);
 
-        $label = (self::NUM_ITEMS_ADD==1 ? 'addanother'.$type : 'addmore'.$types);
-        $label = get_string($label, $plugin, self::NUM_ITEMS_ADD);
+        $label = ($count==1 ? 'addsingle'.$type : 'addmultiple'.$types);
+        $label = get_string($label, $plugin, $count);
 
-        $this->repeat_elements($elements, $repeats, $options, $countitems, $additems, $count, $label, true);
+        $this->repeat_elements($elements, $repeats, $options, $counttypes, $addtypes, $count, $label, true);
 
         // remove the original "Add" button
-        $mform->removeElement($additems);
+        $mform->removeElement($addtypes);
 
         // replace with button + select group
         $options = $this->get_addcount_options($type);
         $mform->addGroup(array(
-            $mform->createElement('submit', $additems, get_string('add')),
-            $mform->createElement('select', $additemscount, '', $options)
-        ), $additemsgroup, '', ' ', false);
+            $mform->createElement('submit', $addtypes, get_string('add')),
+            $mform->createElement('select', $addtypescount, '', $options)
+        ), $addtypesgroup, '', ' ', false);
 
         // set default value and type of select element
-        $mform->setDefault($additemscount, $count);
-        $mform->setType($additemscount, PARAM_INT);
-
-        // special post-processing, depending on $type
-        if ($type=='band') {
-            // using the "repeat_elements" method we can only specify a single
-            // "disabledIf" condition, so we add further conditions separately
-            for ($i=0; $i<$repeats; $i++) {
-                $mform->disabledIf($name."[$i]", 'itemtype', 'eq', 0);
-            }
-        }
+        $mform->setDefault($addtypescount, $count);
+        $mform->setType($addtypescount, PARAM_INT);
     }
 }

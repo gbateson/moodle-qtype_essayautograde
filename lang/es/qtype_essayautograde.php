@@ -32,10 +32,10 @@ $string['pluginnamesummary'] = 'Permite que un ensayo de varias oraciones o pár
 
 $string['privacy:metadata'] = 'El plugin de tipo de pregunta Ensayo (auto-calificar) no almacena ningún dato personal.';
 
-$string['addanotherband'] = 'Añadir otra banda de calificación';
-$string['addanotherphrase'] = 'Añadir otra frase clave';
-$string['addmorebands'] = 'Añadir {$a} más bandas de calificación';
-$string['addmorephrases'] = 'Añadir {$a} más frases clave';
+$string['addsingleband'] = 'Añadir otra banda de calificación';
+$string['addsinglephrase'] = 'Añadir otra frase clave';
+$string['addmultiplebands'] = 'Añadir {$a} más bandas de calificación';
+$string['addmultiplephrases'] = 'Añadir {$a} más frases clave';
 $string['addpartialgrades_help'] = 'Si esta opción es habilitada, las calificaciones serán añadidas para bandas de calificación completadas.';
 $string['addpartialgrades'] = '¿Otorgar calificaciones parciales?';
 $string['autograding'] = 'Auto-calificar';
