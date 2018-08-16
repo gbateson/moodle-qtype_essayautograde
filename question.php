@@ -328,6 +328,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                              ' , '   => '|',
                              ' ,'    => '|',
                              ', '    => '|',
+                             ','     => '|',
                              ' AND ' => '\\b.*\\b',
                              ' AND'  => '\\b.*\\b',
                              'AND '  => '\\b.*\\b',
