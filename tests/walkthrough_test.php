@@ -39,11 +39,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
 
     protected function check_contains_textarea($name, $content = '', $height = 10) {
         $fieldname = $this->quba->get_field_prefix($this->slot) . $name;
-
-        $this->assertTag(array('tag' => 'textarea',
-                'attributes' => array('cols' => '60', 'rows' => $height,
-                        'name' => $fieldname)),
-                $this->currentoutput);
+        $arr = ['tag' => 'textarea', 'attributes' => ['cols' => '60', 'rows' => $height, 'name' => $fieldname]];
+        $this->assertTag($arr, $this->currentoutput);
 
         if ($content) {
             $this->assertRegExp('/' . preg_quote(s($content), '/') . '/', $this->currentoutput);
@@ -121,8 +118,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->quba->finish_all_questions();
 
         // Verify.
-        $this->check_current_state(question_state::$needsgrading);
-        $this->check_current_mark(null);
+        $this->check_current_state(question_state::$gradedwrong);
+        $this->check_current_mark(0.0);
         $this->render();
         $this->assertRegExp('/' . preg_quote($response, '/') . '/', $this->currentoutput);
         $this->check_current_output(
@@ -173,8 +170,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->quba->finish_all_questions();
 
         // Verify.
-        $this->check_current_state(question_state::$needsgrading);
-        $this->check_current_mark(null);
+        $this->check_current_state(question_state::$gradedwrong);
+        $this->check_current_mark(0.0);
         $this->render();
         $this->assertRegExp('/' . preg_quote(s($response), '/') . '/', $this->currentoutput);
         $this->check_current_output(
@@ -230,10 +227,11 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->quba->finish_all_questions();
 
         // Verify.
-        $this->check_current_state(question_state::$needsgrading);
-        $this->check_current_mark(null);
+        $this->check_current_state(question_state::$gradedwrong);
+        $this->check_current_mark(0.0);
         $this->render();
-        $this->assertRegExp('/' . preg_quote(s('Once upon a time there was a little green frog.'), '/') . '/', $this->currentoutput);
+        $this->assertRegExp('/' . preg_quote(s('Once upon a time there was a little green frog.'), '/') . '/',
+             $this->currentoutput);
         $this->check_current_output(
                 $this->get_contains_question_text_expectation($q),
                 $this->get_contains_general_feedback_expectation($q));
@@ -247,7 +245,6 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         // Required to init a text editor.
         $PAGE->set_url('/');
         $usercontextid = context_user::instance($USER->id)->id;
-        $fs = get_file_storage();
 
         // Create an essayautograde question in the DB.
         $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
@@ -316,8 +313,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
 
         // Now submit all and finish.
         $this->finish();
-        $this->check_current_state(question_state::$needsgrading);
-        $this->check_current_mark(null);
+        $this->check_current_state(question_state::$gradedright);
+        $this->check_current_mark(1.0);
         $this->check_step_count(3);
         $this->save_quba();
 
@@ -364,14 +361,12 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
     }
 
     public function test_deferred_feedback_html_editor_with_files_attempt_on_last_no_files_uploaded() {
-        global $CFG, $USER, $PAGE;
+        global $PAGE;
 
         $this->resetAfterTest(true);
         $this->setAdminUser();
         // Required to init a text editor.
         $PAGE->set_url('/');
-        $usercontextid = context_user::instance($USER->id)->id;
-        $fs = get_file_storage();
 
         // Create an essayautograde question in the DB.
         $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
@@ -411,8 +406,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
 
         // Now submit all and finish.
         $this->finish();
-        $this->check_current_state(question_state::$needsgrading);
-        $this->check_current_mark(null);
+        $this->check_current_state(question_state::$gradedright);
+        $this->check_current_mark(1.0);
         $this->check_step_count(3);
         $this->save_quba();
 
@@ -439,11 +434,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
     }
 
     public function test_deferred_feedback_plain_attempt_on_last() {
-        global $CFG, $USER;
-
         $this->resetAfterTest(true);
         $this->setAdminUser();
-        $usercontextid = context_user::instance($USER->id)->id;
 
         // Create an essayautograde question in the DB.
         $generator = $this->getDataGenerator()->get_plugin_generator('core_question');
@@ -472,8 +464,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
 
         // Now submit all and finish.
         $this->finish();
-        $this->check_current_state(question_state::$needsgrading);
-        $this->check_current_mark(null);
+        $this->check_current_state(question_state::$gradedright);
+        $this->check_current_mark(1.0);
         $this->check_step_count(3);
         $this->save_quba();
 
@@ -497,7 +489,8 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->load_quba();
         $this->render();
         // Test taht no HTML comment has been added to the response.
-        $this->assertRegExp('/Once upon a time there was a frog called Freddy. He lived happily ever after.(?!&lt;!--)/', $this->currentoutput);
+        $this->assertRegExp('/Once upon a time there was a frog called Freddy. He lived happily ever after.(?!&lt;!--)/',
+             $this->currentoutput);
         // Test for the hash of an empty file area.
         $this->assertNotContains('d41d8cd98f00b204e9800998ecf8427e', $this->currentoutput);
     }

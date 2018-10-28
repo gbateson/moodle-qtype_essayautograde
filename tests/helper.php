@@ -33,6 +33,7 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_test_helper extends question_test_helper {
+
     public function get_test_questions() {
         return array('editor', 'editorfilepicker', 'plain', 'monospaced', 'responsetemplate', 'noinline');
     }
@@ -56,7 +57,17 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $q->graderinfo = '';
         $q->graderinfoformat = FORMAT_HTML;
         $q->qtype = question_bank::get_qtype('essayautograde');
-
+        $q->enableautograde = 1;
+        $q->itemtype = 1;
+        $q->itemcount = 0;
+        $q->showfeedback = 0;
+        $q->showcalculation = 0;
+        $q->showtextstats = 0;
+        $q->textstatitems = 0;
+        $q->showgradebands = 0;
+        $q->addpartialgrades = 0;
+        $q->showtargetphrases = 0;
+        $q->correctfeedback = 'Correct feedback';
         return $q;
     }
 
@@ -81,7 +92,8 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $fromform->name = 'Essay question (HTML editor)';
         $fromform->questiontext = array('text' => 'Please write a story about a frog.', 'format' => FORMAT_HTML);
         $fromform->defaultmark = 1.0;
-        $fromform->generalfeedback = array('text' => 'I hope your story had a beginning, a middle and an end.', 'format' => FORMAT_HTML);
+        $fromform->generalfeedback =
+             array('text' => 'I hope your story had a beginning, a middle and an end.', 'format' => FORMAT_HTML);
         $fromform->responseformat = 'editor';
         $fromform->responserequired = 1;
         $fromform->responsefieldlines = 10;
@@ -89,6 +101,10 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $fromform->attachmentsrequired = 0;
         $fromform->graderinfo = array('text' => '', 'format' => FORMAT_HTML);
         $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->correctfeedback = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->partiallycorrectfeedback = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->incorrectfeedback = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->addpartialgrades = 1;
 
         return $fromform;
     }
@@ -118,7 +134,8 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $fromform->name = 'Essay question with filepicker and attachments';
         $fromform->questiontext = array('text' => 'Please write a story about a frog.', 'format' => FORMAT_HTML);
         $fromform->defaultmark = 1.0;
-        $fromform->generalfeedback = array('text' => 'I hope your story had a beginning, a middle and an end.', 'format' => FORMAT_HTML);
+        $fromform->generalfeedback =
+             array('text' => 'I hope your story had a beginning, a middle and an end.', 'format' => FORMAT_HTML);
         $fromform->responseformat = 'editorfilepicker';
         $fromform->responserequired = 1;
         $fromform->responsefieldlines = 10;
@@ -126,6 +143,10 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $fromform->attachmentsrequired = 0;
         $fromform->graderinfo = array('text' => '', 'format' => FORMAT_HTML);
         $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->correctfeedback = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->partiallycorrectfeedback = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->incorrectfeedback = array('text' => '', 'format' => FORMAT_HTML);
+        $fromform->addpartialgrades = 1;
 
         return $fromform;
     }
@@ -151,17 +172,23 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $fromform = new stdClass();
 
         $fromform->name = 'Essay question with filepicker and attachments';
-        $fromform->questiontext = array('text' => 'Please write a story about a frog.', 'format' => FORMAT_HTML);
+        $fromform->questiontext = array('text' => 'Please write a story about a frog.', 'format' => FORMAT_PLAIN);
         $fromform->defaultmark = 1.0;
-        $fromform->generalfeedback = array('text' => 'I hope your story had a beginning, a middle and an end.', 'format' => FORMAT_HTML);
+        $fromform->generalfeedback =
+             array('text' => 'I hope your story had a beginning, a middle and an end.', 'format' => FORMAT_PLAIN);
         $fromform->responseformat = 'plain';
         $fromform->responserequired = 1;
         $fromform->responsefieldlines = 10;
         $fromform->attachments = 0;
         $fromform->attachmentsrequired = 0;
-        $fromform->graderinfo = array('text' => '', 'format' => FORMAT_HTML);
-        $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_HTML);
-
+        $fromform->graderinfo = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->graderinfo = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->correctfeedback = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->partiallycorrectfeedback = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->incorrectfeedback = array('text' => '', 'format' => FORMAT_PLAIN);
+        $fromform->addpartialgrades = 0;
         return $fromform;
     }
 
@@ -263,5 +290,28 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         return new question_file_saver($this->make_attachments($attachments), 'question', 'response_attachments');
     }
 
-
+    /**
+     * Makes a essay autograde question with correct ansewer true, defaultmark 1.
+     * @return qtype_essayautograde_question
+     */
+    public static function make_an_essayautograde_question() {
+        question_bank::load_question_definition_classes('essayautograde');
+        $essay = new qtype_essayautograde_question();
+        test_question_maker::initialise_a_question($essay);
+        $essay->name = 'Essayautograde question';
+        $essay->questiontext = 'Write an essay.';
+        $essay->generalfeedback = 'I hope you wrote an interesting essay.';
+        $essay->penalty = 0;
+        $essay->qtype = question_bank::get_qtype('essayautograde');
+        $essay->responseformat = 'editor';
+        $essay->responserequired = 1;
+        $essay->responsefieldlines = 15;
+        $essay->attachments = 0;
+        $essay->attachmentsrequired = 0;
+        $essay->responsetemplate = '';
+        $essay->responsetemplateformat = FORMAT_MOODLE;
+        $essay->graderinfo = '';
+        $essay->graderinfoformat = FORMAT_MOODLE;
+        return $essay;
+    }
 }

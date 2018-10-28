@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
-
+require_once($CFG->dirroot . '/question/type/essayautograde/tests/helper.php');
 
 /**
  * Unit tests for the matching question definition class.
@@ -38,20 +38,20 @@ require_once($CFG->dirroot . '/question/engine/tests/helpers.php');
  */
 class qtype_essayautograde_question_test extends advanced_testcase {
     public function test_get_question_summary() {
-        $essayautograde = test_question_maker::make_an_essayautograde_question();
+        $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
         $essayautograde->questiontext = 'Hello <img src="http://example.com/globe.png" alt="world" />';
         $this->assertEquals('Hello [world]', $essayautograde->get_question_summary());
     }
 
     public function test_summarise_response() {
         $longstring = str_repeat('0123456789', 50);
-        $essayautograde = test_question_maker::make_an_essayautograde_question();
+        $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
         $this->assertEquals($longstring, $essayautograde->summarise_response(
                 array('answer' => $longstring, 'answerformat' => FORMAT_HTML)));
     }
 
     public function test_is_same_response() {
-        $essayautograde = test_question_maker::make_an_essayautograde_question();
+        $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
 
         $essayautograde->responsetemplate = '';
 
@@ -95,7 +95,7 @@ class qtype_essayautograde_question_test extends advanced_testcase {
     }
 
     public function test_is_same_response_with_template() {
-        $essayautograde = test_question_maker::make_an_essayautograde_question();
+        $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
 
         $essayautograde->responsetemplate = 'Once upon a time';
 
@@ -153,7 +153,7 @@ class qtype_essayautograde_question_test extends advanced_testcase {
         }
 
         // Create the essayautograde question under test.
-        $essayautograde = test_question_maker::make_an_essayautograde_question();
+        $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
         $essayautograde->start_attempt(new question_attempt_step(), 1);
 
         // Test the "traditional" case, where we must recieve a response from the user.
