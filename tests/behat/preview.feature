@@ -25,7 +25,7 @@ Feature: Preview Essay autograde questions
     Given I log in as "teacher1"
     And I am on "Course 1" course homepage
     And I navigate to "Question bank" in current page administration
-    
+
   @javascript @_switch_window
   Scenario: Preview an Essay autograde question and submit a partially correct response.
     When I click on "Preview" "link" in the "essayautograde-001" "table_row"

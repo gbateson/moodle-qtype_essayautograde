@@ -1,7 +1,7 @@
 @qtype @qtype_essayautograde
-Feature: Test importing Essay questions
+Feature: Test importing Essay autograde questions
   As a teacher
-  In order to reuse Essay questions
+  In order to reuse Essay autograde questions
   I need to import them
 
   Background:

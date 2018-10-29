@@ -23,7 +23,7 @@ Feature: Test exporting Essay autograde questions
       | Test questions   | essayautograde     | essayautograde-002 | editorfilepicker |
       | Test questions   | essayautograde     | essayautograde-003 | plain            |
     And I log in as "admin"
-    
+
   Scenario: Export 3 Essay autograde questions
     When I am on "Course 1" course homepage
     And I navigate to "Question bank > Export" in current page administration
