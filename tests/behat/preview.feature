@@ -1,7 +1,7 @@
 @qtype @qtype_essayautograde
-Feature: Preview Essay questions
+Feature: Preview Essay autograde questions
   As a teacher
-  In order to check my Essay questions will work for students
+  In order to check my Essay autograde questions will work for students
   I need to preview them
 
   Background:
@@ -18,16 +18,16 @@ Feature: Preview Essay questions
       | contextlevel | reference | name           |
       | Course       | C1        | Test questions |
     And the following "questions" exist:
-      | questioncategory | qtype | name      | template         |
-      | Test questions   | essayautograde | essayautograde-001 | editor           |
-      | Test questions   | essayautograde | essayautograde-002 | editorfilepicker |
-      | Test questions   | essayautograde | essayautograde-003 | plain            |
+      | questioncategory | qtype              | name               | template         |
+      | Test questions   | essayautograde     | essayautograde-001 | editor           |
+      | Test questions   | essayautograde     | essayautograde-002 | editorfilepicker |
+      | Test questions   | essayautograde     | essayautograde-003 | plain            |
     Given I log in as "teacher1"
-    And I follow "Course 1"
-    And I navigate to "Question bank" node in "Course administration"
+    And I am on "Course 1" course homepage
+    And I navigate to "Question bank" in current page administration
 
   @javascript @_switch_window
-  Scenario: Preview an Essay question and submit a partially correct response.
+  Scenario: Preview an Essay autograde question and submit a partially correct response.
     When I click on "Preview" "link" in the "essayautograde-001" "table_row"
     And I switch to "questionpreview" window
     And I set the field "How questions behave" to "Immediate feedback"
@@ -36,7 +36,7 @@ Feature: Preview Essay questions
     And I switch to the main window
 
   @javascript @_switch_window
-  Scenario: Preview an Essay question and submit a partially correct response.
+  Scenario: Preview an Essay autograde question and submit a partially correct response.
     When I click on "Preview" "link" in the "essayautograde-002" "table_row"
     And I switch to "questionpreview" window
     And I set the field "How questions behave" to "Immediate feedback"
@@ -46,7 +46,7 @@ Feature: Preview Essay questions
     And I switch to the main window
 
   @javascript @_switch_window
-  Scenario: Preview an Essay question and submit a partially correct response.
+  Scenario: Preview an Essay autograde question and submit a partially correct response.
     When I click on "Preview" "link" in the "essayautograde-003" "table_row"
     And I switch to "questionpreview" window
     And I set the field "How questions behave" to "Immediate feedback"

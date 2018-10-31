@@ -120,16 +120,16 @@ class qtype_essayautograde extends question_type {
             'graderinfoformat'    => $formdata->graderinfo['format'],
             'responsetemplate'    => $formdata->responsetemplate['text'],
             'responsetemplateformat' => $formdata->responsetemplate['format'],
-            'enableautograde'     => $formdata->enableautograde,
-            'itemtype'            => $formdata->itemtype,
-            'itemcount'           => $formdata->itemcount,
-            'showfeedback'        => $formdata->showfeedback,
-            'showcalculation'     => $formdata->showcalculation,
-            'showtextstats'       => $formdata->showtextstats,
+            'enableautograde'     => isset($formdata->enableautograde) ? $formdata->enableautograde : 1,
+            'itemtype'            => isset($formdata->itemtype) ? $formdata->itemtype : self::ITEM_TYPE_CHARS,
+            'itemcount'           => isset($formdata->itemcount) ? $formdata->itemcount : 1,
+            'showfeedback'        => isset($formdata->showfeedback) ? $formdata->showfeedback : 1,
+            'showcalculation'     => isset($formdata->showcalculation) ? $formdata->showcalculation : 1,
+            'showtextstats'       => isset($formdata->showtextstats) ? $formdata->showtextstats : 1,
             'textstatitems'       => $textstatitems,
-            'showgradebands'      => $formdata->showgradebands,
-            'addpartialgrades'    => $formdata->addpartialgrades,
-            'showtargetphrases'   => $formdata->showtargetphrases
+            'showgradebands'      => isset($formdata->showgradebands) ? $formdata->showgradebands : 1,
+            'addpartialgrades'    => isset($formdata->addpartialgrades) ? $formdata->addpartialgrades : 1,
+            'showtargetphrases'   => isset($formdata->showtargetphrases) ? $formdata->showtargetphrases : 1,
         );
 
         // add options for feedback fields
@@ -482,7 +482,6 @@ class qtype_essayautograde extends question_type {
             $output .= "        <$tag percent=\"$percent\">$text</$tag>\n";;
         }
         $output .= "    </answers>\n";
-
         return $output;
     }
 
