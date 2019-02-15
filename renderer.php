@@ -185,11 +185,6 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $question = $qa->get_question();
 
             $currentresponse = $question->get_current_response();
-            if (empty($current_response)) {
-                echo $step->get_state();
-                print_object($step);
-                die;
-            }
             $displayoptions = $currentresponse->displayoptions;
             if ($displayoptions && isset($displayoptions->markdp)) {
                 $precision = $displayoptions->markdp;
