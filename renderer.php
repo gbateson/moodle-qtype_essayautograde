@@ -168,9 +168,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $output = '';
 
         // Decide if we should show grade explanation.
-        // This will skip "gaveup" and possibly others
         if ($step = $qa->get_last_step()) {
-            $show = preg_match('/(right|partial|wrong)$/', $step->get_state());
+            // We are only interested in graded(right|partial|wrong)
+            // We skip mangr(right|partial|wrong), man(gaveup|finished)
+            // and several others.
+            // For a full list of states, see question/engine/states.php
+            $show = ($step->get_state()->is_commented() ? false : true);
         } else {
             $show = false;
         }
@@ -182,6 +185,11 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $question = $qa->get_question();
 
             $currentresponse = $question->get_current_response();
+            if (empty($current_response)) {
+                echo $step->get_state();
+                print_object($step);
+                die;
+            }
             $displayoptions = $currentresponse->displayoptions;
             if ($displayoptions && isset($displayoptions->markdp)) {
                 $precision = $displayoptions->markdp;
