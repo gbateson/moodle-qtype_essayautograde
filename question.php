@@ -261,10 +261,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
     public function update_current_response($response, $displayoptions=null) {
 
-        if (empty($response) || empty($response['answer'])) {
-            return true;
-        }
-
+        // Initialize data about this $response
         $count = 0;
         $bands = array();
         $phrases = array();
@@ -280,22 +277,26 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $completecount = 0;
         $completepercent = 0;
 
-        $text = question_utils::to_plain_text($response['answer'],
-                                              $response['answerformat'],
-                                              array('para' => false));
+        // Clean the $response text
+        if (empty($response) || empty($response['answer']) || $response['answer'] == $this->responsetemplate) {
+            $text = ''; // No (original) response was entered. 
+        } else {
+            $text = question_utils::to_plain_text($response['answer'],
+                                                  $response['answerformat'],
+                                                  array('para' => false));
+            // Standardize white space in $text.
+            // Html-entity for non-breaking space, $nbsp;,
+            // is converted to a unicode character, "\xc2\xa0",
+            // that can be simulated by two ascii chars (194,160)
+            $text = str_replace(chr(194).chr(160), ' ', $text);
+            $text = preg_replace('/[ \t]+/', ' ', trim($text));
+            $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
+        }
 
-        // Standardize white space in $text.
-        // html-entity for non-breaking space, $nbsp;,
-        // is converted to a unicode character, "\xc2\xa0",
-        // that can be simulated by two ascii chars (194,160)
-        $text = str_replace(chr(194).chr(160), ' ', $text);
-        $text = preg_replace('/[ \t]+/', ' ', trim($text));
-        $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
-
-        // get stats for this $text
+        // Get stats for this $text.
         $stats = $this->get_stats($text);
 
-        // count items in $text
+        // Count items in $text.
         switch ($this->itemtype) {
             case $this->plugin_constant('ITEM_TYPE_CHARS'): $count = $stats->chars; break;
             case $this->plugin_constant('ITEM_TYPE_WORDS'): $count = $stats->words; break;
@@ -303,12 +304,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             case $this->plugin_constant('ITEM_TYPE_PARAGRAPHS'): $count = $stats->paragraphs; break;
         }
 
-        // get records from "question_answers" table
+        // Get records from "question_answers" table.
         $answers = $this->get_answers();
 
         if (empty($answers)) {
 
-            // set fractional grade from number of items
+            // Set fractional grade from number of items.
             if (empty($this->itemcount)) {
                 $rawfraction = 0.0;
             } else {
@@ -317,7 +318,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         } else {
 
-            // cache plugin constants
+            // Cache plugin constants.
             $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
             $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
 

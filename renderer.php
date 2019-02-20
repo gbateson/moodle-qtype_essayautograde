@@ -184,10 +184,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $plugin = $this->plugin_name();
             $question = $qa->get_question();
 
+            // Get the current response text and information
             $currentresponse = $question->get_current_response();
-            $displayoptions = $currentresponse->displayoptions;
-            if ($displayoptions && isset($displayoptions->markdp)) {
-                $precision = $displayoptions->markdp;
+
+            $options = $currentresponse->displayoptions;
+            if ($options && isset($options->markdp)) {
+                $precision = $options->markdp;
             } else {
                 $precision = 0;
             }
@@ -205,17 +207,23 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             }
             $itemtype = core_text::strtolower($itemtype);
 
-            if ($showteacher = has_capability('mod/quiz:grade', $displayoptions->context)) {
+            if (empty($options->context)) {
+                // Shouldn't happen !!
                 $showstudent = false;
+                $showteacher = false;
             } else {
-                $showstudent = has_capability('mod/quiz:attempt', $displayoptions->context);
+                if ($showteacher = has_capability('mod/quiz:grade', $options->context)) {
+                    $showstudent = false;
+                } else {
+                    $showstudent = has_capability('mod/quiz:attempt', $options->context);
+                }
             }
 
             $show = array(
                 $this->plugin_constant('SHOW_NONE') => false,
                 $this->plugin_constant('SHOW_STUDENTS_ONLY') => $showstudent,
                 $this->plugin_constant('SHOW_TEACHERS_ONLY') => $showteacher,
-                $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => true,
+                $this->plugin_constant('SHOW_TEACHERS_AND_STUDENTS') => ($showstudent || $showteacher),
             );
 
             $showgradebands = ($show[$question->showgradebands] && count($currentresponse->bands));
