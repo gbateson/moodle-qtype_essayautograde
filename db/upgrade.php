@@ -133,6 +133,14 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2019030358;
+    if ($oldversion < $newversion) {
+        // Add fields for sample reponse and error glossary/database.
+        $fieldnames = 'responsesample, responsesampleformat, errorcmid, errorpercent';
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fieldnames);
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
     return true;
 }
 
@@ -160,23 +168,27 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
 
     $table = new xmldb_table($pluginoptionstable);
     $fields = array(
+        new xmldb_field('responsesample',                 XMLDB_TYPE_TEXT),
+        new xmldb_field('responsesampleformat',           XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('filetypeslist',                  XMLDB_TYPE_TEXT),
-        new xmldb_field('enableautograde',                XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1),
-        new xmldb_field('itemtype',                       XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('itemcount',                      XMLDB_TYPE_INTEGER, 6, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('showfeedback',                   XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('showcalculation',                XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('showtextstats',                  XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('textstatitems',                  XMLDB_TYPE_CHAR,  255, null, XMLDB_NOTNULL),
-        new xmldb_field('showgradebands',                 XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('addpartialgrades',               XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
-        new xmldb_field('showtargetphrases',              XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('enableautograde',                XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 1),
+        new xmldb_field('itemtype',                       XMLDB_TYPE_INTEGER,  4, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('itemcount',                      XMLDB_TYPE_INTEGER,  6, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showfeedback',                   XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showcalculation',                XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showtextstats',                  XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('textstatitems',                  XMLDB_TYPE_CHAR,   255, null, XMLDB_NOTNULL),
+        new xmldb_field('showgradebands',                 XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('addpartialgrades',               XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('showtargetphrases',              XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('errorcmid',                      XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('errorpercent',                   XMLDB_TYPE_INTEGER,  6, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('correctfeedback',                XMLDB_TYPE_TEXT),
-        new xmldb_field('correctfeedbackformat',          XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('correctfeedbackformat',          XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('incorrectfeedback',              XMLDB_TYPE_TEXT),
-        new xmldb_field('incorrectfeedbackformat',        XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('incorrectfeedbackformat',        XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('partiallycorrectfeedback',       XMLDB_TYPE_TEXT),
-        new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 0)
+        new xmldb_field('partiallycorrectfeedbackformat', XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0)
     );
 
     $previousfield = 'responsetemplateformat';

@@ -4,6 +4,26 @@
     class names.
 ***************************************************************************/
 
+.que.essayautograde .hidesample,
+.que.essayautograde .showsample {
+    font-size: 0.85em;
+    font-weight: bold;
+}
+.que.essayautograde .hidesample::before,
+.que.essayautograde .showsample::before {
+  content: " (";
+}
+.que.essayautograde .hidesample::after,
+.que.essayautograde .showsample::after {
+  content: ")";
+}
+.que.essayautograde .hidesample {
+    color: purple;
+}
+.que.essayautograde .showsample {
+    color: red;
+}
+
 .que.essayautograde textarea.qtype_essay_response {
     width: 100%;
 }
@@ -123,6 +143,7 @@ table.essayautograde.review ul {
     padding:                    0px;
 }
 
+table.essayautograde.review .error,
 table.essayautograde.review .missing,
 table.essayautograde.review .partial,
 table.essayautograde.review .present {
@@ -135,6 +156,7 @@ table.essayautograde.review .present {
     white-space:             nowrap;
 }
 
+table.essayautograde.review .error,
 table.essayautograde.review .missing {
     background-color:  #ffdddd; /* light red */
     border-color:      #ff7373; /* gentle red */

@@ -109,15 +109,22 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             return false;
         }
 
-        // If there is no response template, the answer must
-        // be original and therefore it is gradable.
-        if (empty($this->responsetemplate)) {
+        // If there is no response template or sample,
+        // the answer must be original and therefore it is gradable.
+        if (empty($this->responsetemplate) && empty($this->responsesample)) {
             return true;
         }
 
-        // Otherwise, we check that the answer is not simply
-        // the unaltered response template.
-        return ($response['answer']==$this->responsetemplate ? false : true);
+        // Check that the answer is not simply the unaltered response template/sample.
+        if ($response['answer']==$this->responsetemplate) {
+            return false;
+        }
+        if ($response['answer']==$this->responsesample) {
+            return false;
+        }
+
+        // The response can be graded.
+        return true;
     }
 
     /**
@@ -278,8 +285,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $completepercent = 0;
 
         // Clean the $response text
-        if (empty($response) || empty($response['answer']) || $response['answer'] == $this->responsetemplate) {
-            $text = ''; // No (original) response was entered. 
+        if (empty($response) || empty($response['answer'])) {
+            $text = ''; // No response was entered. 
+        } else if ($response['answer'] == $this->responsetemplate) {
+            $text = ''; 
+        } else if ($response['answer'] == $this->responsesample) {
+            $text = '';
         } else {
             $text = question_utils::to_plain_text($response['answer'],
                                                   $response['answerformat'],
@@ -293,8 +304,11 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
         }
 
+        // detect common errors
+        list($errors, $errorpercent) = $this->get_common_errors($text);
+
         // Get stats for this $text.
-        $stats = $this->get_stats($text);
+        $stats = $this->get_stats($text, $errors);
 
         // Count items in $text.
         switch ($this->itemtype) {
@@ -322,6 +336,186 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
             $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
 
+            // override "addpartialgrades" with incoming form data, if necessary
+            $addpartialgrades = $this->addpartialgrades;
+            $addpartialgrades = optional_param('addpartialgrades', $addpartialgrades, PARAM_INT);
+
+            // set fractional grade from item count and target phrases
+            $rawfraction = 0.0;
+            $checkbands = true;
+            foreach ($answers as $answer) {
+                switch (intval($answer->fraction)) {
+
+                    case $ANSWER_TYPE_BAND:
+                        if ($checkbands) {
+                            if ($answer->answer > $count) {
+                                $checkbands = false;
+                            }
+                            // update band counts and percents
+                            $completecount   = $currentcount;
+                            $completepercent = $currentpercent;
+                            $currentcount    = $answer->answer;
+                            $currentpercent  = $answer->answerformat;
+                        }
+                        $bands[$answer->answer] = $answer->answerformat;
+                        break;
+
+                    case $ANSWER_TYPE_PHRASE:
+                        if ($search = trim($answer->feedback)) {
+                            if ($match = $this->search_text($search, $text)) {
+                                $rawfraction += ($answer->feedbackformat / 100);
+                                $myphrases[$match] = $search;
+                            }
+                            $phrases[$search] = $answer->feedbackformat;
+                        }
+                        break;
+                }
+            }
+
+            // update band counts for top grade band, if necessary
+            if ($checkbands) {
+                $completecount = $currentcount;
+                $completepercent = $currentpercent;
+            }
+
+            // set the item width of the current band
+            // and the percentage width of the current band
+            $currentcount = ($currentcount - $completecount);
+            $currentpercent = ($currentpercent - $completepercent);
+
+            // set the number of items to be graded by the current band
+            // and thus calculate the percent awarded by the current band
+            if ($addpartialgrades && $currentcount) {
+                $partialcount = ($count - $completecount);
+                $partialpercent = round(($partialcount / $currentcount) * $currentpercent);
+            } else {
+                $partialcount = 0;
+                $partialpercent = 0;
+            }
+
+            $rawfraction += (($completepercent + $partialpercent) / 100);
+
+        }
+
+        // deduct penalties for common errors
+        $rawfraction -= ($errorpercent / 100);
+
+        // make sure $autofraction is in range 0.0 - 1.0
+        $autofraction = min(1.0, max(0.0, $rawfraction));
+
+        // we can now set $autopercent and $rawpercent
+        $rawpercent = round($rawfraction * 100);
+        $autopercent = round($autofraction * 100);
+
+        // store this information, in case it is needed elswhere
+        $this->save_current_response('text', $text);
+        $this->save_current_response('stats', $stats);
+        $this->save_current_response('count', $count);
+        $this->save_current_response('bands', $bands);
+        $this->save_current_response('phrases', $phrases);
+        $this->save_current_response('myphrases', $myphrases);
+        $this->save_current_response('rawpercent', $rawpercent);
+        $this->save_current_response('rawfraction', $rawfraction);
+        $this->save_current_response('autopercent', $autopercent);
+        $this->save_current_response('autofraction', $autofraction);
+        $this->save_current_response('partialcount', $partialcount);
+        $this->save_current_response('partialpercent', $partialpercent);
+        $this->save_current_response('completecount', $completecount);
+        $this->save_current_response('completepercent', $completepercent);
+        $this->save_current_response('displayoptions', $displayoptions);
+        $this->save_current_response('errors', $errors);
+        $this->save_current_response('errorpercent', $errorpercent);
+    }
+
+    /**
+     * get_common_errors
+     */
+    protected function get_common_errors($text) {
+        global $DB;
+
+        $errors = array();
+
+        if ($this->errorcmid && ($cm = get_coursemodule_from_id('', $this->errorcmid))) {
+            $entryids = array();
+            if ($entries = $DB->get_records('glossary_entries', array('glossaryid' => $cm->instance), 'concept')) {
+                foreach ($entries as $entry) {
+                    if ($match = $this->glossary_entry_search_text($entry, $entry->concept, $text)) {
+                        $errors[$match] = $this->glossary_entry_link($entry, $match);
+                    } else {
+                        $entryids[] = $entry->id;
+                    }
+                }
+            }
+            if (count($entryids)) {
+                list($select, $params) = $DB->get_in_or_equal($entryids);
+                if ($aliases = $DB->get_records_select('glossary_alias', "entryid $select", $params)) {
+                    foreach ($aliases as $alias) {
+                        $entry = $entries[$alias->entryid];
+                        if ($match = $this->glossary_entry_search_text($entry, $alias->alias, $text)) {
+                            $errors[$match] = $this->glossary_entry_link($entry, $match);
+                        }
+                    }
+                }
+            }
+
+            // sort the matching errors by length (longest to shortest)
+            // https://stackoverflow.com/questions/3955536/php-sort-hash-array-by-key-length
+            $matches = array_keys($errors);
+            $keys = array_map('core_text::strlen', $matches);
+            array_multisort($keys, SORT_DESC, $matches);
+
+            // remove matches that are substrings of longer matches
+            $keys = array();            
+            foreach ($matches as $match) {
+                $search = '/^'.preg_quote($match, '/').'.+/iu';
+                $search = preg_grep($search, $matches);
+                if (count($search)) {
+                    unset($errors[$match]);
+                } else {
+                    $keys[] = $match;
+                }
+            }
+        }
+
+        return array($errors, count($errors) * $this->errorpercent);
+    }
+
+    /**
+     * glossary_entry_search_text
+     *
+     * @param object $entry
+     * @param string $match
+     * @param string $text
+     * @return string the matching substring in $text or "" 
+     */
+    protected function glossary_entry_search_text($entry, $search, $text) {
+        return $this->search_text($search, $text, $entry->fullmatch, empty($entry->casesensitive));
+    }
+
+    /**
+     * search_text
+     *
+     * @param string $match
+     * @param string $text
+     * @return boolean TRUE if $text mattches the $match; otherwise FALSE;
+     */
+    protected function search_text($search, $text, $fullmatch=false, $caseinsensitive=false) {
+
+        static $aliases = null;
+        static $metachars = null;
+        static $flipmetachars = null;
+
+        $text = trim($text);
+        if ($text=='') {
+            return false; // unexpected ?!
+        }
+
+        $search = trim($search);
+        if ($search=='') {
+            return false; // shouldn't happen !!
+        }
+
+        if ($aliases===null) {
             // human readable aliases for regexp strings
             $aliases = array(' OR '  => '|',
                              ' OR'   => '|',
@@ -359,112 +553,52 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                                '>' => 'CLOSE_ANGLE',
                                '\\' => 'BACKSLASH');
             $flipmetachars = array_flip($metachars);
-
-            // override "addpartialgrades" with incoming form data, if necessary
-            $addpartialgrades = $this->addpartialgrades;
-            $addpartialgrades = optional_param('addpartialgrades', $addpartialgrades, PARAM_INT);
-
-            // set fractional grade from item count and target phrases
-            $rawfraction = 0.0;
-            $checkbands = true;
-            foreach ($answers as $answer) {
-                switch (intval($answer->fraction)) {
-
-                    case $ANSWER_TYPE_BAND:
-                        if ($checkbands) {
-                            if ($answer->answer > $count) {
-                                $checkbands = false;
-                            }
-                            // update band counts and percents
-                            $completecount   = $currentcount;
-                            $completepercent = $currentpercent;
-                            $currentcount    = $answer->answer;
-                            $currentpercent  = $answer->answerformat;
-                        }
-                        $bands[$answer->answer] = $answer->answerformat;
-                        break;
-
-                    case $ANSWER_TYPE_PHRASE:
-                        if ($search = trim($answer->feedback)) {
-                            $search = strtr($search, $aliases);
-                            $search = strtr($search, $metachars);
-                            $search = preg_quote($search, '/');
-                            $search = strtr($search, $flipmetachars);
-                            $search = "/$search/isu"; // case-insensitive unicode match
-                            if (preg_match($search, $text, $phrase)) {
-                                if (strlen($phrase[0]) <= strlen($answer->feedback)) {
-                                    $phrase = $phrase[0];
-                                } else {
-                                    $phrase = $answer->feedback;
-                                }
-                                $rawfraction += ($answer->feedbackformat / 100);
-                                $myphrases[$phrase] = $answer->feedback;
-                            }
-                            $phrases[$answer->feedback] = $answer->feedbackformat;
-                        }
-                        break;
-                }
-            }
-
-            // update band counts for top grade band, if necessary
-            if ($checkbands) {
-                $completecount = $currentcount;
-                $completepercent = $currentpercent;
-            }
-
-            // set the item width of the current band
-            // and the percentage width of the current band
-            $currentcount = ($currentcount - $completecount);
-            $currentpercent = ($currentpercent - $completepercent);
-
-            // set the number of items to be graded by the current band
-            // and thus calculate the percent awarded by the current band
-            if ($addpartialgrades && $currentcount) {
-                $partialcount = ($count - $completecount);
-                $partialpercent = round(($partialcount / $currentcount) * $currentpercent);
-            } else {
-                $partialcount = 0;
-                $partialpercent = 0;
-            }
-
-            $rawfraction += (($completepercent + $partialpercent) / 100);
-
         }
 
-        // make sure $autofraction is in range 0.0 - 1.0
-        $autofraction = min(1.0, max(0.0, $rawfraction));
-
-        // we can now set $autopercent and $rawpercent
-        $rawpercent = round($rawfraction * 100);
-        $autopercent = round($autofraction * 100);
-
-        // store this information, in case it is needed elswhere
-        $this->save_current_response('text', $text);
-        $this->save_current_response('stats', $stats);
-        $this->save_current_response('count', $count);
-        $this->save_current_response('bands', $bands);
-        $this->save_current_response('phrases', $phrases);
-        $this->save_current_response('myphrases', $myphrases);
-        $this->save_current_response('rawpercent', $rawpercent);
-        $this->save_current_response('rawfraction', $rawfraction);
-        $this->save_current_response('autopercent', $autopercent);
-        $this->save_current_response('autofraction', $autofraction);
-        $this->save_current_response('partialcount', $partialcount);
-        $this->save_current_response('partialpercent', $partialpercent);
-        $this->save_current_response('completecount', $completecount);
-        $this->save_current_response('completepercent', $completepercent);
-        $this->save_current_response('displayoptions', $displayoptions);
+        $regexp = strtr($search, $aliases);
+        $regexp = strtr($regexp, $metachars);
+        $regexp = preg_quote($regexp, '/');
+        $regexp = strtr($regexp, $flipmetachars);
+        if ($fullmatch) {
+            $regexp = "\\b$regexp\\b";
+        }
+        $regexp = "/$regexp/u"; // unicode match
+        if ($caseinsensitive) {
+            $regexp .= 'i';
+        }
+        if (preg_match($regexp, $text, $match)) {
+            if (core_text::strlen($search) < core_text::strlen($match[0])) {
+                return $search;
+            }
+            return $match[0];
+        } else {
+            return ''; // no matches
+        }
     }
 
     /**
      * Store information about latest response to this question
      *
-     * @param  string  clean response $text
-     * @param  integer number of items in $text
-     * @param  array   applicable grade bands
-     * @param  phrases traget phrases in $text
-     * @param  decimal $fraction grade for $text
-     * @return string
+     * @param  string $name
+     * @param  string $value
+     * @return void, but will update currentresponse property of this object
+     */
+    public function glossary_entry_link($entry, $text) {
+        $params = array('eid' => $entry->id,
+                        'displayformat' => 'dictionary');
+        $url = new moodle_url('/mod/glossary/showentry.php', $params);
+
+        $params = array('target' => '_blank',
+                        'class' => 'glossary autolink concept glossaryid'.$entry->glossaryid);
+        return html_writer::link($url, $text, $params);
+    }
+
+    /**
+     * Store information about latest response to this question
+     *
+     * @param  string $name
+     * @param  string $value
+     * @return void, but will update currentresponse property of this object
      */
     public function save_current_response($name, $value) {
         if ($this->currentresponse===null) {
@@ -506,7 +640,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     /**
      * get_stats
      */
-    protected function get_stats($text) {
+    protected function get_stats($text, $errors) {
         $precision = 1;
         $stats = (object)array('chars' => $this->get_stats_chars($text),
                                'words' => $this->get_stats_words($text),
@@ -515,6 +649,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                                'longwords' => $this->get_stats_longwords($text),
                                'uniquewords' => $this->get_stats_uniquewords($text),
                                'fogindex' => 0,
+                               'commonerrors' => count($errors),
                                'lexicaldensity' => 0,
                                'charspersentence' => 0,
                                'wordspersentence' => 0,

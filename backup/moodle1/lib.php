@@ -50,7 +50,9 @@ class moodle1_qtype_essayautograde_handler extends moodle1_qtype_handler {
             'graderinfo'             => '',
             'graderinfoformat'       => FORMAT_HTML,
             'responsetemplate'       => '',
-            'responsetemplateformat' => FORMAT_HTML
+            'responsetemplateformat' => FORMAT_HTML,
+            'responsesample'         => '',
+            'responsesampleformat'   => FORMAT_HTML
         ), array('/essayautograde/id'));
     }
 }

@@ -61,7 +61,10 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         $params = array('questionid' => backup::VAR_PARENTID);
         $essayautograde->set_source_table('qtype_essayautograde_options', $params);
 
-        // Don't need to annotate ids nor files.
+        // Annote course_module ids.
+        $essayautograde->annotate_ids('course_modules', 'errorcmid');
+
+        // Don't need to annotate files.
 
         return $plugin;
     }
@@ -73,11 +76,13 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
      * files to be processed both in backup and restore.
      */
     public static function get_qtype_fileareas() {
-        return array('graderinfo'        => 'question_created',
-                     'responsetemplate'  => 'question_created',
-                     'correctfeedback'   => 'question_created',
-                     'incorrectfeedback' => 'question_created',
-                     'partiallycorrectfeedback' => 'question_created');
+        $filearea = 'question_created';
+        return array('graderinfo'        => $filearea,
+                     'responsetemplate'  => $filearea,
+                     'responsesample'    => $filearea,
+                     'correctfeedback'   => $filearea,
+                     'incorrectfeedback' => $filearea,
+                     'partiallycorrectfeedback' => $filearea);
     }
 
     /**

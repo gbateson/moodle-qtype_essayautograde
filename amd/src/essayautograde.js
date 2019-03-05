@@ -27,8 +27,9 @@ define(["jquery", "core/str"], function($, STR) {
     /** @alias module:qtype_essayautograde/view */
     var ESSAY = {};
 
-    // cache the plugin name
+    // cache the plugin name and string cache
     ESSAY.plugin = "qtype_essayautograde";
+    ESSAY.str = {};
 
     ESSAY.itemtype = "";
     ESSAY.itemmatch = "";
@@ -37,10 +38,13 @@ define(["jquery", "core/str"], function($, STR) {
     ESSAY.editormaxtries = 50;
     ESSAY.editorinterval = 100; // 100 ms
 
+    ESSAY.responsesample = "";
+    ESSAY.responseoriginal = "";
+
     /*
      * initialize this AMD module
      */
-    ESSAY.init = function(readonly, itemtype, editortype) {
+    ESSAY.init = function(readonly, itemtype, editortype, responsesample) {
 
         // get RegExp expression for this item type
         var itemmatch = "";
@@ -61,6 +65,7 @@ define(["jquery", "core/str"], function($, STR) {
             ESSAY.setup_response_heights();
         } else {
             ESSAY.setup_itemcounts();
+            ESSAY.setup_responsesample(responsesample);
         }
     };
 
@@ -192,6 +197,78 @@ define(["jquery", "core/str"], function($, STR) {
             {"key": ESSAY.itemtype, "component": ESSAY.plugin}
         ]).done(function(s) {
             $(ESSAY.escape(id)).text(s[0] + ": " + itemcount);
+        });
+    };
+
+    ESSAY.setup_responsesample = function(txt) {
+        if (txt=='') {
+            return;
+        }
+        ESSAY.responsesample = txt;
+        STR.get_strings([
+            {"key": "hidesample", "component": ESSAY.plugin},
+            {"key": "showsample", "component": ESSAY.plugin}
+        ]).done(function(s) {
+            ESSAY.str.hidesample = s[0];
+            ESSAY.str.showsample = s[1];
+            var last = $(".qtext").find("p, div");
+            if (last.length) {
+                last = last.last();
+            } else {
+                last = $(".qtext");
+            }
+            last.append($("<span></span>").click(function(){
+                var newtxt = "",
+                    oldtxt = "",
+                    saveresponse = false;
+                if ($(this).hasClass("showsample")) {
+                    $(this).removeClass("showsample")
+                           .addClass("hidesample")
+                           .text(ESSAY.str.hidesample);
+                    newtxt = ESSAY.responsesample;
+                    saveresponse = true;
+                } else {
+                    $(this).removeClass("hidesample")
+                           .addClass("showsample")
+                           .text(ESSAY.str.showsample);
+                    newtxt = ESSAY.responseoriginal;
+                }
+                // Locate response element
+                var r = $(this).closest(".qtext").next(".ablock").find(".answer .qtype_essay_response");
+                var editor = null;
+                if (r.is("[name$='_answer']")) {
+                    // Plain text (i.e. no editor)
+                    editor = r;
+                } else {
+                    // Atto
+                    editor = r.find("[contenteditable=true]");
+                    if (editor.length==0) {
+                        // TinyMCE
+                        editor = r.find("iframe").contents().find("[contenteditable=true]");
+                        if (editor.length==0) {
+                            // Plain text editor
+                            editor = r.find("[name$='_answer']");
+                        }
+                    }
+                }
+
+                if (editor===null || editor.length==0) {
+                    return false; // shouldn't happen !!
+                }
+
+                if (editor.prop("tagName")=="TEXTAREA") {
+                    oldtxt = editor.val();
+                    editor.val(newtxt).keyup();
+                } else {
+                    oldtxt = editor.text();
+                    editor.text(newtxt).keyup();
+                }
+
+                if (saveresponse) {
+                    ESSAY.responseoriginal = oldtxt;
+                }
+                return true;
+            }).trigger("click"));
         });
     };
 

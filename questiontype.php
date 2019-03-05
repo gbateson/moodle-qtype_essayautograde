@@ -62,10 +62,12 @@ class qtype_essayautograde extends question_type {
                      'attachments', 'attachmentsrequired', 'filetypeslist',
                      'graderinfo', 'graderinfoformat',
                      'responsetemplate', 'responsetemplateformat',
+                     'responsesample', 'responsesampleformat',
                      'enableautograde', 'itemtype', 'itemcount',
                      'showfeedback', 'showcalculation',
                      'showtextstats', 'textstatitems',
                      'showgradebands', 'addpartialgrades','showtargetphrases',
+                     'errorcmid', 'errorpercent',
                      'correctfeedback', 'correctfeedbackformat',
                      'incorrectfeedback', 'incorrectfeedbackformat',
                      'partiallycorrectfeedback', 'partiallycorrectfeedbackformat');
@@ -80,7 +82,7 @@ class qtype_essayautograde extends question_type {
     }
 
     public function save_question_options($formdata) {
-        global $DB;
+        global $DB, $PAGE;
 
         ///////////////////////////////////////////////////////
         // save essayautograde options
@@ -104,8 +106,10 @@ class qtype_essayautograde extends question_type {
             $textstatitems = implode(',', $textstatitems);
         }
 
+        // Retrieve OLD values from the database.
         $params = array('questionid' => $questionid);
         $optionsid = $DB->get_field($optionstable, 'id', $params);
+        $errorpercent = $DB->get_field($optionstable, 'errorpercent', $params);
         $addpartialgrades = $DB->get_field($optionstable, 'addpartialgrades', $params);
 
         $options = (object)array(
@@ -120,6 +124,8 @@ class qtype_essayautograde extends question_type {
             'graderinfoformat'    => $formdata->graderinfo['format'],
             'responsetemplate'    => $formdata->responsetemplate['text'],
             'responsetemplateformat' => $formdata->responsetemplate['format'],
+            'responsesample'      => $formdata->responsesample['text'],
+            'responsesampleformat' => $formdata->responsesample['format'],
             'enableautograde'     => isset($formdata->enableautograde) ? $formdata->enableautograde : 1,
             'itemtype'            => isset($formdata->itemtype) ? $formdata->itemtype : self::ITEM_TYPE_CHARS,
             'itemcount'           => isset($formdata->itemcount) ? $formdata->itemcount : 1,
@@ -130,7 +136,19 @@ class qtype_essayautograde extends question_type {
             'showgradebands'      => isset($formdata->showgradebands) ? $formdata->showgradebands : 1,
             'addpartialgrades'    => isset($formdata->addpartialgrades) ? $formdata->addpartialgrades : 1,
             'showtargetphrases'   => isset($formdata->showtargetphrases) ? $formdata->showtargetphrases : 1,
+            'errorcmid'           => isset($formdata->errorcmid) ? $formdata->errorcmid : 0,
+            'errorpercent'        => isset($formdata->errorpercent) ? $formdata->errorpercent : 0,
         );
+
+        if ($cmid = $options->errorcmid) {
+            $modinfo = get_fast_modinfo($PAGE->course->id);
+            if (empty($modinfo->cms[$cmid]) || empty($modinfo->cms[$cmid]->uservisible)) {
+                $options->errorcmid = 0;
+            }            
+        }
+        if ($options->errorcmid==0) {
+            $options->errorpercent = 0;
+        }
 
         // add options for feedback fields
         $options = $this->save_combined_feedback_helper($options, $formdata, $context, true);
@@ -217,8 +235,8 @@ class qtype_essayautograde extends question_type {
             $oldanswers = array();
         }
 
-        if ($addpartialgrades==$formdata->addpartialgrades) {
-            $regrade =  true;
+        if ($addpartialgrades==$formdata->addpartialgrades && $errorpercent==$formdata->errorpercent) {
+            $regrade =  false; // Values has not changed.
         } else {
             $regrade =  true;
         }
@@ -269,7 +287,7 @@ class qtype_essayautograde extends question_type {
         parent::initialise_question_instance($question, $questiondata);
 
         // initialize "essayautograde" fields
-        $defaults = $this->get_default_values();
+        $defaults = self::get_default_values();
         foreach ($defaults as $name => $default) {
             if (isset($questiondata->options->$name)) {
                 $question->$name = $questiondata->options->$name;
@@ -511,27 +529,27 @@ class qtype_essayautograde extends question_type {
         $textfield = '/^('.implode('|', $textfields).')$/';
         $formatfield = '/^('.implode('|', $textfields).')format$/';
 
-		$defaults = $this->get_default_values();
+        $defaults = self::get_default_values();
         foreach ($defaults as $field => $default) {
             if (preg_match($textfield, $field) || preg_match($formatfield, $field)) {
                 continue;
             }
-			$value = $format->getpath($data, array('#', $field, 0, '#'), $default);
-			switch ($field) {
-				case 'textstatitems':
-					$value = explode(',', $value);
-					$value = array_map('trim', $value);
-					$value = array_filter($value);
-					$value = array_combine($value, array_fill(0, count($value), 1));
-					break;
-			}
-			$newquestion->$field =$value;
+            $value = $format->getpath($data, array('#', $field, 0, '#'), $default);
+            switch ($field) {
+                case 'textstatitems':
+                    $value = explode(',', $value);
+                    $value = array_map('trim', $value);
+                    $value = array_filter($value);
+                    $value = array_combine($value, array_fill(0, count($value), 1));
+                    break;
+            }
+            $newquestion->$field = $value;
         }
 
-		foreach ($textfields as $field) {
-			$fmt = $format->get_format($format->getpath($data, array('#', $field.'format', 0, '#'), 0));
-			$newquestion->$field = $format->import_text_with_files($data, array('#', $field, 0), '', $fmt);
-		}
+        foreach ($textfields as $field) {
+            $fmt = $format->get_format($format->getpath($data, array('#', $field.'format', 0, '#'), 0));
+            $newquestion->$field = $format->import_text_with_files($data, array('#', $field, 0), '', $fmt);
+        }
 
         $newquestion->answer = array();
         $newquestion->answerformat = array();
@@ -539,29 +557,29 @@ class qtype_essayautograde extends question_type {
         $newquestion->feedback = array();
         $newquestion->feedbackformat = array();
 
-		$a = 0; // answer index
+        $a = 0; // answer index
 
         $i = 0; // gradeband index
-		while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'gradeband', $i), null)) {
-			$newquestion->answer[$a] = $answer['#'];
-			$newquestion->answerformat[$a] = $answer['@']['percent'];
-			$newquestion->fraction[$a] = self::ANSWER_TYPE_BAND;
-			$newquestion->feedback[$a] = '';
-			$newquestion->feedbackformat[$a] = 0;
+        while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'gradeband', $i), null)) {
+            $newquestion->answer[$a] = $answer['#'];
+            $newquestion->answerformat[$a] = $answer['@']['percent'];
+            $newquestion->fraction[$a] = self::ANSWER_TYPE_BAND;
+            $newquestion->feedback[$a] = '';
+            $newquestion->feedbackformat[$a] = 0;
             $i++;
-			$a++;
-		}
+            $a++;
+        }
 
         $i = 0; // targetphrase index
-		while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'targetphrase', $i), null)) {
-			$newquestion->answer[$a] = '';
-			$newquestion->answerformat[$a] = 0;
-			$newquestion->fraction[$a] = self::ANSWER_TYPE_PHRASE;
-			$newquestion->feedback[$a] = $answer['#'];
-			$newquestion->feedbackformat[$a] = $answer['@']['percent'];
+        while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'targetphrase', $i), null)) {
+            $newquestion->answer[$a] = '';
+            $newquestion->answerformat[$a] = 0;
+            $newquestion->fraction[$a] = self::ANSWER_TYPE_PHRASE;
+            $newquestion->feedback[$a] = $answer['#'];
+            $newquestion->feedbackformat[$a] = $answer['@']['percent'];
             $i++;
-			$a++;
-		}
+            $a++;
+        }
 
         //$format->import_combined_feedback($newquestion, $data, false);
         $format->import_hints($newquestion, $data, false);
@@ -740,7 +758,7 @@ class qtype_essayautograde extends question_type {
         }
 
         // set default values
-        $values = $this->get_default_values();
+        $values = self::get_default_values();
         foreach ($values as $name => $value) {
             if (isset($question->$name)) {
                 continue;
@@ -749,8 +767,10 @@ class qtype_essayautograde extends question_type {
         }
 
         // fields to mimic HTML editors
-        $question->graderinfo = array('text' => '', 'format' => FORMAT_MOODLE, 'itemid' => '', 'files' => null);
         $question->responsetemplate = array('text' => '', 'format' => FORMAT_MOODLE);
+        $question->responsesample   = array('text' => '', 'format' => FORMAT_MOODLE);
+        $question->graderinfo       = array('text' => '', 'format' => FORMAT_MOODLE,
+                                            'itemid' => '', 'files' => null);
 
         return $question;
     }
@@ -762,7 +782,8 @@ class qtype_essayautograde extends question_type {
      */
     public function get_text_fields() {
         return array('graderinfo',
-        			 'responsetemplate',
+                     'responsetemplate',
+                     'responsesample',
                      'correctfeedback',
                      'incorrectfeedback',
                      'partiallycorrectfeedback');
@@ -787,26 +808,46 @@ class qtype_essayautograde extends question_type {
      *
      * @return array of default values for a new question
      */
-    public function get_default_values() {
-        return array('responseformat'      => 'editor',
-                     'responserequired'    =>  1,
-                     'responsefieldlines'  => 15,
-                     'attachments'         =>  0,
-                     'attachmentsrequired' =>  0,
-                     'graderinfo'          => '',
-                     'graderinfoformat'    =>  0,
-                     'responsetemplate'    => '',
-                     'responsetemplateformat' => 0,
-                     'filetypeslist'       => '',
-                     'enableautograde'     =>  1,
-                     'itemtype'            =>  0,
-                     'itemcount'           =>  0,
-                     'showfeedback'        =>  0,
-                     'showcalculation'     =>  0,
-                     'showtextstats'       =>  0,
-                     'textstatitems'       => '',
-                     'showgradebands'      =>  0,
-                     'addpartialgrades'    =>  0,
-                     'showtargetphrases'   =>  0);
+    static public function get_default_values($questionid=0, $feedback=false) {
+    	$values = array();
+    	if ($questionid) {
+    		$values['questionid'] = $questionid;
+    	}
+    	$values = array_merge($values, array(
+    		'responseformat'       => 'editor',
+			'responserequired'     =>  1,
+			'responsefieldlines'   => 15,
+			'attachments'          =>  0,
+			'attachmentsrequired'  =>  0,
+			'graderinfo'           => '',
+			'graderinfoformat'     =>  0,
+			'responsetemplate'     => '',
+			'responsetemplateformat' => 0,
+			'responsesample'       => '',
+			'responsesampleformat' =>  0,
+			'filetypeslist'        => '',
+			'enableautograde'      =>  1,
+			'itemtype'             =>  0,
+			'itemcount'            =>  0,
+			'showfeedback'         =>  0,
+			'showcalculation'      =>  0,
+			'showtextstats'        =>  0,
+			'textstatitems'        => '',
+			'showgradebands'       =>  0,
+			'addpartialgrades'     =>  0,
+			'showtargetphrases'    =>  0,
+			'errorcmid'            =>  0,
+			'errorpercent'         =>  0,
+		));
+		if ($feedback) {
+			$values = array_merge($values, array(
+				'correctfeedback'       => '',
+				'correctfeedbackformat' =>  0,
+				'incorrectfeedback'     => '',
+				'incorrectfeedbackformat' => 0,
+				'partiallycorrectfeedback' => '',
+				'partiallycorrectfeedbackformat' => 0
+			));
+		}
     }
 }

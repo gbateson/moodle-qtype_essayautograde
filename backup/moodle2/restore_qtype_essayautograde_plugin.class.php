@@ -64,6 +64,12 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
         if (! isset($data->responsetemplateformat)) {
             $data->responsetemplateformat = FORMAT_HTML;
         }
+        if (! isset($data->responsesample)) {
+            $data->responsesample = '';
+        }
+        if (! isset($data->responsesampleformat)) {
+            $data->responsesampleformat = FORMAT_HTML;
+        }
         if (! isset($data->responserequired)) {
             $data->responserequired = 1;
         }
@@ -73,8 +79,8 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
 
         // Detect if the question is created or mapped
         // "question" is the XML tag name, not the DB field name.
-        $oldquestionid   = $this->get_old_parentid('question');
-        $newquestionid   = $this->get_new_parentid('question');
+        $oldquestionid = $this->get_old_parentid('question');
+        $newquestionid = $this->get_new_parentid('question');
 
         // If the question has been created by restore,
         // we need to create a "qtype_ordering_options" record
@@ -94,6 +100,7 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
     public static function define_decode_contents() {
         $fields = array('graderinfo',
                         'responsetemplate',
+                        'responsesample',
                         'correctfeedback',
                         'incorrectfeedback',
                         'partiallycorrectfeedback');
@@ -108,38 +115,13 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
     protected function after_execute_question() {
         global $DB;
 
-        $sql = 'SELECT 1 FROM {qtype_essayautograde_options} qeo WHERE qeo.questionid = q.id';
+        // select all Essay (auto-grade) questions that have no options
+        $sql = 'SELECT 1 FROM {qtype_essayautograde_options} options WHERE options.questionid = q.id';
         $sql = 'SELECT * FROM {question} q WHERE q.qtype = ?'." AND NOT EXISTS ($sql)";
-        $essayautogradeswithoutoptions = $DB->get_records_sql($sql, array('essayautograde'));
+        $questions = $DB->get_records_sql($sql, array('essayautograde'));
 
-        foreach ($essayautogradeswithoutoptions as $q) {
-            $options = (object)array(
-                'questionid'          => $q->id,
-                'responseformat'      => 'editor',
-                'responserequired'    => 1,
-                'responsefieldlines'  => 15,
-                'attachments'         => 0,
-                'attachmentsrequired' => 0,
-                'graderinfo'          => '',
-                'graderinfoformat'    => FORMAT_HTML,
-                'responsetemplate'    => '',
-                'responsetemplateformat' => FORMAT_HTML,
-                'enableautograde'     => 1,
-                'itemtype'            => 2, // words
-                'itemcount'           => 0,
-                'showcalculation'     => 0,
-                'showtextstats'       => 0,
-                'textstatitems'       => '',
-                'showgradebands'      => 0,
-                'addpartialgrades'    => 0,
-                'showtargetphrases'   => 0,
-                'correctfeedback'     => '',
-                'correctfeedbackformat' => FORMAT_HTML,
-                'incorrectfeedback'   => '',
-                'incorrectfeedbackformat' => FORMAT_HTML,
-                'partiallycorrectfeedback' => '',
-                'partiallycorrectfeedbackformat' => FORMAT_HTML
-            );
+        foreach ($questions as $q) {
+            $options = qtype_essayautograde::get_default_values($q->id, true);
             $DB->insert_record('qtype_essayautograde_options', $options);
         }
     }
@@ -156,5 +138,33 @@ class restore_qtype_essayautograde_plugin extends restore_qtype_plugin {
             return '';
         }
         return $this->get_mappingid('question_answer', $state->answer);
+    }
+
+    /**
+     * This function, executed after all the tasks in the plan
+     * have been executed, will perform the recode of the
+     * target activity ids for this block.
+     * This must be done here and not in normal execution steps
+     * because the activities can be restored after the block.
+     */
+    public function after_restore_question() {
+        global $DB;
+        $restoreid = $this->get_restoreid();
+        $rs = $DB->get_recordset_sql('SELECT options.id, options.errorcmid
+                                        FROM {qtype_essayautograde_options} options
+                                        JOIN {backup_ids_temp} bi ON bi.newitemid = options.questionid
+                                       WHERE bi.backupid = ?
+                                         AND bi.itemname = ?', array($restoreid, 'question'));
+        foreach ($rs as $option) {
+            if ($cmid = $option->errorcmid) {
+                if ($map = restore_dbops::get_backup_ids_record($restoreid, 'course_module', $cmid)) {
+                    $cmid = $map->newitemid;
+                } else {
+                    $cmid = 0;
+                }
+                $DB->set_field('qtype_essayautograde_options', 'errorcmid', $cmid, array('id' => $option->id));
+            }
+        }
+        $rs->close();
     }
 }

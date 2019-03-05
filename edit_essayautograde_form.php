@@ -158,6 +158,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addHelpButton($name, $name, $plugin);
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'showtextstats', 'eq', $this->plugin_constant('SHOW_NONE'));
+        $mform->disabledIf($name.'[commonerrors]', 'errorcmid', 'eq', 0);
 
         // only use defaults on new record
         //$defaults = 'words,wordspersentence,uniquewords,longwords';
@@ -259,6 +260,37 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                                 'disabledif' => array('enableautograde', 'eq', 0));
         $this->add_repeat_elements($mform, 'phrase', $elements, $options, $name);
 
+        $name = 'commonerrors';
+        $label = get_string($name, $plugin);
+        $mform->addElement('header', $name, $label);
+        $mform->setExpanded($name, true);
+
+        $name = 'errorcmid';
+        $label = get_string($name, $plugin);
+        $options = $this->get_errorcmid_options($PAGE->course->id);
+        $mform->addElement('select', $name, $label, $options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+
+        $name = 'errorpercent';
+        $label = get_string($name, $plugin);
+        $mform->addElement('select', $name, $label, $grade_options);
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setDefault($name, $this->get_default_value($name, 5));
+        $mform->setType($name, PARAM_INT);
+        $mform->disabledIf($name, 'errorcmid', 'eq', 0);
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+
+        $name = 'responsesample';
+        $label = get_string($name, $plugin);
+        $options = array_merge($this->editoroptions, array('maxfiles' => 0));
+        $i = $mform->_elementIndex['responsetemplate'];
+        $mform->insertElementBefore($mform->createElement(
+            'editor', $name, $label, array('rows' => 10), $options
+        ), array_search($i + 1, $mform->_elementIndex));
+        $mform->addHelpButton($name, $name, $plugin);
+
         /////////////////////////////////////////////////
         // Add feedback fields (= Combined feedback).
         // and interactive settings (= Multiple tries).
@@ -312,6 +344,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                        'partiallycorrectfeedback',
                        'incorrectfeedback',
                        'responsetemplate',
+                       'responsesample',
                        'graderinfo');
         for ($i=0; $i<$numhints; $i++) {
             $names[] = "hint[$i]";
@@ -344,7 +377,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $names = array('enableautograde', 'showfeedback',
                        'showcalculation', 'showtextstats',
                        'showgradebands', 'addpartialgrades',
-                       'showtargetphrases');
+                       'showtargetphrases',
+                       'errorcmid', 'errorpercent');
 
         foreach ($names as $name) {
             if (! isset($question->options->$name)) {
@@ -352,6 +386,20 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             }
         }
 
+        $names = array('responsesample');
+        foreach ($names as $name) {
+            if (! isset($question->options->$name)) {
+                $question->options->$name = '';
+            }
+            if (! isset($question->options->{$name.'format'})) {
+                $question->options->{$name.'format'} = FORMAT_HTML;
+            }
+        }
+
+        $question->responsesample = array(
+            'text' => $question->options->responsesample,
+            'format' => $question->options->responsesampleformat,
+        );
         $question->enableautograde = $question->options->enableautograde;
         $question->itemtype = $question->options->itemtype;
         $question->itemcount = $question->options->itemcount;
@@ -362,6 +410,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $question->showgradebands = $question->options->showgradebands;
         $question->addpartialgrades = $question->options->addpartialgrades;
         $question->showtargetphrases = $question->options->showtargetphrases;
+        $question->errorcmid = $question->options->errorcmid;
+        $question->errorpercent = $question->options->errorpercent;
 
         $question->textstatitems = explode(',', $question->textstatitems);
         $question->textstatitems = array_filter($question->textstatitems);
@@ -511,6 +561,22 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     /**
+     * Get array of glossary options
+     *
+     * @return array(glossaryid => name)
+     */
+    protected function get_errorcmid_options($courseid=0) {
+        $options = array('0' => '');
+        $modinfo = get_fast_modinfo($courseid);
+        foreach ($modinfo->cms as $cmid => $cm) {
+            if ($cm->modname=='glossary' && $cm->uservisible) {
+                $options[$cm->id] = format_text($cm->name);
+            }
+        }
+        return $options;
+    }
+
+    /**
      * Get array of countable item types
      *
      * @return array(type => description)
@@ -521,7 +587,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                          'uniquewords', 'longwords',
                          'charspersentence', 'wordspersentence',
                          'longwordspersentence', 'sentencesperparagraph',
-                         'lexicaldensity', 'fogindex');
+                         'lexicaldensity', 'fogindex',
+                         'commonerrors');
         if ($returntext) {
             $plugin = $this->plugin_name();
             $options = array_flip($options);

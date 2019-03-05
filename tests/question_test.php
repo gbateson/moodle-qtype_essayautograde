@@ -54,6 +54,7 @@ class qtype_essayautograde_question_test extends advanced_testcase {
         $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
 
         $essayautograde->responsetemplate = '';
+        $essayautograde->responsesample = '';
 
         $essayautograde->start_attempt(new question_attempt_step(), 1);
 
@@ -95,9 +96,17 @@ class qtype_essayautograde_question_test extends advanced_testcase {
     }
 
     public function test_is_same_response_with_template() {
+        $this->test_is_same_response_with_editor('responsetemplate');
+    }
+
+    public function test_is_same_response_with_sample() {
+        $this->test_is_same_response_with_editor('responsesample');
+    }
+
+    public function test_is_same_response_with_editor($editorfieldname) {
         $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
 
-        $essayautograde->responsetemplate = 'Once upon a time';
+        $essayautograde->$editorfieldname = $editortext;
 
         $essayautograde->start_attempt(new question_attempt_step(), 1);
 
