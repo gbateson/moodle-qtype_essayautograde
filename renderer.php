@@ -134,7 +134,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         global $CFG;
         require_once($CFG->dirroot.'/lib/form/filemanager.php');
 
-		$name = 'attachments';
+        $name = 'attachments';
         $itemid = $qa->prepare_response_files_draft_itemid($name, $options->context->id);
         $pickeroptions = (object)array('mainfile' => null,
                                        'maxfiles' => $maxfiles,

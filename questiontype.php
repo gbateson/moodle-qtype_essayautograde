@@ -809,45 +809,46 @@ class qtype_essayautograde extends question_type {
      * @return array of default values for a new question
      */
     static public function get_default_values($questionid=0, $feedback=false) {
-    	$values = array();
-    	if ($questionid) {
-    		$values['questionid'] = $questionid;
-    	}
-    	$values = array_merge($values, array(
-    		'responseformat'       => 'editor',
-			'responserequired'     =>  1,
-			'responsefieldlines'   => 15,
-			'attachments'          =>  0,
-			'attachmentsrequired'  =>  0,
-			'graderinfo'           => '',
-			'graderinfoformat'     =>  0,
-			'responsetemplate'     => '',
-			'responsetemplateformat' => 0,
-			'responsesample'       => '',
-			'responsesampleformat' =>  0,
-			'filetypeslist'        => '',
-			'enableautograde'      =>  1,
-			'itemtype'             =>  0,
-			'itemcount'            =>  0,
-			'showfeedback'         =>  0,
-			'showcalculation'      =>  0,
-			'showtextstats'        =>  0,
-			'textstatitems'        => '',
-			'showgradebands'       =>  0,
-			'addpartialgrades'     =>  0,
-			'showtargetphrases'    =>  0,
-			'errorcmid'            =>  0,
-			'errorpercent'         =>  0,
-		));
-		if ($feedback) {
-			$values = array_merge($values, array(
-				'correctfeedback'       => '',
-				'correctfeedbackformat' =>  0,
-				'incorrectfeedback'     => '',
-				'incorrectfeedbackformat' => 0,
-				'partiallycorrectfeedback' => '',
-				'partiallycorrectfeedbackformat' => 0
-			));
-		}
+        $values = array();
+        if ($questionid) {
+            $values['questionid'] = $questionid;
+        }
+        $values = array_merge($values, array(
+            'responseformat'       => 'editor',
+            'responserequired'     =>  1,
+            'responsefieldlines'   => 15,
+            'attachments'          =>  0,
+            'attachmentsrequired'  =>  0,
+            'graderinfo'           => '',
+            'graderinfoformat'     =>  0,
+            'responsetemplate'     => '',
+            'responsetemplateformat' => 0,
+            'responsesample'       => '',
+            'responsesampleformat' =>  0,
+            'filetypeslist'        => '',
+            'enableautograde'      =>  1,
+            'itemtype'             =>  0,
+            'itemcount'            =>  0,
+            'showfeedback'         =>  0,
+            'showcalculation'      =>  0,
+            'showtextstats'        =>  0,
+            'textstatitems'        => '',
+            'showgradebands'       =>  0,
+            'addpartialgrades'     =>  0,
+            'showtargetphrases'    =>  0,
+            'errorcmid'            =>  0,
+            'errorpercent'         =>  0,
+        ));
+        if ($feedback) {
+            $values = array_merge($values, array(
+                'correctfeedback'       => '',
+                'correctfeedbackformat' =>  0,
+                'incorrectfeedback'     => '',
+                'incorrectfeedbackformat' => 0,
+                'partiallycorrectfeedback' => '',
+                'partiallycorrectfeedbackformat' => 0
+            ));
+        }
+        return $values;
     }
 }
