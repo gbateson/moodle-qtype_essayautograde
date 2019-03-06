@@ -152,7 +152,7 @@ A question mark "?" in a phrase matches any single character, while an asterisk 
 $string['targetphrase'] = 'Target phrase [{no}]';
 $string['targetphrases'] = 'Target phrases';
 $string['textstatistics'] = 'Text statistics';
-$string['textstatitems_help'] = 'Select any items here that you wish to appear in the text statistics that are show on grading and review pages.';
+$string['textstatitems_help'] = 'Select any items here that you wish to appear in the text statistics that are shown on grading and review pages.';
 $string['textstatitems'] = 'Statistical items';
 $string['uniquewords'] = 'Unique words';
 $string['words'] = 'Words';
