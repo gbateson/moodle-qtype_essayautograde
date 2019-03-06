@@ -43,14 +43,25 @@ $string['bandcount'] = 'Para';
 $string['bandpercent'] = 'o más ítems, otorgar';
 $string['chars'] = 'Caracteres';
 $string['charspersentence'] = 'Caracteres por oración';
+$string['commonerror'] = 'Error común';
+$string['commonerrors_help'] = 'Los errores comunes están definidos en el "Glosario de errores" asociado con esta pregunta.';
+$string['commonerrors'] = 'Errores comunes';
 $string['correctresponse'] = 'Para obtener puntaje completo para esta pregunta, Usted debe satisfacer los siguientes criterios:';
 $string['enableautograde_help'] = 'Habilitar, o deshabilitar, calificación automática';
 $string['enableautograde'] = 'Habilitar calificación automática';
+$string['errorcmid_help'] = 'Elegir el Glosario que contiene una lista de errores comunes. 
+
+Cada vez que uno de estos errores sea encontrado en la respuesta del ensayo, la penalización especificada será restada de la calificación del estudiante para esta pregunta.';
+$string['errorcmid'] = 'Glosario de errores';
+$string['errorpercent_help'] = 'Seleccione el porcentaje de la calificación total que debería ser restad por cada error que sea encontrado en la respuesta.';
+$string['errorpercent'] = 'Penalización por error';
+$string['excludecommonerrors'] = 'No cometa ninguno de los errores comunes en <a href="{$a->href}" target="_blank">{$a->name}</a>';
+$string['explanationautopercent'] = 'Esto está fuera del rango de porcentaje normal, por lo que fue ajustado a {$a->autopercent}%.';
+$string['explanationcommonerror'] = '{$a->percent}% por incluir "{$a->error}", que es un error común';
 $string['explanationcompleteband'] = '{$a->percent}% por completar Banda de calificación [{$a->gradeband}]';
-$string['explanationseecomment'] = '(vea comentario debajo)';
-$string['explanationdatetime'] = 'on %Y %b %d (%a) at %H:%M';
+$string['explanationdatetime'] = 'en %Y %b %d (%a) a las %H:%M';
 $string['explanationfirstitems'] = '{$a->percent}% por el primer(a) {$a->count} {$a->itemtype}';
-$string['explanationgrade'] = 'Por lo tanto, la calificación generada por el ordenador para este ensayo fue ajustada a {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
+$string['explanationgrade'] = 'Por lo tanto, la calificación generada por la computadora para este ensayo fue ajustada a {$a->finalgrade} = ({$a->finalpercent}% of {$a->maxgrade}).';
 $string['explanationitems'] = '{$a->percent}% por {$a->count} {$a->itemtype}';
 $string['explanationmaxgrade'] = 'La calificación máxima para esta pregunta es {$a->maxgrade}.';
 $string['explanationnotenough'] = '{$a->count} {$a->itemtype} es menor que la calificación mínima requerida para que se le otorgue una calificación.';
@@ -62,8 +73,9 @@ $string['explanationautopercent'] = 'Esto está fuera del rango de porcentaje no
 $string['explanationremainingitems'] = '{$a->percent}% por los restantes {$a->count} {$a->itemtype}';
 $string['explanationtargetphrase'] = '{$a->percent}% por incluir la frase "{$a->phrase}"';
 $string['feedback'] = 'Retroalimentación';
+$string['feedbackhinterrors'] = '¿Hizo alguno de los errores comunes?';
+$string['feedbackhintphrases'] = '¿Incluyó todas las frases chave?';
 $string['feedbackhints'] = 'Pistas para mejorar su calificación';
-$string['feedbackhintphrases'] = '¿Incluyó todas las frases clave?';
 $string['feedbackhintwords'] = '¿Alcanzó la meta de número de palabras?';
 $string['fogindex_help'] = 'El índice de niebla de Gunning es una medida de legibilidad. Es calculado usando la siguiente fórmula.
 
@@ -76,6 +88,7 @@ $string['gradeband'] = 'Banda de calificación [{no}]';
 $string['gradebands'] = 'Bandas de calificación';
 $string['gradecalculation'] = 'Cálculo de calificación';
 $string['gradeforthisquestion'] = 'Calificación por esta pregunta';
+$string['hidesample'] = 'Ocultar muestra';
 $string['itemcount_help'] = 'El número mínimo de ítems contables que deben estar en el texto del ensayo para obtener la calificación máxima para esta pregunta.
 
 Tenga en cuenta, que este valor puede tornarse inefectivo por las bandas de calificación, si hubiera, definidas debajo.';
@@ -98,9 +111,17 @@ $string['phrasematch'] = 'Si';
 $string['phrasepercent'] = 'es usado/a, otorgar';
 $string['pleaseenterananswer'] = 'Por favor ingrese su respuesta dentro de la caja de texto.';
 $string['present'] = 'Presente';
-$string['rewriteresubmitwords'] = 'Re-escriba y envíe de nuevo con más palabras.';
+$string['responsesample_help'] = 'Cualquier texto aquí será mostrado como una respuesta de muestra, si el estudiante elije el enlace para "Mostrar muestra" en el texto de la pregunta.';
+$string['responsesample'] = 'Respuesta muestra';
+$string['responsesampleformat_help'] = 'Seleccione el formato del texto de la respuesta muestra.';
+$string['responsesampleformat'] = 'Formato de ensayo muestra';
+$string['rewriteresubmiterrors'] = 'Corrija los errores comunes y envíe nuevamente.';
 $string['rewriteresubmitphrases'] = 'Re-escriba y envíe de nuevo incluyendo las frases faltantes.';
-$string['rewriteresubmitwordsphrases'] = 'Re-escriba y envíe de nuevo con más palabras, incluyendo las frases faltantes.';
+$string['rewriteresubmitphraseserrors'] = 'Corrija los errores comunes, re-escriba el textopara incluir las frases faltantes, y envíe nuevamente.';
+$string['rewriteresubmitwords'] = 'Re-escriba y envíe de nuevo con más palabras.';
+$string['rewriteresubmitwordserrors'] = 'Corrija los errores comunes y envíe nuevamente con más palabras.';
+$string['rewriteresubmitwordsphrases'] = 'Re-escriba y envíe nuevamente con más palabras, incluyendo las frases faltantes.';
+$string['rewriteresubmitwordsphraseserrors'] = 'Corrija los errores comunes, re-escriba el texto para añadir más palabras e incluya las frases faltantes, y envíe nuevamente.';
 $string['sentences'] = 'Oraciones';
 $string['sentencesperparagraph'] = 'Oraciones por párrafo';
 $string['showcalculation_help'] = 'Si esta opción está habilitada, una explicación del cálculo de la calificación generada automáticamente será mostrada en las páginas de calificación y revisión.';
@@ -109,6 +130,7 @@ $string['showfeedback_help'] = 'Si esta opción es habilitada, una tabla de retr
 $string['showfeedback'] = '¿Mostrar retroalimentación al estudiante?';
 $string['showgradebands_help'] = 'Si esta opción es habilitada, los detalles de las bandas de calificación serán mostrados en las páginas de calificación y revisión.';
 $string['showgradebands'] = '¿Mostrar bandas de calificación?';
+$string['showsample'] = 'Mostrar muestra';
 $string['showtargetphrases_help'] = 'Si esta opción es habilitada, los detalles de las frase clave serán mostrados en las páginas de calificación y revisión.';
 $string['showtargetphrases'] = '¿Mostrar frases clave?';
 $string['showtextstats_help'] = 'Si esta opción es habilitada, se mostrarán estadísticas acerca del texto.';
