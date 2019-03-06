@@ -62,8 +62,13 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
         if ($readonly) {
             $answer = $renderer->response_area_read_only('answer', $qa, $step, $linecount, $options->context);
-            $currentresponse = $question->get_current_response();
-            $answer = strtr($answer, $currentresponse->errors);
+            $answer = preg_replace('/<a[^>]*class="[^">]*autolink[^">]*"[^>]*>(.*?)<\/a>/ius', '$1', $answer);
+            if ($question->errorcmid) {
+                $currentresponse = $question->get_current_response();
+                if (count($currentresponse->errors)) {
+                    $answer = strtr($answer, $currentresponse->errors);
+                }
+            }
         } else {
             $answer = $renderer->response_area_input('answer', $qa, $step, $linecount, $options->context);
         }

@@ -74,6 +74,14 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     protected $currentresponse = null;
 
     /**
+     * These variables are only used if needed
+     * to dtect paterns in a student response
+     */
+    private static $aliases = null;
+    private static $metachars = null;
+    private static $flipmetachars = null;
+
+    /**
      * Override "make_behaviour" method in the parent class, "qtype_essay_question",
      * because we may need to autograde the response
      */
@@ -440,7 +448,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             if ($entries = $DB->get_records('glossary_entries', array('glossaryid' => $cm->instance), 'concept')) {
                 foreach ($entries as $entry) {
                     if ($match = $this->glossary_entry_search_text($entry, $entry->concept, $text)) {
-                        $errors[$match] = $this->glossary_entry_link($entry, $match);
+                        $errors[$match] = $this->glossary_entry_link($cm->name, $entry, $match);
                     } else {
                         $entryids[] = $entry->id;
                     }
@@ -452,7 +460,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                     foreach ($aliases as $alias) {
                         $entry = $entries[$alias->entryid];
                         if ($match = $this->glossary_entry_search_text($entry, $alias->alias, $text)) {
-                            $errors[$match] = $this->glossary_entry_link($entry, $match);
+                            $errors[$match] = $this->glossary_entry_link($cm->name, $entry, $match);
                         }
                     }
                 }
@@ -501,10 +509,6 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function search_text($search, $text, $fullmatch=false, $caseinsensitive=false) {
 
-        static $aliases = null;
-        static $metachars = null;
-        static $flipmetachars = null;
-
         $text = trim($text);
         if ($text=='') {
             return false; // unexpected ?!
@@ -515,50 +519,50 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             return false; // shouldn't happen !!
         }
 
-        if ($aliases===null) {
+        if (self::$aliases===null) {
             // human readable aliases for regexp strings
-            $aliases = array(' OR '  => '|',
-                             ' OR'   => '|',
-                             'OR '   => '|',
-                             ' , '   => '|',
-                             ' ,'    => '|',
-                             ', '    => '|',
-                             ','     => '|',
-                             ' AND ' => '\\b.*\\b',
-                             ' AND'  => '\\b.*\\b',
-                             'AND '  => '\\b.*\\b',
-                             ' ANY ' => '\\b.*\\b',
-                             ' ANY'  => '\\b.*\\b',
-                             'ANY '  => '\\b.*\\b');
+            self::$aliases = array(' OR '  => '|',
+                                   ' OR'   => '|',
+                                   'OR '   => '|',
+                                   ' , '   => '|',
+                                   ' ,'    => '|',
+                                   ', '    => '|',
+                                   ','     => '|',
+                                   ' AND ' => '\\b.*\\b',
+                                   ' AND'  => '\\b.*\\b',
+                                   'AND '  => '\\b.*\\b',
+                                   ' ANY ' => '\\b.*\\b',
+                                   ' ANY'  => '\\b.*\\b',
+                                   'ANY '  => '\\b.*\\b');
 
             // allowable regexp strings and their internal aliases
-            $metachars = array('^' => 'CARET',
-                               '$' => 'DOLLAR',
-                               '.' => 'DOT',
-                               '?' => 'QUESTION_MARK',
-                               '*' => 'ASTERISK',
-                               '+' => 'PLUS_SIGN',
-                               '|' => 'VERTICAL_BAR',
-                               '-' => 'HYPHEN',
-                               ':' => 'COLON',
-                               '!' => 'EXCLAMATION_MARK',
-                               '=' => 'EQUALS_SIGN',
-                               '(' => 'OPEN_ROUND',
-                               ')' => 'CLOSE_ROUND',
-                               '[' => 'OPEN_SQUARE',
-                               ']' => 'CLOSE_SQUARE',
-                               '{' => 'OPEN_CURLY',
-                               '}' => 'CLOSE_CURLY',
-                               '<' => 'OPEN_ANGLE',
-                               '>' => 'CLOSE_ANGLE',
-                               '\\' => 'BACKSLASH');
-            $flipmetachars = array_flip($metachars);
+            self::$metachars = array('^' => 'CARET',
+                                     '$' => 'DOLLAR',
+                                     '.' => 'DOT',
+                                     '?' => 'QUESTION_MARK',
+                                     '*' => 'ASTERISK',
+                                     '+' => 'PLUS_SIGN',
+                                     '|' => 'VERTICAL_BAR',
+                                     '-' => 'HYPHEN',
+                                     ':' => 'COLON',
+                                     '!' => 'EXCLAMATION_MARK',
+                                     '=' => 'EQUALS_SIGN',
+                                     '(' => 'OPEN_ROUND',
+                                     ')' => 'CLOSE_ROUND',
+                                     '[' => 'OPEN_SQUARE',
+                                     ']' => 'CLOSE_SQUARE',
+                                     '{' => 'OPEN_CURLY',
+                                     '}' => 'CLOSE_CURLY',
+                                     '<' => 'OPEN_ANGLE',
+                                     '>' => 'CLOSE_ANGLE',
+                                     '\\' => 'BACKSLASH');
+            self::$flipmetachars = array_flip(self::$metachars);
         }
 
-        $regexp = strtr($search, $aliases);
-        $regexp = strtr($regexp, $metachars);
+        $regexp = strtr($search, self::$aliases);
+        $regexp = strtr($regexp, self::$metachars);
         $regexp = preg_quote($regexp, '/');
-        $regexp = strtr($regexp, $flipmetachars);
+        $regexp = strtr($regexp, self::$flipmetachars);
         if ($fullmatch) {
             $regexp = "\\b$regexp\\b";
         }
@@ -583,12 +587,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @param  string $value
      * @return void, but will update currentresponse property of this object
      */
-    public function glossary_entry_link($entry, $text) {
+    public function glossary_entry_link($glossaryname, $entry, $text) {
         $params = array('eid' => $entry->id,
                         'displayformat' => 'dictionary');
         $url = new moodle_url('/mod/glossary/showentry.php', $params);
 
         $params = array('target' => '_blank',
+                        'title' => $glossaryname.': '.$entry->concept,
                         'class' => 'glossary autolink concept glossaryid'.$entry->glossaryid);
         return html_writer::link($url, $text, $params);
     }
