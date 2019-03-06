@@ -12,6 +12,8 @@ following characteristics of the response.
 
     * the presence of one or more target phrases in the response
 
+    * the presence of common errors in the response
+
 The automatic grade can be overridden by the teacher later.
 
 Additionally, the teacher can set up grading bands that offer a non-linear grading
@@ -44,3 +46,20 @@ Further information
 
     For more information and online discussion forums, please visit:
     https://github.com/gbateson/moodle-qtype_essayautograde
+
+============================================
+Development history and credits
+============================================
+
+This plugin was originally commissioned by Matthew Cotter (Hokusei Gakuen Junior College,
+Japan) and Don Hinkelman (Sapporo Gakuin University, Japan) and then implemented by 
+Gordon Bateson (Kochi University of Technology, Japan)
+
+Functionality for Glossary of Common Errors was commissioned by David Campbell 
+(Obihiro University of Agriculture and Veterinary Medicine, Japan).
+
+Thanks also to German Valero (Mexican National Autonomous University, Mexico) 
+for his enthusiastic support of this plugin and creation of the Spanish language packs, 
+and Matthias Giger (Switzerland) for bug reports and encouragement.
+
+many thanks to all concerned!
