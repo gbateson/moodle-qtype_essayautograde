@@ -1,5 +1,5 @@
 ============================================
-The Essay (autograde) question type for Moodle >= 3.1
+The Essay (autograde) question type for Moodle >= 3.0
 ============================================
 
 The essay (autograde) question type allows an essay question response to be given
