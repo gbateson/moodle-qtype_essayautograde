@@ -197,12 +197,17 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             // Get the current response text and information
             $currentresponse = $question->get_current_response();
 
+            // Specify decision for decimal numbers.
             $options = $currentresponse->displayoptions;
             if ($options && isset($options->markdp)) {
                 $precision = $options->markdp;
             } else {
                 $precision = 0;
             }
+
+            // cache the maximum grade for this question
+            $maxgrade = $qa->get_max_mark(); // float number
+            $maxgradetext = $qa->format_max_mark($precision);
 
             $gradeband = array_values($currentresponse->bands); // percents
             $gradeband = array_search($currentresponse->completepercent, $gradeband);
@@ -321,9 +326,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $details[] = $this->get_calculation_detail('explanationnotenough', $plugin, $a);
                 }
 
-                if ($details = implode('<br />', $details)) {
-
-                    $maxgrade = $qa->format_max_mark($precision);
+                if ($details = implode(html_writer::empty_tag('br'), $details)) {
 
                     $step = $qa->get_last_step_with_behaviour_var('finish');
                     if ($step->get_id()) {
@@ -334,7 +337,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $rawpercent = $currentresponse->rawpercent;
 
                     $autopercent = $currentresponse->autopercent;
-                    $autograde = format_float($currentresponse->autofraction * $maxgrade, $precision);
+                    $autograde = $currentresponse->autofraction * $maxgrade;
 
                     if ($trypenalty = $question->penalty) {
                         // A "try" is actually a click of the "Check" button
@@ -377,11 +380,11 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $finalpercent = max(0, $autopercent - $penaltypercent);
 
                     // numeric values used by explanation strings
-                    $a = (object)array('maxgrade' => $maxgrade,
+                    $a = (object)array('maxgrade' => $maxgradetext,
                                        'rawpercent' => $rawpercent,
                                        'autopercent' => $autopercent,
                                        'penaltytext' => $penaltytext,
-                                       'finalgrade' => $finalgrade,
+                                       'finalgrade' => format_float($finalgrade, $precision),
                                        'finalpercent' => $finalpercent,
                                        'details' => $details);
 
@@ -475,17 +478,17 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $output .= html_writer::start_tag('table', array('class' => 'generaltable essayautograde review feedback'));
 
                 // Overall grade
-                $maxgrade = $qa->format_max_mark($precision);
                 $step = $qa->get_last_step_with_behaviour_var('finish');
                 if ($step->get_id()) {
                     $rawgrade = format_float($step->get_fraction() * $maxgrade, $precision);
                 } else {
                     $rawgrade = $qa->format_mark($precision);
                 }
+                $maxgrade = $qa->format_max_mark($precision);
 
                 $output .= html_writer::start_tag('tr');
                 $output .= html_writer::tag('th', get_string('gradeforthisquestion', $plugin), array('class' => 'cell c0'));
-                $output .= html_writer::tag('td', html_writer::tag('b', $rawgrade.' / '.$maxgrade), array('class' => 'cell c1'));
+                $output .= html_writer::tag('td', html_writer::tag('b', $rawgrade.' / '.$maxgradetext), array('class' => 'cell c1'));
                 $output .= html_writer::end_tag('tr');
 
                 // Item count

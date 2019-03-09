@@ -28,7 +28,7 @@ To INSTALL or UPDATE this plugin
 
         (a) GIT: https://github.com/gbateson/moodle-qtype_essayautograde.git
         (b) zip: the Moodle.org -> Plugins repository (search for "essayautograde")
-        (c) zip: http://bateson.kanazawa-gu.ac.jp/zip/plugins_qtype_essayautograde.zip
+        (c) zip: https://bateson.kochi-tech.ac.jp/zip/plugins_qtype_essayautograde.zip
 
        If you are installing from a zip file, unzip the zip file, to create a folder
        called "essayautograde" and upload or move this folder into the "question/type" folder
