@@ -72,11 +72,11 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         parent::definition_inner($mform);
 
         // cache the plugin name
-        $plugin = $this->plugin_name();
+        $plugin = 'qtype_essayautograde'; // $this->plugin_name();
 
         // add Javascript to expand/contract text input fields
         $params = array();
-        $PAGE->requires->js_call_amd('qtype_essayautograde/form', 'init', $params);
+        $PAGE->requires->js_call_amd("$plugin/form", 'init', $params);
 
         // cache options for form elements to input text
         $short_text_options  = array('size' => 3,  'style' => 'width: auto');
@@ -590,7 +590,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                          'lexicaldensity', 'fogindex',
                          'commonerrors');
         if ($returntext) {
-            $plugin = $this->plugin_name();
+            $plugin = 'qtype_essayautograde'; // $this->plugin_name();
             $options = array_flip($options);
             foreach (array_keys($options) as $option) {
                 $options[$option] = get_string($option, $plugin);
@@ -607,7 +607,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     protected function get_addcount_options($type, $max=10) {
 
         // cache plugin name
-        $plugin = $this->plugin_name();
+        $plugin = 'qtype_essayautograde'; // $this->plugin_name();
 
         // generate options
         $options = array();
@@ -631,7 +631,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     protected function add_repeat_elements($mform, $type, $elements, $options, $name) {
         $types = $type.'s';
         $TYPE = strtoupper($type);
-        $plugin = $this->plugin_name();
+        $plugin = 'qtype_essayautograde'; // $this->plugin_name();
 
         // cache element names
         $addtypes = 'add'.$types;

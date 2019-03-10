@@ -98,7 +98,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return qtype_essay_format_renderer_base the response-format-specific renderer.
      */
     public function get_format_renderer(moodle_page $page) {
-        return $page->get_renderer('qtype_essayautograde', 'format_' . $this->responseformat);
+        return $page->get_renderer($this->plugin_name(), 'format_' . $this->responseformat);
     }
 
     /**

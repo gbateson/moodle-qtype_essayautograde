@@ -211,7 +211,7 @@ define(["jquery", "core/str"], function($, STR) {
         ]).done(function(s) {
             ESSAY.str.hidesample = s[0];
             ESSAY.str.showsample = s[1];
-            var last = $(".qtext").find("p, div");
+            var last = $(".qtext").find("p:not(:empty), div:not(:empty)");
             if (last.length) {
                 last = last.last();
             } else {

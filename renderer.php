@@ -191,7 +191,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         // If required, show explanation of grade calculation.
         if ($show) {
 
-            $plugin = $this->plugin_name();
+            $plugin = 'qtype_essayautograde';
             $question = $qa->get_question();
 
             // Get the current response text and information

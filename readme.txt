@@ -32,7 +32,7 @@ To INSTALL or UPDATE this plugin
 
        If you are installing from a zip file, unzip the zip file, to create a folder
        called "essayautograde" and upload or move this folder into the "question/type" folder
-       on your Moodle >= 3.1 site, to create a new folder at "question/type/essayautograde".
+       on your Moodle >= 3.0 site, to create a new folder at "question/type/essayautograde".
 
     2. log in to Moodle as administrator to initiate install/upgrade
 

@@ -83,6 +83,7 @@ $string['fogindex_help'] = 'The Gunning fog index is a measure of readability. I
 
 For more information see: <https://en.wikipedia.org/wiki/Gunning_fog_index>';
 $string['fogindex'] = 'Fog index';
+$string['forceupgrade'] = 'Force upgrade';
 $string['gradeband_help'] = 'Specify the minimum number of countable items for this band to be applied, and the grade that is to be awarded if this band is applied.';
 $string['gradeband'] = 'Grade band [{no}]';
 $string['gradebands'] = 'Grade bands';
