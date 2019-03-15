@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * load the EnglishCentral player
+ * load the Essay (auto-grade) question
  *
  * @module      qtype_essayautograde/view
  * @category    output
