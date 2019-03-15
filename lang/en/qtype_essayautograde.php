@@ -25,7 +25,7 @@
  */
 
 $string['pluginname'] = 'Essay (auto-grade)';
-$string['pluginname_help'] = 'In response to a question that may include an image, the respondent writes an answer of one or more paragraphs. Initially, a grade is awarded automatically based on the number of chars, words, sentences or paragarphs, and the presence of certain target phrases. The automatic grade may be overridden later by the teacher.';
+$string['pluginname_help'] = 'In response to a question that may include an image, the respondent writes an answer of one or more paragraphs. Initially, a grade is awarded automatically based on the number of chars, words, sentences or paragraphs, and the presence of certain target phrases. The automatic grade may be overridden later by the teacher.';
 $string['pluginname_link'] = 'question/type/essayautograde';
 $string['pluginnameadding'] = 'Adding an Essay (auto-grade) question';
 $string['pluginnameediting'] = 'Editing an Essay (auto-grade) question';
