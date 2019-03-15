@@ -51,7 +51,7 @@ define(["jquery", "core/str"], function($, STR) {
         switch (itemtype) {
             case "chars": itemmatch = "."; break;
             case "words": itemmatch = "\\w+"; break;
-            case "sentences": itemmatch = "[^\\.]+[\\.]"; break;
+            case "sentences": itemmatch = "[^\\.?!]+[\\.?!]"; break;
             case "paragraphs": itemmatch = "[^\\r\\n]+[\\r\\n]*"; break;
         }
         // take a look at https://github.com/RadLikeWhoa/Countable/blob/master/Countable.js
