@@ -445,7 +445,19 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         $errors = array();
 
-        if ($this->errorcmid && ($cm = get_coursemodule_from_id('', $this->errorcmid))) {
+        if (empty($this->errorcmid)) {
+            $cm = null;
+        } else {
+            $cm = get_coursemodule_from_id('', $this->errorcmid);
+        }
+
+        if (empty($this->errorpercent)) {
+            $percent = 0;
+        } else {
+            $percent = $this->errorpercent;
+        }
+
+        if ($cm) {
             $entryids = array();
             if ($entries = $DB->get_records('glossary_entries', array('glossaryid' => $cm->instance), 'concept')) {
                 foreach ($entries as $entry) {
@@ -487,7 +499,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             }
         }
 
-        return array($errors, count($errors) * $this->errorpercent);
+        return array($errors, count($errors) * $percent);
     }
 
     /**

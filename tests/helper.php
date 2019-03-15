@@ -67,6 +67,8 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $q->showgradebands = 0;
         $q->addpartialgrades = 0;
         $q->showtargetphrases = 0;
+        $q->errorcmid = 0;
+        $q->errorpercent = 0;
         $q->correctfeedback = 'Correct feedback';
         return $q;
     }

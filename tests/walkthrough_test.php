@@ -193,7 +193,7 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
      * @param string $fieldname the name of the editor field
      * @return void, but will test fiield behavior
      */
-    protected function test_editorfield($editofieldname) {
+    public function test_editorfield($editofieldname) {
         global $PAGE;
 
         // The current text editor depends on the users profile setting - so it needs a valid user.
