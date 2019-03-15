@@ -29,6 +29,7 @@ env:
   - DB=mysqli MOODLE_BRANCH=master
   - DB=mariadb MOODLE_BRANCH=MOODLE_34_STABLE
   - DB=mariadb MOODLE_BRANCH=MOODLE_35_STABLE
+  - DB=mariadb MOODLE_BRANCH=MOODLE_36_STABLE
   - DB=mariadb MOODLE_BRANCH=master
   
 before_install:
