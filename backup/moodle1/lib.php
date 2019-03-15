@@ -17,7 +17,8 @@
 /**
  * @package    qtype
  * @subpackage essayautograde
- * @copyright  2011 David Mudrak <david@moodle.com>
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2011 David Mudrak <david@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

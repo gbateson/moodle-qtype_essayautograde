@@ -19,7 +19,8 @@
  *
  * @package    qtype
  * @subpackage essayautograde
- * @copyright  2010 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2010 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -33,7 +34,8 @@ defined('MOODLE_INTERNAL') || die();
  *
  * This class is used by the code in question/engine/upgrade/upgradelib.php.
  *
- * @copyright  2010 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2010 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_qe2_attempt_updater extends question_qtype_attempt_updater {

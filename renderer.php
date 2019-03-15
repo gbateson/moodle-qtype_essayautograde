@@ -19,7 +19,8 @@
  *
  * @package    qtype
  * @subpackage essayautograde
- * @copyright  2009 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -30,7 +31,8 @@ require_once($CFG->dirroot.'/question/type/essay/renderer.php');
 /**
  * Generates the output for essayautograde questions.
  *
- * @copyright  2009 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_renderer extends qtype_with_combined_feedback_renderer {
@@ -712,7 +714,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
  * An essayautograde format renderer for essayautogrades where the student should not enter
  * any inline response.
  *
- * @copyright  2013 Binghamton University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2013 Binghamton University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_noinline_renderer extends qtype_essay_format_noinline_renderer {
@@ -725,7 +728,8 @@ class qtype_essayautograde_format_noinline_renderer extends qtype_essay_format_n
  * An essayautograde format renderer for essayautogrades where the student should use the HTML
  * editor without the file picker.
  *
- * @copyright  2011 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_editor_renderer {
@@ -739,7 +743,8 @@ class qtype_essayautograde_format_editor_renderer extends qtype_essay_format_edi
  * An essayautograde format renderer for essayautogrades where the student should use the HTML
  * editor with the file picker.
  *
- * @copyright  2011 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essay_format_editorfilepicker_renderer {
@@ -753,7 +758,8 @@ class qtype_essayautograde_format_editorfilepicker_renderer extends qtype_essay_
  * An essayautograde format renderer for essayautogrades where the student should use a plain
  * input box, but with a normal, proportional font.
  *
- * @copyright  2011 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_plain_renderer extends qtype_essay_format_plain_renderer {
@@ -768,7 +774,8 @@ class qtype_essayautograde_format_plain_renderer extends qtype_essay_format_plai
  * input box with a monospaced font. You might use this, for example, for a
  * question where the students should type computer code.
  *
- * @copyright  2011 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2011 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde_format_monospaced_renderer extends qtype_essay_format_plain_renderer {

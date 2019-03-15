@@ -19,7 +19,8 @@
  *
  * @package    qtype
  * @subpackage essayautograde
- * @copyright  2005 Mark Nielsen
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2005 Mark Nielsen
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -30,7 +31,8 @@ require_once($CFG->dirroot.'/lib/questionlib.php');
 /**
  * The essayautograde question type.
  *
- * @copyright  2005 Mark Nielsen
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2005 Mark Nielsen
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class qtype_essayautograde extends question_type {

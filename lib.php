@@ -19,7 +19,8 @@
  *
  * @since      Moodle 2.0
  * @package    qtype_essayautograde
- * @copyright  Dongsheng Cai <dongsheng@moodle.com>
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by Dongsheng Cai <dongsheng@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

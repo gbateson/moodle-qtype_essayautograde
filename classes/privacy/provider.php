@@ -18,7 +18,8 @@
  * Privacy Subsystem implementation for qtype_essayautograde.
  *
  * @package    qtype_essayautograde
- * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -29,7 +30,8 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Privacy Subsystem for qtype_essayautograde implementing null_provider.
  *
- * @copyright  2018 Andrew Nicols <andrew@nicols.co.uk>
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2018 Andrew Nicols <andrew@nicols.co.uk>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements \core_privacy\local\metadata\null_provider {

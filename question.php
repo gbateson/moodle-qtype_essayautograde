@@ -19,7 +19,8 @@
  *
  * @package    qtype
  * @subpackage essayautograde
- * @copyright  2009 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -36,7 +37,8 @@ require_once($CFG->dirroot.'/question/type/essay/question.php');
  * However, we override "make_behaviour" in case automatic grading is required.
  * Additionally, we implement the methods required for automatic grading.
  *
- * @copyright  2009 The Open University
+ * @copyright  2018 Gordon Bateson (gordon.bateson@gmail.com)
+ * @copyright  based on work by 2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 // interface: question_automatically_gradable
