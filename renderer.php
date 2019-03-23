@@ -609,7 +609,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         global $DB;
 
         $output = '';
-        $plugin = $this->plugin_name();
+        $plugin = 'qtype_essayautograde';
         $question = $qa->get_question();
 
         if ($step = $qa->get_last_step()) {
