@@ -46,17 +46,21 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         question_bank::load_question_definition_classes('essayautograde');
         $q = new qtype_essayautograde_question();
         test_question_maker::initialise_a_question($q);
+        $q->qtype = question_bank::get_qtype('essayautograde');
         $q->name = 'Essay question (HTML editor)';
         $q->questiontext = 'Please write a story about a frog.';
         $q->generalfeedback = 'I hope your story had a beginning, a middle and an end.';
         $q->responseformat = 'editor';
         $q->responserequired = 1;
-        $q->responsefieldlines = 10;
+        $q->responsefieldlines = 10
         $q->attachments = 0;
         $q->attachmentsrequired = 0;
         $q->graderinfo = '';
         $q->graderinfoformat = FORMAT_HTML;
-        $q->qtype = question_bank::get_qtype('essayautograde');
+        $q->responsetemplate = '';
+        $q->responsetemplateformat = FORMAT_HTML;
+        $q->responsesample = '';
+        $q->responsesampleformat = FORMAT_HTML;
         $q->enableautograde = 1;
         $q->itemtype = 1;
         $q->itemcount = 0;
@@ -70,6 +74,11 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $q->errorcmid = 0;
         $q->errorpercent = 0;
         $q->correctfeedback = 'Correct feedback';
+        $q->correctfeedbackformat = FORMAT_HTML;
+        $q->incorrectfeedback = 'Incorrect feedback';
+        $q->incorrectfeedbackformat = FORMAT_HTML;
+        $q->partiallycorrectfeedback = 'Partially correct feedback';
+        $q->partiallycorrectfeedbackformat = FORMAT_HTML;
         return $q;
     }
 
@@ -188,8 +197,6 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $fromform->graderinfo = array('text' => '', 'format' => FORMAT_PLAIN);
         $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_PLAIN);
         $fromform->responsesample = array('text' => '', 'format' => FORMAT_PLAIN);
-        $fromform->graderinfo = array('text' => '', 'format' => FORMAT_PLAIN);
-        $fromform->responsetemplate = array('text' => '', 'format' => FORMAT_PLAIN);
         $fromform->correctfeedback = array('text' => '', 'format' => FORMAT_PLAIN);
         $fromform->partiallycorrectfeedback = array('text' => '', 'format' => FORMAT_PLAIN);
         $fromform->incorrectfeedback = array('text' => '', 'format' => FORMAT_PLAIN);
@@ -320,12 +327,12 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $essay->responsefieldlines = 15;
         $essay->attachments = 0;
         $essay->attachmentsrequired = 0;
+        $essay->graderinfo = '';
+        $essay->graderinfoformat = FORMAT_MOODLE;
         $essay->responsetemplate = '';
         $essay->responsetemplateformat = FORMAT_MOODLE;
         $essay->responsesample = '';
         $essay->responsesampleformat = FORMAT_MOODLE;
-        $essay->graderinfo = '';
-        $essay->graderinfoformat = FORMAT_MOODLE;
         return $essay;
     }
 }

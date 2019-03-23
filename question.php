@@ -126,10 +126,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         }
 
         // Check that the answer is not simply the unaltered response template/sample.
-        if ($response['answer']==$this->responsetemplate) {
+        if ($this->is_similar_text($response['answer'], $this->responsetemplate)) {
             return false;
         }
-        if ($response['answer']==$this->responsesample) {
+        if ($this->is_similar_text($response['answer'], $this->responsesample)) {
             return false;
         }
 
@@ -297,9 +297,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         // Clean the $response text
         if (empty($response) || empty($response['answer'])) {
             $text = ''; // No response was entered. 
-        } else if ($response['answer'] == $this->responsetemplate) {
+        } else if ($this->is_similar_text($response['answer'], $this->responsetemplate)) {
             $text = ''; 
-        } else if ($response['answer'] == $this->responsesample) {
+        } else if ($this->is_similar_text($response['answer'], $this->responsesample)) {
             $text = '';
         } else {
             $text = question_utils::to_plain_text($response['answer'],
@@ -435,6 +435,48 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $this->save_current_response('displayoptions', $displayoptions);
         $this->save_current_response('errors', $errors);
         $this->save_current_response('errorpercent', $errorpercent);
+    }
+
+    /**
+     * is_similar_text($a, $b, $thresholdpercent=10)
+     */
+    protected function is_similar_text($a, $b, $thresholdpercent=10) {
+        if (empty($a)) {
+            $a = '';
+            $alen = 0;
+        } else {
+            $alen = core_text::strlen($a);
+        }
+
+        if (empty($b)) {
+            $b = '';
+            $blen = 0;
+        } else {
+            $blen = core_text::strlen($b);
+        }
+
+        // If possible, we compare with a simple comparison
+        if ($alen==$blen && $a==$b) {
+            return true;
+        }
+
+        // Cache the length of the longer of the two strings.
+        $maxlen = max($alen, $blen);
+        
+        // Compare short strings (of up to 255 chars) with "levenshtein()" because its faster.
+        // Compare long strings with "similar_text()" because it can handle texts of any length.
+        if ($alen > 255 || $blen > 255) {
+            // "similar_text()" returns the number of matching chars in both $a and $b, 
+            // i.e. the higher number, the more similar the texts are.
+            $fraction = (($maxlen - similar_text($a, $b)) / $maxlen);
+        } else {
+            // "levenshtein()" returns the minimal number of characters 
+            // you have to replace, insert or delete to transform $a into $b
+            // i.e. the lower the number, the more similar the texts are.
+            $fraction = (levenshtein($a, $b) / $maxlen);
+        }
+
+        return (round($fraction * 100, 2) <= $thresholdpercent);
     }
 
     /**

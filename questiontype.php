@@ -109,11 +109,17 @@ class qtype_essayautograde extends question_type {
         }
 
         // Retrieve OLD values from the database.
-        $params = array('questionid' => $questionid);
-        $optionsid = $DB->get_field($optionstable, 'id', $params);
-        $errorpercent = $DB->get_field($optionstable, 'errorpercent', $params);
-        $addpartialgrades = $DB->get_field($optionstable, 'addpartialgrades', $params);
+        if ($options = $DB->get_record($optionstable, array('questionid' => $questionid))) {
+            $optionsid = $options->id;
+            $errorpercent = $options->errorpercent;
+            $addpartialgrades = $options->addpartialgrades;
+        } else {
+            $optionsid = 0;
+            $errorpercent = 0;
+            $addpartialgrades = 0;
+        }
 
+        // Set NEW values for the question options
         $options = (object)array(
             'id'                  => $optionsid,
             'questionid'          => $questionid,
@@ -237,8 +243,8 @@ class qtype_essayautograde extends question_type {
             $oldanswers = array();
         }
 
-        if ($addpartialgrades==$formdata->addpartialgrades && $errorpercent==$formdata->errorpercent) {
-            $regrade =  false; // Values has not changed.
+        if ($addpartialgrades == $options->addpartialgrades && $errorpercent == $options->errorpercent) {
+            $regrade =  true;
         } else {
             $regrade =  true;
         }
