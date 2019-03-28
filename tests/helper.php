@@ -52,7 +52,7 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $q->generalfeedback = 'I hope your story had a beginning, a middle and an end.';
         $q->responseformat = 'editor';
         $q->responserequired = 1;
-        $q->responsefieldlines = 10
+        $q->responsefieldlines = 10;
         $q->attachments = 0;
         $q->attachmentsrequired = 0;
         $q->graderinfo = '';

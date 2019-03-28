@@ -40,7 +40,6 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
         global $PAGE;
 
-        $plugin = $this->plugin_name();
         $question = $qa->get_question();
         $response = $qa->get_last_qt_data();
         $question->update_current_response($response, $options);
@@ -99,10 +98,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'): $itemtype = 'paragraphs'; break;
         }
 
-        // get editor name (remove trailing"_texteditor")
-        // e.g. textarea, atto, tinymce
-        $editor = editors_get_preferred_editor();
-        $editor = substr(get_class($editor), 0, -11);
+        $editor = $this->get_editor_type($question);
         $sample = question_utils::to_plain_text($question->responsesample,
                                                 $question->responsesampleformat,
                                                 array('para' => false));
@@ -110,6 +106,22 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $PAGE->requires->js_call_amd('qtype_essayautograde/essayautograde', 'init', $params);
 
         return $result;
+    }
+
+    /**
+     * Specify the short name for the editor used to input the response.
+     * This is used to locate where on the page to insert the sample response.
+     * For Essay questions, the editor type will be "atto", "tinymce" or "textarea".
+     * For Speak questions, the editor will be one of the speech recorders.
+     *
+     * @param object $question
+     * @return string The short name of the editor.
+     */
+    public function get_editor_type($question) {
+        // extract editor name from full editor class by remove the trailing"_texteditor"
+        // e.g. textarea, atto, tinymce
+        $editor = editors_get_preferred_editor();
+        return substr(get_class($editor), 0, -11);
     }
 
     /**

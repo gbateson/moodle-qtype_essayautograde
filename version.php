@@ -30,8 +30,8 @@ $plugin->cron      = 0;
 $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2015111600; // Moodle 3.0
-$plugin->version   = 2019032376;
-$plugin->release   = '2019-03-23 (76)';
+$plugin->version   = 2019032878;
+$plugin->release   = '2019-03-28 (78)';
 
 // https://docs.moodle.org/dev/Releases
 // Moodle 3.6 2018120300  3 Dec 2018

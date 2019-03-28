@@ -217,6 +217,7 @@ define(["jquery", "core/str"], function($, STR) {
             } else {
                 last = $(".qtext");
             }
+
             last.append($("<span></span>").click(function(){
                 var newtxt = "",
                     oldtxt = "",
@@ -233,21 +234,27 @@ define(["jquery", "core/str"], function($, STR) {
                            .text(ESSAY.str.showsample);
                     newtxt = ESSAY.responseoriginal;
                 }
+
                 // Locate response element
-                var r = $(this).closest(".qtext").next(".ablock").find(".answer .qtype_essay_response");
                 var editor = null;
-                if (r.is("[name$='_answer']")) {
-                    // Plain text (i.e. no editor)
-                    editor = r;
+                var qtext = $(this).closest(".qtext");
+                if (ESSAY.editortype=="audio" || ESSAY.editortype=="video") {
+                    editor = qtext.find(".audiovideo_response_prompt");
                 } else {
-                    // Atto
-                    editor = r.find("[contenteditable=true]");
-                    if (editor.length==0) {
-                        // TinyMCE
-                        editor = r.find("iframe").contents().find("[contenteditable=true]");
+                    var r = qtext.next(".ablock").find(".answer .qtype_essay_response");
+                    if (r.is("[name$='_answer']")) {
+                        // Plain text (i.e. no editor)
+                        editor = r;
+                    } else {
+                        // Atto
+                        editor = r.find("[contenteditable=true]");
                         if (editor.length==0) {
-                            // Plain text editor
-                            editor = r.find("[name$='_answer']");
+                            // TinyMCE
+                            editor = r.find("iframe").contents().find("[contenteditable=true]");
+                            if (editor.length==0) {
+                                // Plain text editor
+                                editor = r.find("[name$='_answer']");
+                            }
                         }
                     }
                 }
