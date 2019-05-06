@@ -38,8 +38,13 @@ require_once($CFG->dirroot.'/lib/questionlib.php');
 class qtype_essayautograde extends question_type {
 
     /** Answer types in question_answers record */
-    const ANSWER_TYPE_BAND    = 0;
-    const ANSWER_TYPE_PHRASE  = 1;
+    const ANSWER_TYPE_BAND = 0;
+    const ANSWER_TYPE_PHRASE = 1;
+
+    /** Boolean filters to extract info from "fraction" field for a phrase answer */
+    const ANSWER_TYPE = 1;
+    const ANSWER_FULL_MATCH = 2;
+    const ANSWER_CASE_SENSITIVE = 4;
 
     /** Item types */
     const ITEM_TYPE_NONE = 0;
@@ -182,22 +187,27 @@ class qtype_essayautograde extends question_type {
         $counts  = (empty($formdata->bandcount)   ? array() : $formdata->bandcount);
         $percent = (empty($formdata->bandpercent) ? array() : $formdata->bandpercent);
 
+		$fraction = floatval(self::ANSWER_TYPE_BAND);
+
         $items = array();
         foreach ($counts as $i => $count) {
             if (array_key_exists($count, $items)) {
                 continue;
             }
-            $items[$count] = $percent[$i];
+            $items[$count] = (object)array(
+            	'count' => $count,
+            	'percent' => $percent[$i],
+            	'fraction' => $fraction
+            );
         }
         ksort($items);
 
-        $fraction = floatval(self::ANSWER_TYPE_BAND);
-        foreach ($items as $count => $percent) {
+        foreach ($items as $item) {
             $answers[] = (object)array(
                 'question'       => $questionid,
-                'answer'         => $count,
-                'answerformat'   => $percent,
-                'fraction'       => $fraction,
+                'answer'         => $item->count,
+                'answerformat'   => $item->percent,
+                'fraction'       => $item->fraction,
                 'feedback'       => '',
                 'feedbackformat' => 0,
             );
@@ -207,9 +217,11 @@ class qtype_essayautograde extends question_type {
         // add target phrases to $answers
         ///////////////////////////////////////////////////////
 
-        $repeats = (empty($formdata->countphrases)  ? 0       : $formdata->countphrases);
-        $phrases = (empty($formdata->phrasematch)   ? array() : $formdata->phrasematch);
+        $repeats = (empty($formdata->countphrases) ? 0 : $formdata->countphrases);
+        $phrases = (empty($formdata->phrasematch) ? array() : $formdata->phrasematch);
         $percent = (empty($formdata->phrasepercent) ? array() : $formdata->phrasepercent);
+        $fullmatch = (empty($formdata->phrasefullmatch) ? array() : $formdata->phrasefullmatch);
+        $casesensitive = (empty($formdata->phrasecasesensitive) ? array() : $formdata->phrasecasesensitive);
 
         $items = array();
         foreach ($phrases as $i => $phrase) {
@@ -219,19 +231,29 @@ class qtype_essayautograde extends question_type {
             if (array_key_exists($phrase, $items)) {
                 continue;
             }
-            $items[$phrase] = $percent[$i];
+			$fraction = self::ANSWER_TYPE_PHRASE;
+			if (array_key_exists($i, $fullmatch) && $fullmatch[$i]) {
+				$fraction |= self::ANSWER_FULL_MATCH;
+			}
+			if (array_key_exists($i, $casesensitive) && $casesensitive[$i]) {
+				$fraction |= self::ANSWER_CASE_SENSITIVE;
+			}
+            $items[$phrase] = (object)array(
+            	'phrase' => $phrase,
+            	'percent' => $percent[$i],
+            	'fraction' => floatval($fraction)
+            );
         }
         //asort($items);
-
         $fraction = floatval(self::ANSWER_TYPE_PHRASE);
-        foreach ($items as $phrase => $percent) {
+        foreach ($items as $item) {
             $answers[] = (object)array(
                 'question'       => $questionid,
                 'answer'         => '',
                 'answerformat'   => 0,
-                'fraction'       => $fraction,
-                'feedback'       => $phrase,
-                'feedbackformat' => $percent,
+                'fraction'       => $item->fraction,
+                'feedback'       => $item->phrase,
+                'feedbackformat' => $item->percent,
             );
         }
 

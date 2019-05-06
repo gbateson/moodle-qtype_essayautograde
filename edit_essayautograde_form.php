@@ -255,6 +255,16 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $elements[] = $mform->createElement('select', $name, $label, $grade_options);
         $options[$name] = array('type' => PARAM_INT);
 
+        //$elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
+
+        //$name = 'phrasefullmatch';
+        //$elements[] = $mform->createElement('select', $name, '', $this->get_fullmatch_options($plugin));
+        //$options[$name] = array('type' => PARAM_INT, 'default' => 1);
+
+        //$name = 'phrasecasesensitive';
+        //$elements[] = $mform->createElement('select', $name, '', $this->get_casesensitive_options($plugin));
+        //$options[$name] = array('type' => PARAM_INT, 'default' => 0);
+
         $name = 'targetphrase';
         $label = get_string($name, $plugin);
         $elements = array($mform->createElement('group', $name, $label, $elements, ' ', false));
@@ -437,11 +447,22 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
+        $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
+        $ANSWER_FULL_MATCH = $this->plugin_constant('ANSWER_FULL_MATCH');
+        $ANSWER_CASE_SENSITIVE = $this->plugin_constant('ANSWER_CASE_SENSITIVE');
+
         $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
         $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
 
-        foreach ($question->options->answers as $answer) {
-            switch (intval($answer->fraction)) {
+        foreach ($question->options->answers as $id => $answer) {
+
+            $fraction = intval($answer->fraction);
+            $answer->type = ($fraction & $ANSWER_TYPE);
+            $answer->fullmatch = ($fraction & $ANSWER_FULL_MATCH);
+            $answer->casesensitive = ($fraction & $ANSWER_CASE_SENSITIVE);
+            $question->options->answers[$id] = $answer;
+
+            switch ($answer->type) {
                 case $ANSWER_TYPE_BAND:
                     $question->bandcount[] = $answer->answer;
                     $question->bandpercent[] = $answer->answerformat;
@@ -449,6 +470,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                 case $ANSWER_TYPE_PHRASE:
                     $question->phrasematch[] = $answer->feedback;
                     $question->phrasepercent[] = $answer->feedbackformat;
+                    $question->phrasefullmatch[] = $answer->fullmatch;
+                    $question->phrasecasesensitive[] = $answer->casesensitive;
                     break;
             }
         }
@@ -471,8 +494,10 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         if (isset($question->id)) {
             $repeats = 0;
             if (isset($question->options->answers)) {
+                $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
                 foreach ($question->options->answers as $answer) {
-                    if (intval($answer->fraction)==$type) {
+                    $fraction = intval($answer->fraction);
+                    if (($fraction & $ANSWER_TYPE)==$type) {
                         $repeats++;
                     }
                 }
@@ -560,6 +585,28 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             $options[$i] = get_string('percentofquestiongrade', $plugin, $i);
         }
         return $options;
+    }
+
+    /**
+     * Get array of full match options
+     *
+     * @param string $plugin name
+     * @return array(value => description)
+     */
+    protected function get_fullmatch_options($plugin) {
+        return array(0 => get_string('phrasefullmatchno', $plugin),
+                     1 => get_string('phrasefullmatchyes', $plugin));
+    }
+
+    /**
+     * Get array of case sensitivity options
+     *
+     * @param string $plugin name
+     * @return array(value => description)
+     */
+    protected function get_casesensitive_options($plugin) {
+        return array(0 => get_string('phrasecasesensitiveno', $plugin),
+                     1 => get_string('phrasecasesensitiveyes', $plugin));
     }
 
     /**

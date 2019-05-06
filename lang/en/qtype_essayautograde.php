@@ -109,6 +109,10 @@ $string['longwordspersentence'] = 'Long words per sentence';
 $string['missing'] = 'Missing';
 $string['paragraphs'] = 'Paragraphs';
 $string['percentofquestiongrade'] = '{$a}% of the question grade.';
+$string['phrasecasesensitiveno'] = 'Match is case-insensitive';
+$string['phrasecasesensitiveyes'] = 'Match is case-sensitive.';
+$string['phrasefullmatchno'] = 'Match full or partial words.';
+$string['phrasefullmatchyes'] = 'Match full words only.';
 $string['phrasematch'] = 'If';
 $string['phrasepercent'] = 'is used, award';
 $string['pleaseenterananswer'] = 'Please enter your response in the text box.';
@@ -159,3 +163,4 @@ $string['textstatitems'] = 'Statistical items';
 $string['uniquewords'] = 'Unique words';
 $string['words'] = 'Words';
 $string['wordspersentence'] = 'Words per sentence';
+

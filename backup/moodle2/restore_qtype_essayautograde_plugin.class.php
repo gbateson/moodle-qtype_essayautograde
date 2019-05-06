@@ -24,6 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+// get required qtype class
+require_once($CFG->dirroot.'/question/type/essayautograde/questiontype.php');
+
 /**
  * restore plugin class that provides the necessary information
  * needed to restore one essayautograde qtype plugin

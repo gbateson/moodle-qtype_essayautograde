@@ -343,8 +343,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         } else {
 
             // Cache plugin constants.
-            $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
-            $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
+            $BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
+            $PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
 
             // override "addpartialgrades" with incoming form data, if necessary
             $addpartialgrades = $this->addpartialgrades;
@@ -354,9 +354,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $rawfraction = 0.0;
             $checkbands = true;
             foreach ($answers as $answer) {
-                switch (intval($answer->fraction)) {
+                switch ($answer->fraction) {
 
-                    case $ANSWER_TYPE_BAND:
+                    case $BAND:
                         if ($checkbands) {
                             if ($answer->answer > $count) {
                                 $checkbands = false;
@@ -370,9 +370,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                         $bands[$answer->answer] = $answer->answerformat;
                         break;
 
-                    case $ANSWER_TYPE_PHRASE:
+                    case $PHRASE:
                         if ($search = trim($answer->feedback)) {
-                            if ($match = $this->search_text($search, $text)) {
+                            if ($match = $this->search_text($search, $text, $answer->fullmatch, $answer->casesensitive)) {
                                 $rawfraction += ($answer->feedbackformat / 100);
                                 $myphrases[$match] = $search;
                             }
@@ -553,7 +553,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return string the matching substring in $text or "" 
      */
     protected function glossary_entry_search_text($entry, $search, $text) {
-        return $this->search_text($search, $text, $entry->fullmatch, empty($entry->casesensitive));
+        return $this->search_text($search, $text, $entry->fullmatch, $entry->casesensitive);
     }
 
     /**
@@ -563,7 +563,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @param string $text
      * @return boolean TRUE if $text mattches the $match; otherwise FALSE;
      */
-    protected function search_text($search, $text, $fullmatch=false, $caseinsensitive=false) {
+    protected function search_text($search, $text, $fullmatch=false, $casesensitive=false) {
 
         $text = trim($text);
         if ($text=='') {
@@ -623,7 +623,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $regexp = "\\b$regexp\\b";
         }
         $regexp = "/$regexp/u"; // unicode match
-        if ($caseinsensitive) {
+        if (empty($casesensitive)) {
             $regexp .= 'i';
         }
         if (preg_match($regexp, $text, $match)) {
@@ -690,8 +690,23 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     public function get_answers() {
         global $DB;
         if ($this->answers===null) {
-            $this->answers = $DB->get_records('question_answers', array('question' => $this->id), 'fraction,id');
-            if ($this->answers===false) {
+            if ($this->answers = $DB->get_records('question_answers', array('question' => $this->id), 'fraction,id')) {
+
+                //$ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
+                //$ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
+
+                $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
+                $ANSWER_FULL_MATCH = $this->plugin_constant('ANSWER_FULL_MATCH');
+                $ANSWER_CASE_SENSITIVE = $this->plugin_constant('ANSWER_CASE_SENSITIVE');
+
+                foreach ($this->answers as $id => $answer) {
+                    $fraction = intval($answer->fraction);
+                    $this->answers[$id]->fraction = $fraction;
+                    $this->answers[$id]->type = ($fraction & $ANSWER_TYPE);
+                    $this->answers[$id]->fullmatch = ($fraction & $ANSWER_FULL_MATCH);
+                    $this->answers[$id]->casesensitive = ($fraction & $ANSWER_CASE_SENSITIVE);
+                }
+            } else {
                 $this->answers = array();
             }
         }
