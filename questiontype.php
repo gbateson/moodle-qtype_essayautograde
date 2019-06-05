@@ -157,7 +157,7 @@ class qtype_essayautograde extends question_type {
             $modinfo = get_fast_modinfo($PAGE->course->id);
             if (empty($modinfo->cms[$cmid]) || empty($modinfo->cms[$cmid]->uservisible)) {
                 $options->errorcmid = 0;
-            }            
+            }
         }
         if ($options->errorcmid==0) {
             $options->errorpercent = 0;
@@ -507,27 +507,47 @@ class qtype_essayautograde extends question_type {
                 $output .= $format->write_files($files);
                 $output .= "    </$field>\n";
             } else {
-                $output .= "    <$field>".$format->xml_escape($question->options->$field)."</$field>\n";
+                $value = $question->options->$field;
+                if ($field=='errorcmid') {
+                    $value = $this->export_errorcmid($value);
+                }
+                $output .= "    <$field>".$format->xml_escape($value)."</$field>\n";
             }
         }
 
         $output .= "    <answers>\n";
         foreach ($question->options->answers as $answer) {
-            switch (intval($answer->fraction)) {
+
+            $tag = '';
+            $text = '';
+            $extra = '';
+
+            $fraction = intval($answer->fraction);
+            switch ($fraction & self::ANSWER_TYPE) {
+
                 case self::ANSWER_TYPE_BAND:
                     $tag = 'gradeband';
                     $text = 'answer';
                     break;
+
                 case self::ANSWER_TYPE_PHRASE:
                     $tag = 'targetphrase';
                     $text = 'feedback';
+                    if ($fraction & self::ANSWER_FULL_MATCH) {
+                        $extra = ' fullmatch="1"';
+                    }
+                    if ($fraction & self::ANSWER_CASE_SENSITIVE) {
+                        $extra = ' casesensitive="1"';
+                    }
                     break;
-                default:
-                    continue; // shouldn't happen !!
             }
-            $percent = intval($answer->{$text.'format'});
-            $text = $format->xml_escape($answer->$text);
-            $output .= "        <$tag percent=\"$percent\">$text</$tag>\n";;
+
+            if ($tag && $text) {
+                $percent = intval($answer->{$text.'format'});
+                $extra = ' percent="'.$percent.'"'.$extra;
+                $text = $format->xml_escape($answer->$text);
+                $output .= "        <$tag$extra>$text</$tag>\n";;
+            }
         }
         $output .= "    </answers>\n";
         return $output;
@@ -546,6 +566,7 @@ class qtype_essayautograde extends question_type {
      * @return object New question object
      */
     public function import_from_xml($data, $question, qformat_xml $format, $extra=null) {
+        global $PAGE;
 
         $questiontype = $format->getpath($data, array('@', 'type'), '');
         if ($questiontype != 'essayautograde') {
@@ -567,10 +588,10 @@ class qtype_essayautograde extends question_type {
             $value = $format->getpath($data, array('#', $field, 0, '#'), $default);
             switch ($field) {
                 case 'textstatitems':
-                    $value = explode(',', $value);
-                    $value = array_map('trim', $value);
-                    $value = array_filter($value);
-                    $value = array_combine($value, array_fill(0, count($value), 1));
+                    $value = $this->import_textstatitems($value);
+                    break;
+                case 'errorcmid':
+                    $value = $this->import_errorcmid($value);
                     break;
             }
             $newquestion->$field = $value;
@@ -581,35 +602,33 @@ class qtype_essayautograde extends question_type {
             $newquestion->$field = $format->import_text_with_files($data, array('#', $field, 0), '', $fmt);
         }
 
-        $newquestion->answer = array();
-        $newquestion->answerformat = array();
-        $newquestion->fraction = array();
-        $newquestion->feedback = array();
-        $newquestion->feedbackformat = array();
+        $newquestion->countbands = 0;
+        $newquestion->bandcount = array();
+        $newquestion->bandpercent = array();
 
-        $a = 0; // answer index
+        $newquestion->countphrases = 0;
+        $newquestion->phrasematch = array();
+        $newquestion->phrasepercent = array();
+        $newquestion->phrasefullmatch = array();
+        $newquestion->phrasecasesensitive = array();
 
         $i = 0; // gradeband index
         while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'gradeband', $i), null)) {
-            $newquestion->answer[$a] = $answer['#'];
-            $newquestion->answerformat[$a] = $answer['@']['percent'];
-            $newquestion->fraction[$a] = self::ANSWER_TYPE_BAND;
-            $newquestion->feedback[$a] = '';
-            $newquestion->feedbackformat[$a] = 0;
+            $newquestion->bandcount[$i] = (empty($answer['#']) ? '0' : $answer['#']);
+            $newquestion->bandpercent[$i] = (empty($answer['@']['percent']) ? 0 : intval($answer['@']['percent']));
             $i++;
-            $a++;
         }
+        $newquestion->countbands = $i;
 
         $i = 0; // targetphrase index
         while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'targetphrase', $i), null)) {
-            $newquestion->answer[$a] = '';
-            $newquestion->answerformat[$a] = 0;
-            $newquestion->fraction[$a] = self::ANSWER_TYPE_PHRASE;
-            $newquestion->feedback[$a] = $answer['#'];
-            $newquestion->feedbackformat[$a] = $answer['@']['percent'];
+            $newquestion->phrasematch[$i] = (empty($answer['#']) ? '' : $answer['#']);
+            $newquestion->phrasepercent[$i] = (empty($answer['@']['percent']) ? 0 : intval($answer['@']['percent']));
+            $newquestion->phrasefullmatch[$i] = (empty($answer['@']['fullmatch']) ? 0 : intval($answer['@']['fullmatch']));
+            $newquestion->phrasecasesensitive[$i] = (empty($answer['@']['casesensitive']) ? 0 : intval($answer['@']['casesensitive']));
             $i++;
-            $a++;
         }
+        $newquestion->countphrases = $i;
 
         //$format->import_combined_feedback($newquestion, $data, false);
         $format->import_hints($newquestion, $data, false);
@@ -657,19 +676,33 @@ class qtype_essayautograde extends question_type {
         $fields = $this->get_gift_fields();
         foreach ($fields as $field) {
             if ($question->options->$field) {
-                $output .= strtoupper($field).'='.$question->options->$field.''.PHP_EOL;
+            	if ($value = $question->options->$field) {
+					if ($field=='errorcmid') {
+					    $value = $this->export_errorcmid($value);
+                        $value = $format->write_name($value);
+                        $value = trim($value, ':');
+					}
+            	}
+                $output .= strtoupper($field).'='.$value.PHP_EOL;
             }
         }
 
         $bands = array();
         $phrases = array();
         foreach ($question->options->answers as $answer) {
-            switch (intval($answer->fraction)) {
+            $fraction = intval($answer->fraction);
+            switch ($fraction & self::ANSWER_TYPE) {
+
                 case self::ANSWER_TYPE_BAND:
-                    $bands[] = '('.$answer->answer.','.$answer->answerformat.'%)';
+                    $bands[] = '('.$answer->answer.','.
+                                   $answer->answerformat.'%)';
                     break;
+
                 case self::ANSWER_TYPE_PHRASE:
-                    $phrases[] = '("'.$answer->feedback.'",'.$answer->feedbackformat.'%)';
+                    $phrases[] = '("'.$answer->feedback.'",'.
+                                      $answer->feedbackformat.'%,'.
+                                      ($fraction & self::ANSWER_FULL_MATCH).','.
+                                      ($fraction & self::ANSWER_CASE_SENSITIVE).')';
                     break;
             }
         }
@@ -696,9 +729,10 @@ class qtype_essayautograde extends question_type {
      * @return object Question instance
      */
     public function import_from_gift($lines, $question, $format, $extra=null) {
+        global $PAGE;
 
         // the $question object will later be passed to the "save_question_options()" method
-        // so it should fields should match those returned by the edit form for this plugin
+        // so fields should match those returned by the edit form for this plugin
 
         if (! $extra) {
             return false;
@@ -735,11 +769,8 @@ class qtype_essayautograde extends question_type {
         $search = '/^('.$search.')\s*=\s*(.*?)$/i';
 
         // regular expressions to parse GRADEBANDS and TARGETPHRASES
-        $gradeband = '/\(\s*(\d+)\s*,\s*(\d+)\s*%?\s*\)/';
-        $targetphrase = '/\(\s*"(.*?)"\s*,\s*(\d+)\s*%?\s*\)/';
-
-        $question->itemtype = '';
-        $question->itemcount = 0;
+        $gradeband = '/\((\d+),(\d+)%?\)/';
+        $targetphrase = '/\("(.*?)",(\d+)%?,?(\d*),?(\d*)\)/';
 
         $question->countbands = 0;
         $question->bandcount = array();
@@ -748,6 +779,8 @@ class qtype_essayautograde extends question_type {
         $question->countphrases = 0;
         $question->phrasematch = array();
         $question->phrasepercent = array();
+        $question->phrasefullmatch = array();
+        $question->phrasecasesensitive = array();
 
         foreach ($options as $option) {
 
@@ -777,8 +810,18 @@ class qtype_essayautograde extends question_type {
                                 $question->countphrases++;
                                 array_push($question->phrasematch, $matches[1][$i]);
                                 array_push($question->phrasepercent, $matches[2][$i]);
+                                array_push($question->phrasefullmatch, $matches[3][$i]);
+                                array_push($question->phrasecasesensitive, $matches[4][$i]);
                             }
                         }
+                        break;
+
+                    case 'textstatitems':
+                        $question->$name = $this->import_textstatitems($value);
+                        break;
+
+                    case 'errorcmid':
+					    $question->$name = $this->import_errorcmid($value);
                         break;
 
                     default:
@@ -801,8 +844,57 @@ class qtype_essayautograde extends question_type {
         $question->responsesample   = array('text' => '', 'format' => FORMAT_MOODLE);
         $question->graderinfo       = array('text' => '', 'format' => FORMAT_MOODLE,
                                             'itemid' => '', 'files' => null);
-
         return $question;
+    }
+
+    /**
+     * export_errorcmid
+     *
+     * @param integer $cmid of glossary of common errors
+     * @return string $name of glossary of common errors
+     */
+    protected function export_errorcmid($cmid) {
+        global $PAGE;
+        if ($PAGE && $PAGE->course && $cmid) {
+			$modinfo = get_fast_modinfo($PAGE->course->id);
+			if (isset($modinfo->cms[$cmid])) {
+				return $modinfo->cms[$cmid]->name;
+			}
+        }
+        return '';
+    }
+
+    /**
+     * import_errorcmid
+     *
+     * @param string $name of glossary of common errors
+     * @return integer $cmid of glossary of common errors
+     */
+    protected function import_errorcmid($name) {
+        global $PAGE;
+        if ($PAGE && $PAGE->course && $name) {
+			$modinfo = get_fast_modinfo($PAGE->course->id);
+			foreach ($modinfo->cms as $cm) {
+				if ($cm->modname=='glossary' && $cm->name==$name) {
+					return $cm->id;
+				}
+			}
+        }
+        return 0;
+    }
+
+    /**
+     * import_textstatitems
+     *
+     * @param string comma-delimeted list of text stat $items
+     * @return array of items [$name => 1]
+     */
+    protected function import_textstatitems($items) {
+        $items = explode(',', $items);
+        $items = array_map('trim', $items);
+        $items = array_filter($items);
+        $items = array_fill_keys($items, 1);
+        return $items;
     }
 
     /**
