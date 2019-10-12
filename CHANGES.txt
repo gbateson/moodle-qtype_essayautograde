@@ -1,0 +1,327 @@
+========================================
+Change log for qtype_essayautograde
+========================================
+
+2019-06-05 (84)
+ -  fix importing from XML and GIFT files 
+
+2019-05-08 (83)
+ -  fix 'continue' statement within 'switch' block 
+
+2019-05-08 (83)
+ -  replace Oracle8 installer from travis.yml. 
+
+2019-05-08 (82)
+ -  remove Oracle8 installer from travis.yml as advised by Travis CI help desk. 
+
+2019-05-08 (81)
+ -  Add a full stop just as the other strings (#24) Thanks German! 
+
+2019-05-07 (80)
+ -  fix restore error: Class not found 
+
+2019-05-28 (80)
+ -  fix restore error: Class not found 
+
+2019-03-28 (79)
+ -  add framework for full-word match and case-sensitive match on target phrases 
+
+2019-03-28 (78)
+ -  fix missing ';' in tests/helper.php 
+
+2019-03-25 (77)
+ -  add new method, get_editortype(), so that speakautograde can specify its own values for the editortype 
+
+2019-03-23 (76)
+ -  ensure correct component is used when getting string from lang pack 
+
+2019-03-23 (75)
+ -  use similar_text() or levenshtein() to check for similarity of user response to template/sample response 
+
+2019-03-16 (74)
+ -  Fix typo (paragraphs) (#22) Well spotted and thanks for the fix German! 
+
+2019-03-15 (73)
+ -  remove 'es' and 'es_mx' lang packs from the plugin's 'lang' directory because they now available via AMOS 
+
+2019-03-15 (72)
+ -  add 'MOODLE_36_STABLE' to pgsql and mysqli in .travis.yml 
+
+2019-03-15 (71)
+ -  fix counting of sentences ending in '\!' and '?' 
+
+2019-03-15 (70)
+ -  qtype_essayautorgrade fix problems detected by travis-ci (see https://travis-ci.org/gbateson/moodle-qtype_essayautograde/jobs/506616765) 
+
+2019-03-15 (69)
+ -  fix all copyright notices to conform to Moodle standard, using 'base by work on ...' 
+
+2019-03-15 (68)
+ -  enable travis-ci functionality (Travis implementation #17) 
+
+2019-03-10 (67)
+ -  optimize code for use as parent class for other question types 
+
+2019-03-09 (66)
+ -  qtype_essay/speak autograde fix minimum version number in readme.txt 
+
+2019-03-09 (66)
+ -  fix 'malformed number' errors when lang pack uses comma as decimal seperator, 'decsep' 
+
+2019-03-07 (65)
+ -  fix URL of secondary zip download site 
+
+2019-03-07 (65)
+ -  for Moodle >= 3.0 according to version.php (#16) 
+
+2019-03-06 (64)
+ -  be sure to remove autolink links from response before adding links to error glossary 
+
+2019-03-06 (63)
+ -  add acknowledgements and credits to readme.txt 
+
+2019-03-06 (62)
+ -  fix small typo in lang file 
+
+2019-03-05 (61)
+ -  fix error caused by set_default_values not returning a result 
+
+2019-03-04 (60)
+ -  replace tab indent with spaces from renderer.php and questiontype.php 
+
+2019-03-04 (60)
+ -  fix restore or errorcmid 
+
+2019-03-04 (59)
+ -  add links from common errors to relevant entry in glossary 
+
+2019-03-03 (58)
+ -  new functionality to specify (1) sample response; (2) glossary of common errors 
+
+2019-02-20 (56)
+ -  improve handling of empty answers, so that context is always available, and stats are always initialized 
+
+2019-02-15 (55)
+ -  qtype/essayautograde remove left debug code that prints $step object to browser 
+
+2019-02-15 (54)
+ -  qtype/essayautograde fix manually grading of empty response. Thanks to Matthias Giger for reporting this issue. 
+
+2018-10-31 (53)
+ -  qtype/essayautograde add Behat tests (thanks ewallah\!) 
+
+2018-10-31 (53)
+ -  qtype/essayautograde add Behat tests (thanks ewallah!) 
+
+2018-08-17 (52)
+ -  qtype/essayautograde allow bare comma (without preceding or following space, as separator for list in target phrase 
+
+2018-08-09 (51)
+ -  qtype/essayautograde scroll to appropriate section when adding more grade bands or target phrases 
+
+2018-08-09 (50)
+ -  qtype/essayautograde scroll to appropriate section when adding more grade bands or target phrases 
+
+2018-08-08 (49)
+ -  qtype/essayautograde put code to create form menu options into separate methods, to improve code readability 
+
+2018-08-08 (48)
+ -  qtype/essayautograde optimize code to set width of phrase text boxes 
+
+2018-08-07 (47)
+ -  qtype/essayautograde add missing blank lines in Spanish translations (thanks to German Valero) 
+
+2018-08-07 (46)
+ -  qtype/essayautograde make phrase text boxes expandable on edit form 
+
+2018-08-07 (46)
+ -  qtype/essayautograde make phrase text boxes expandable on edit form 
+
+2018-08-07 (45)
+ -  qtype/essayautograde add XML import/export functionality 
+
+2018-07-30 (44)
+ -  add new lang packs for 'es' and 'es_mx'. BIG thanks to German Valero 
+
+2018-07-30 (44)
+ -  add missing field, 'filetypeslist', to install.xml 
+
+2018-07-07 (43)
+ -  add %-sign to 'Lexical density', and simplify help text for 'Long words' 
+
+2018-06-25 (42)
+ -  qtype/essayautograde remove left over window.console statement in JS file 
+
+2018-06-23 (41)
+ -  add privacy:metadata string required for GDPR 
+
+2018-06-23 (40)
+ -  improve CSS formatting for items in the actionable feedback <table> 
+
+2018-06-23 (40)
+ -  improve CSS formatting for items in the actionable feedback <table> 
+
+2018-06-22 (39)
+ -  add filetypeslist as an 'extra field' in this plugin 
+
+2018-06-22 (39)
+ -  add filetypeslist as an 'extra field' in this plugin 
+
+2018-06-22 (39)
+ -  add filetypeslist field as required by essay options in Moodle >= 3.5 
+
+2018-06-22 (39)
+ -  add filetypeslist field as required by essay options in Moodle >= 3.5 
+
+2018-06-21 (38)
+ -  fix access to response text when using 'HTML editor with file picker' 
+
+2018-06-20 (37)
+ -  qtype_eaayautograde remove duplicate code from renderer that was merely a copy of code in parent class 
+
+2018-06-18 (36)
+ -  add export/import of GIFT format 
+
+2018-06-15 (35)
+ -  move javascript to AMD; add actionable feedback on review page 
+
+2017-07-26 (34)
+ -  fix upload and display of attached files 
+
+2017-06-29 (33)
+ -  generate list of database fieldnames automatically during backup 
+
+2017-04-11 (32)
+ -  improve explanation of intermediate grades > 100%; add white background to responses on review page. 
+
+2017-04-09 (31)
+ -  improve explanation of intermediate grades > 100%; add white background to responses on review page. 
+
+2017-04-09 (31)
+ -  remove 'allowoverride' setting because override is always available for ALL question types 
+
+2017-04-07 (30)
+ -  always set state to graded value to acheive expected 'interactive' behavior with several 'tries' 
+
+2017-04-07 (30)
+ -  fix issue detecting correctness of essay response 
+
+2017-04-07 (30)
+ -  fix issue detecting correctness of essay response 
+
+2017-04-06 (29)
+ -  include explanation of deductions for checking response before submission 
+
+2017-04-03 (28)
+ -  include explanation of deductions for checking response before submission 
+
+2017-04-03 (28)
+ -  allow full regular expressions in target phrases; fix display of images in hints 
+
+2017-04-01 (27)
+ -  fix display of images in questiontext, general feedback, and conditional feedback 
+
+2017-03-15 (26)
+ -  fix detection of editable response area when adding item counter to question answer form 
+
+2017-03-14 (25)
+ -  fix detection of editable response area when adding item counter to question answer form 
+
+2017-03-14 (25)
+ -  add item counter to input form 
+
+2017-03-14 (24)
+ -  regrade attempts using the current question when grading options are modified 
+
+2017-02-27 (23)
+ -  fix warnings and errors caused by empty fields on edit form, such as 'textstatitems' 
+
+2017-02-16 (22)
+ -  be more cautious about setting previous field when adding/updating DB fields 
+
+2017-02-13 (21)
+ -  small tweak to one message 
+
+2017-02-13 (21)
+ -  add help icons to certain statistical items 
+
+2017-02-13 (21)
+ -  improve wording of grade explanations, and allow the explanation to be hidden from students if required 
+
+2017-02-12 (20)
+ -  add new fields to show more granular display of auto-feedback 
+
+2017-02-12 (19)
+ -  add new fields to show more granular display of auto-feedback 
+
+2017-02-12 (19)
+ -  add new settings to give more graular control over auto-feedback 
+
+2017-02-12 (18)
+ -  add new fields to show more granular display of auto-feedback 
+
+2017-02-12 (17)
+ -  add new fields to show more granular display of auto-feedback 
+
+2017-02-12 (17)
+ -  add new fields to show more granular display of auto-feedback 
+
+2017-02-12 (16)
+ -  add new fields to show more granular display of auto-feedback 
+
+2017-02-12 (16)
+ -  add missing autofeedback field to install.xml 
+
+2017-02-12 (16)
+ -  add missing autofeedback field to install.xml 
+
+2017-02-09 (15)
+ -  rename 'hardwords' to 'longwords' 
+
+2017-02-09 (14)
+ -  fix restore and backup of grade bands, target phrases, and files used in html text editor fields 
+
+2017-02-09 (13)
+ -  overriding of automatically generated grades; add settings for auto-feedback (=statistics) 
+
+2017-02-08 (12)
+ -  qtype_essayautograde.php begin development of code to display question and preview 
+
+2017-02-08 (12)
+ -  improve display of statistics on review page 
+
+2017-02-08 (11)
+ -  add detailed statistics about response text 
+
+2017-02-08 (10)
+ -  add combined feedback and hints for multiple tries 
+
+2017-02-06 (08)
+ -  display feedback on correctneww when reviewing an attempt 
+
+2017-02-04 (07)
+ -  qtype_essayautograde.php begin development of code to display question and preview 
+
+2017-02-04 (07)
+ -  fix small tyll typo: qtype -> plugin 
+
+2017-02-04 (07)
+ -  use function to fetch constants from questiontype.php 
+
+2017-02-04 (06)
+ -  display previously saved grade bands and target phrases in the edit form 
+
+2017-02-03 (05)
+ -  fix saving of form options to 'essay' options table in database 
+
+2017-02-03 (04)
+ -  store grade bands and target words question_answer table 
+
+2017-02-02 (02)
+ -  improve messages on edit form related to awarding grades 
+
+2017-02-01 (01)
+ -  put grade bands and dtarget phrases into separate section of main edit form 
+
+2017-01-01 (00)
+ -  populate new question type: essayautograde 
