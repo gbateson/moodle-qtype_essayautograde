@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2020-03-01 (87)
+ - include current version in tool to redo upgrade
+
 2019-10-12 (85)
  - standardize layout and spelling in CHANGES.txt
 
