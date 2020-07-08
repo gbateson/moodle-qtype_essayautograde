@@ -64,6 +64,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         if ($readonly) {
             $answer = $renderer->response_area_read_only('answer', $qa, $step, $linecount, $options->context);
             $answer = preg_replace('/<a[^>]*class="[^">]*autolink[^">]*"[^>]*>(.*?)<\/a>/ius', '$1', $answer);
+            $answer = preg_replace('/ *min-height: [0-9.]+em;/ius', '$1', $answer);
             if ($question->errorcmid) {
                 $currentresponse = $question->get_current_response();
                 if (count($currentresponse->errors)) {
@@ -131,13 +132,47 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
      *      not be displayed. Used to get the context.
      */
     public function files_read_only(question_attempt $qa, question_display_options $options) {
-        $files = $qa->get_last_qt_files('attachments', $options->context->id);
         $output = array();
 
+        $files = $qa->get_last_qt_files('attachments', $options->context->id);
         foreach ($files as $file) {
-            $output[] = html_writer::tag('p', html_writer::link($qa->get_response_file_url($file),
-                    $this->output->pix_icon(file_file_icon($file), get_mimetype_description($file),
-                    'moodle', array('class' => 'icon')) . ' ' . s($file->get_filename())));
+
+            $url = $qa->get_response_file_url($file);
+            $url = preg_replace('/(\?|\&|\&amp;)forcedownload=1/', '', $url);
+
+            $mimetype = $file->get_mimetype();
+            $mimetext = get_mimetype_description($file);
+
+            switch (substr($mimetype, 0, strpos($mimetype, '/'))) {
+
+                case 'image':
+                    $params = array('src' => $url,
+                                    'alt' => $mimetext,
+                                    'style' => 'width: 100%; max-width: 480px;');
+                    $file = html_writer::empty_tag('img', $params);
+                    break;
+
+                case 'audio':
+                    $file = html_writer::empty_tag('source', array('src' => $url));
+                    $params = array('controls' => 'true',
+                                    'style' => 'width: 100%; max-width: 480px;');
+                    $file = html_writer::tag('audio', $file.$url, $params);
+                    break;
+
+                case 'video':
+                    $file = html_writer::empty_tag('source', array('src' => $url));
+                    $params = array('controls' => 'true',
+                                    'playsinline' => 'true',
+                                    'style' => 'width: 100%; max-width: 480px;');
+                    $file = html_writer::tag('video', $file.$url, $params);
+                    break;
+
+                default:
+                    $icon = file_file_icon($file);
+                    $icon = $this->output->pix_icon($icon, $mimetext, 'moodle', array('class' => 'icon'));
+                    $file = html_writer::link($qa->get_response_file_url($file), $icon.' '.s($file->get_filename()));
+            }
+            $output[] = html_writer::tag('p', $file);
         }
         return implode($output);
     }
@@ -539,6 +574,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     if ($count < $maxcount) {
                         $hints['phrases'] = get_string('feedbackhintphrases', $plugin);
                     }
+                    if ($currentresponse->breaks) {
+                        $hints['breaks'] = get_string('feedbackhintbreaks', $plugin);
+                    }
                     $output .= html_writer::start_tag('tr', array('class' => 'phrases'));
                     $output .= html_writer::tag('th', get_string('targetphrases', $plugin), array('class' => 'cell c0'));
                     $output .= html_writer::tag('td', $count.' / '.$maxcount, array('class' => 'cell c1'));
@@ -581,7 +619,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
                 // Hints
                 if (count($hints)) {
-                    $hints['rewriteresubmit'] = get_string('rewriteresubmit'.implode('', array_keys($hints)), $plugin);
+                    $name = str_replace('breaks', '', implode('', array_keys($hints)));
+                    $hints['rewriteresubmit'] = get_string('rewriteresubmit'.$name, $plugin);
                     $output .= html_writer::start_tag('tr');
                     $output .= html_writer::tag('th', get_string('feedbackhints', $plugin), array('class' => 'cell c0'));
                     $output .= html_writer::tag('td', html_writer::alist($hints), array('class' => 'cell c1'));

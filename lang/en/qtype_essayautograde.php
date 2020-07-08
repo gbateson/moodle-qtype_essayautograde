@@ -33,6 +33,7 @@ $string['pluginnamesummary'] = 'Allows an essay of several sentences or paragrap
 
 $string['privacy:metadata'] = 'The Essay (auto-grade) question type plugin does not store any personal data.';
 
+$string['audios'] = 'Audio files';
 $string['addmultiplebands'] = 'Add {$a} more grade bands';
 $string['addmultiplephrases'] = 'Add {$a} more target phrases';
 $string['addpartialgrades_help'] = 'If this option is enabled, grades will be added for partially completed grade bands.';
@@ -74,6 +75,7 @@ $string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->co
 $string['explanationseecomment'] = '(see comment below)';
 $string['explanationtargetphrase'] = '{$a->percent}% for including the phrase "{$a->phrase}"';
 $string['feedback'] = 'Feedback';
+$string['feedbackhintbreaks'] = 'Did you use too many line breaks?';
 $string['feedbackhinterrors'] = 'Did you make any common errors?';
 $string['feedbackhintphrases'] = 'Did you include all the target phrases?';
 $string['feedbackhints'] = 'Hints to improve your grade';
@@ -91,6 +93,7 @@ $string['gradebands'] = 'Grade bands';
 $string['gradecalculation'] = 'Grade calculation';
 $string['gradeforthisquestion'] = 'Grade for this question';
 $string['hidesample'] = 'Hide sample';
+$string['images'] = 'Image files';
 $string['itemcount_help'] = 'The minimum number of countable items that must be in the essay text in order to achieve the maximum grade for this question.
 
 Note, that this value may be rendered ineffective by the grade bands, if any, defined below.';
@@ -109,10 +112,14 @@ $string['longwordspersentence'] = 'Long words per sentence';
 $string['missing'] = 'Missing';
 $string['paragraphs'] = 'Paragraphs';
 $string['percentofquestiongrade'] = '{$a}% of the question grade.';
+$string['phrasebehavior_help'] = 'These settings refine the matching behavior for this target phrase.';
+$string['phrasebehavior'] = 'Target phrase [{no}] behavior';
 $string['phrasecasesensitiveno'] = 'Match is case-insensitive.';
 $string['phrasecasesensitiveyes'] = 'Match is case-sensitive.';
 $string['phrasefullmatchno'] = 'Match full or partial words.';
 $string['phrasefullmatchyes'] = 'Match full words only.';
+$string['phraseignorebreaksno'] = 'Recognize line breaks.';
+$string['phraseignorebreaksyes'] = 'Ignore line breaks.';
 $string['phrasematch'] = 'If';
 $string['phrasepercent'] = 'is used, award';
 $string['pleaseenterananswer'] = 'Please enter your response in the text box.';
@@ -161,6 +168,7 @@ $string['textstatistics'] = 'Text statistics';
 $string['textstatitems_help'] = 'Select any items here that you wish to appear in the text statistics that are shown on grading and review pages.';
 $string['textstatitems'] = 'Statistical items';
 $string['uniquewords'] = 'Unique words';
+$string['videos'] = 'Video files';
 $string['words'] = 'Words';
 $string['wordspersentence'] = 'Words per sentence';
 

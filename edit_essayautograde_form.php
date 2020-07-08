@@ -198,32 +198,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setDefault($name, $this->get_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
-        $elements = array();
-        $options = array();
-
-        $name = 'bandcount';
-        $label = get_string($name, $plugin);
-        $elements[] = $mform->createElement('text', $name, $label, $short_text_options);
-        $options[$name] = array('type' => PARAM_INT);
-
-        $name = 'bandpercent';
-        $label = get_string($name, $plugin);
-        $elements[] = $mform->createElement('select', $name, $label, $grade_options);
-        $options[$name] = array('type' => PARAM_INT);
-
-        $name = 'gradeband';
-        $label = get_string($name, $plugin);
-        $elements = array($mform->createElement('group', $name, $label, $elements, ' ', false));
-        $options[$name] = array('helpbutton' => array($name, $plugin),
-                                'disabledif' => array('enableautograde', 'eq', 0));
-        $this->add_repeat_elements($mform, 'band', $elements, $options, $name);
-
-        // disable gradebands if no itemtype is specified
-        $i = 0;
-        while ($mform->elementExists($name."[$i]")) {
-            $mform->disabledIf($name."[$i]", 'itemtype', 'eq', 0);
-            $i++;
-        }
+        $this->add_repeat_gradebands($mform, $plugin, $short_text_options, $long_text_options, $grade_options);
 
         /////////////////////////////////////////////////
         // add target phrases
@@ -242,35 +217,11 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setDefault($name, $this->get_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
-        $elements = array();
-        $options = array();
+        $this->add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options);
 
-        $name = 'phrasematch';
-        $label = get_string($name, $plugin);
-        $elements[] = $mform->createElement('text', $name, $label, $long_text_options);
-        $options[$name] = array('type' => PARAM_TEXT);
-
-        $name = 'phrasepercent';
-        $label = get_string($name, $plugin);
-        $elements[] = $mform->createElement('select', $name, $label, $grade_options);
-        $options[$name] = array('type' => PARAM_INT);
-
-        //$elements[] = $mform->createElement('static', '', '', html_writer::empty_tag('br'));
-
-        //$name = 'phrasefullmatch';
-        //$elements[] = $mform->createElement('select', $name, '', $this->get_fullmatch_options($plugin));
-        //$options[$name] = array('type' => PARAM_INT, 'default' => 1);
-
-        //$name = 'phrasecasesensitive';
-        //$elements[] = $mform->createElement('select', $name, '', $this->get_casesensitive_options($plugin));
-        //$options[$name] = array('type' => PARAM_INT, 'default' => 0);
-
-        $name = 'targetphrase';
-        $label = get_string($name, $plugin);
-        $elements = array($mform->createElement('group', $name, $label, $elements, ' ', false));
-        $options[$name] = array('helpbutton' => array($name, $plugin),
-                                'disabledif' => array('enableautograde', 'eq', 0));
-        $this->add_repeat_elements($mform, 'phrase', $elements, $options, $name);
+        /////////////////////////////////////////////////
+        // add common errors
+        /////////////////////////////////////////////////
 
         $name = 'commonerrors';
         $label = get_string($name, $plugin);
@@ -386,18 +337,19 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
             return $question;
         }
 
-        $names = array('enableautograde', 'showfeedback',
-                       'showcalculation', 'showtextstats',
-                       'showgradebands', 'addpartialgrades',
-                       'showtargetphrases',
+        // Initialize numeric fields.
+        $names = array('enableautograde', 'itemtype', 'itemcount',
+                       'showfeedback', 'showcalculation', 'showtextstats',
+                       'showgradebands', 'addpartialgrades', 'showtargetphrases',
                        'errorcmid', 'errorpercent');
-
         foreach ($names as $name) {
             if (! isset($question->options->$name)) {
                 $question->options->$name = 0;
             }
+            $question->$name = $question->options->$name;
         }
 
+        // Initialize HTML text fields.
         $names = array('responsesample');
         foreach ($names as $name) {
             if (! isset($question->options->$name)) {
@@ -407,24 +359,16 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                 $question->options->{$name.'format'} = FORMAT_HTML;
             }
         }
-
         $question->responsesample = array(
             'text' => $question->options->responsesample,
             'format' => $question->options->responsesampleformat,
         );
-        $question->enableautograde = $question->options->enableautograde;
-        $question->itemtype = $question->options->itemtype;
-        $question->itemcount = $question->options->itemcount;
-        $question->showfeedback = $question->options->showfeedback;
-        $question->showcalculation = $question->options->showcalculation;
-        $question->showtextstats = $question->options->showtextstats;
-        $question->textstatitems = $question->options->textstatitems;
-        $question->showgradebands = $question->options->showgradebands;
-        $question->addpartialgrades = $question->options->addpartialgrades;
-        $question->showtargetphrases = $question->options->showtargetphrases;
-        $question->errorcmid = $question->options->errorcmid;
-        $question->errorpercent = $question->options->errorpercent;
 
+        // Initialize textstatitems (a comma delimited list)
+        if (! isset($question->options->textstatitems)) {
+            $question->options->textstatitems = '';
+        }
+        $question->textstatitems = $question->options->textstatitems;
         $question->textstatitems = explode(',', $question->textstatitems);
         $question->textstatitems = array_filter($question->textstatitems);
         $question->textstatitems = array_flip($question->textstatitems);
@@ -440,6 +384,9 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $question->bandpercent = array();
         $question->phrasematch = array();
         $question->phrasepercent = array();
+        $question->phrasefullmatch = array();
+        $question->phrasecasesensitive = array();
+        $question->phraseignorebreaks = array();
 
         $question = parent::data_preprocessing_answers($question);
 
@@ -450,6 +397,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
         $ANSWER_FULL_MATCH = $this->plugin_constant('ANSWER_FULL_MATCH');
         $ANSWER_CASE_SENSITIVE = $this->plugin_constant('ANSWER_CASE_SENSITIVE');
+        $ANSWER_IGNORE_BREAKS = $this->plugin_constant('ANSWER_IGNORE_BREAKS');
 
         $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
         $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
@@ -458,8 +406,9 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
             $fraction = intval($answer->fraction);
             $answer->type = ($fraction & $ANSWER_TYPE);
-            $answer->fullmatch = ($fraction & $ANSWER_FULL_MATCH);
-            $answer->casesensitive = ($fraction & $ANSWER_CASE_SENSITIVE);
+            $answer->phrasefullmatch = (($fraction & $ANSWER_FULL_MATCH) ? 1 : 0);
+            $answer->phrasecasesensitive = (($fraction & $ANSWER_CASE_SENSITIVE) ? 1 : 0);
+            $answer->phraseignorebreaks = (($fraction & $ANSWER_IGNORE_BREAKS) ? 1 : 0);
             $question->options->answers[$id] = $answer;
 
             switch ($answer->type) {
@@ -470,8 +419,9 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                 case $ANSWER_TYPE_PHRASE:
                     $question->phrasematch[] = $answer->feedback;
                     $question->phrasepercent[] = $answer->feedbackformat;
-                    $question->phrasefullmatch[] = $answer->fullmatch;
-                    $question->phrasecasesensitive[] = $answer->casesensitive;
+                    $question->phrasefullmatch[] = $answer->phrasefullmatch;
+                    $question->phrasecasesensitive[] = $answer->phrasecasesensitive;
+                    $question->phraseignorebreaks[] = $answer->phraseignorebreaks;
                     break;
             }
         }
@@ -610,6 +560,17 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     /**
+     * Get array of options for ignoring breaks
+     *
+     * @param string $plugin name
+     * @return array(value => description)
+     */
+    protected function get_ignorebreaks_options($plugin) {
+        return array(0 => get_string('phraseignorebreaksno', $plugin),
+                     1 => get_string('phraseignorebreaksyes', $plugin));
+    }
+
+    /**
      * Get array of glossary options
      *
      * @return array(glossaryid => name)
@@ -671,11 +632,110 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     /**
+     * Add grade bands as repeated elements
+     *
+     * @param object $mform the Moodle form object
+     * @param string $plugin name
+     * @param array $short_text_options
+     * @param array $grade_options
+     * @return void, but will update $mform
+     */
+    protected function add_repeat_gradebands($mform, $plugin, $short_text_options, $long_text_options, $grade_options) {
+
+        $repeat_elements = array();
+        $repeat_options = array();
+
+        // Add group of grade bands
+        $group_elements = array();
+
+        $name = 'bandcount';
+        $label = get_string($name, $plugin);
+        $group_elements[] = $mform->createElement('text', $name, $label, $short_text_options);
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $name = 'bandpercent';
+        $label = get_string($name, $plugin);
+        $group_elements[] = $mform->createElement('select', $name, $label, $grade_options);
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $name = 'gradeband';
+        $label = get_string($name, $plugin);
+        $repeat_elements[] = $mform->createElement('group', $name, $label, $group_elements, ' ', false);
+        $repeat_options[$name] = array('helpbutton' => array($name, $plugin),
+                                       'disabledif' => array('enableautograde', 'eq', 0));
+        $this->add_repeat_elements($mform, 'band', $repeat_elements, $repeat_options, $name);
+
+        // disable gradebands if no itemtype is specified
+        $i = 0;
+        while ($mform->elementExists($name."[$i]")) {
+            $mform->disabledIf($name."[$i]", 'itemtype', 'eq', 0);
+            $i++;
+        }
+    }
+
+    /**
+     * Add grade bands as repeated elements
+     *
+     * @param object $mform the Moodle form object
+     * @param string $plugin name
+     * @param array $short_text_options
+     * @param array $grade_options
+     * @return void, but will update $mform
+     */
+    protected function add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options) {
+
+        $repeat_elements = array();
+        $repeat_options = array();
+
+        // add group of target phrases
+        $group_elements = array();
+
+        $name = 'phrasematch';
+        $label = get_string($name, $plugin);
+        $group_elements[] = $mform->createElement('text', $name, $label, $long_text_options);
+        $repeat_options[$name] = array('type' => PARAM_TEXT);
+
+        $name = 'phrasepercent';
+        $label = get_string($name, $plugin);
+        $group_elements[] = $mform->createElement('select', $name, $label, $grade_options);
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $name = 'targetphrase';
+        $label = get_string($name, $plugin);
+        $repeat_elements[] = $mform->createElement('group', $name, $label, $group_elements, ' ', false);
+        $repeat_options[$name] = array('helpbutton' => array($name, $plugin),
+                                       'disabledif' => array('enableautograde', 'eq', 0));
+
+        // add group of phrase matching behaviors
+        $group_elements = array();
+
+        $name = 'phrasefullmatch';
+        $group_elements[] = $mform->createElement('select', $name, '', $this->get_fullmatch_options($plugin));
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $name = 'phrasecasesensitive';
+        $group_elements[] = $mform->createElement('select', $name, '', $this->get_casesensitive_options($plugin));
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $name = 'phraseignorebreaks';
+        $group_elements[] = $mform->createElement('select', $name, '', $this->get_ignorebreaks_options($plugin));
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $name = 'phrasebehavior';
+        $label = get_string($name, $plugin);
+        $repeat_elements[] = $mform->createElement('group', $name, $label, $group_elements, ' ', false);
+        $repeat_options[$name] = array('helpbutton' => array($name, $plugin),
+                                       'disabledif' => array('enableautograde', 'eq', 0));
+
+        $this->add_repeat_elements($mform, 'phrase', $repeat_elements, $repeat_options, $name);
+    }
+
+    /**
      * Add repeated elements with a button allowing a selectable number of new elements
      *
      * @param object $mform the Moodle form object
      * @param string the $type of elements being added (e.g. "band" or "phrase")
-     * @return voide, but will update $mform
+     * @return void, but will update $mform
      */
     protected function add_repeat_elements($mform, $type, $elements, $options, $name) {
         $types = $type.'s';

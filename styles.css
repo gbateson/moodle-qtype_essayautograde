@@ -172,3 +172,9 @@ table.essayautograde.review .present {
     border-color:      #99ff66; /* gentle green */
     color:             #009900; /* dark green */
 }
+
+@media (min-width: 768px) {
+    [id^=fgroup_id_phrasebehavior_][id$=_label] {
+        visibility: hidden;
+    }
+}

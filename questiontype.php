@@ -45,6 +45,7 @@ class qtype_essayautograde extends question_type {
     const ANSWER_TYPE = 1;
     const ANSWER_FULL_MATCH = 2;
     const ANSWER_CASE_SENSITIVE = 4;
+    const ANSWER_IGNORE_BREAKS = 8;
 
     /** Item types */
     const ITEM_TYPE_NONE = 0;
@@ -222,6 +223,7 @@ class qtype_essayautograde extends question_type {
         $percent = (empty($formdata->phrasepercent) ? array() : $formdata->phrasepercent);
         $fullmatch = (empty($formdata->phrasefullmatch) ? array() : $formdata->phrasefullmatch);
         $casesensitive = (empty($formdata->phrasecasesensitive) ? array() : $formdata->phrasecasesensitive);
+        $ignorebreaks = (empty($formdata->phraseignorebreaks) ? array() : $formdata->phraseignorebreaks);
 
         $items = array();
         foreach ($phrases as $i => $phrase) {
@@ -238,12 +240,16 @@ class qtype_essayautograde extends question_type {
 			if (array_key_exists($i, $casesensitive) && $casesensitive[$i]) {
 				$fraction |= self::ANSWER_CASE_SENSITIVE;
 			}
+			if (array_key_exists($i, $ignorebreaks) && $ignorebreaks[$i]) {
+				$fraction |= self::ANSWER_IGNORE_BREAKS;
+			}
             $items[$phrase] = (object)array(
             	'phrase' => $phrase,
             	'percent' => $percent[$i],
             	'fraction' => floatval($fraction)
             );
         }
+
         //asort($items);
         $fraction = floatval(self::ANSWER_TYPE_PHRASE);
         foreach ($items as $item) {
@@ -534,10 +540,13 @@ class qtype_essayautograde extends question_type {
                     $tag = 'targetphrase';
                     $text = 'feedback';
                     if ($fraction & self::ANSWER_FULL_MATCH) {
-                        $extra = ' fullmatch="1"';
+                        $extra .= ' fullmatch="1"';
                     }
                     if ($fraction & self::ANSWER_CASE_SENSITIVE) {
-                        $extra = ' casesensitive="1"';
+                        $extra .= ' casesensitive="1"';
+                    }
+                    if ($fraction & self::ANSWER_IGNORE_BREAKS) {
+                        $extra .= ' ignorebreaks="1"';
                     }
                     break;
             }
@@ -611,6 +620,7 @@ class qtype_essayautograde extends question_type {
         $newquestion->phrasepercent = array();
         $newquestion->phrasefullmatch = array();
         $newquestion->phrasecasesensitive = array();
+        $newquestion->phraseignorebreaks = array();
 
         $i = 0; // gradeband index
         while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'gradeband', $i), null)) {
@@ -626,6 +636,7 @@ class qtype_essayautograde extends question_type {
             $newquestion->phrasepercent[$i] = (empty($answer['@']['percent']) ? 0 : intval($answer['@']['percent']));
             $newquestion->phrasefullmatch[$i] = (empty($answer['@']['fullmatch']) ? 0 : intval($answer['@']['fullmatch']));
             $newquestion->phrasecasesensitive[$i] = (empty($answer['@']['casesensitive']) ? 0 : intval($answer['@']['casesensitive']));
+            $newquestion->phraseignorebreaks[$i] = (empty($answer['@']['ignorebreaks']) ? 0 : intval($answer['@']['ignorebreaks']));
             $i++;
         }
         $newquestion->countphrases = $i;
@@ -702,7 +713,8 @@ class qtype_essayautograde extends question_type {
                     $phrases[] = '("'.$answer->feedback.'",'.
                                       $answer->feedbackformat.'%,'.
                                       ($fraction & self::ANSWER_FULL_MATCH).','.
-                                      ($fraction & self::ANSWER_CASE_SENSITIVE).')';
+                                      ($fraction & self::ANSWER_CASE_SENSITIVE).
+                                      ($fraction & self::ANSWER_IGNORE_BREAKS).')';
                     break;
             }
         }
@@ -770,7 +782,7 @@ class qtype_essayautograde extends question_type {
 
         // regular expressions to parse GRADEBANDS and TARGETPHRASES
         $gradeband = '/\((\d+),(\d+)%?\)/';
-        $targetphrase = '/\("(.*?)",(\d+)%?,?(\d*),?(\d*)\)/';
+        $targetphrase = '/\("(.*?)",(\d+)%?,?(\d*),?(\d*),?(\d*)\)/';
 
         $question->countbands = 0;
         $question->bandcount = array();
@@ -781,6 +793,7 @@ class qtype_essayautograde extends question_type {
         $question->phrasepercent = array();
         $question->phrasefullmatch = array();
         $question->phrasecasesensitive = array();
+        $question->phraseignorebreaks = array();
 
         foreach ($options as $option) {
 
@@ -812,6 +825,7 @@ class qtype_essayautograde extends question_type {
                                 array_push($question->phrasepercent, $matches[2][$i]);
                                 array_push($question->phrasefullmatch, $matches[3][$i]);
                                 array_push($question->phrasecasesensitive, $matches[4][$i]);
+                                array_push($question->phraseignorebreaks, $matches[5][$i]);
                             }
                         }
                         break;

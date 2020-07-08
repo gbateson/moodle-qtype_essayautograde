@@ -283,6 +283,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $bands = array();
         $phrases = array();
         $myphrases = array();
+        $breaks = 0;
         $rawpercent = 0;
         $rawfraction = 0.0;
         $autopercent = 0;
@@ -343,8 +344,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         } else {
 
             // Cache plugin constants.
-            $BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
-            $PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
+            $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
+            $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
 
             // override "addpartialgrades" with incoming form data, if necessary
             $addpartialgrades = $this->addpartialgrades;
@@ -354,9 +355,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $rawfraction = 0.0;
             $checkbands = true;
             foreach ($answers as $answer) {
-                switch ($answer->fraction) {
+                switch ($answer->type) {
 
-                    case $BAND:
+                    case $ANSWER_TYPE_BAND:
                         if ($checkbands) {
                             if ($answer->answer > $count) {
                                 $checkbands = false;
@@ -370,11 +371,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                         $bands[$answer->answer] = $answer->answerformat;
                         break;
 
-                    case $PHRASE:
+                    case $ANSWER_TYPE_PHRASE:
                         if ($search = trim($answer->feedback)) {
-                            if ($match = $this->search_text($search, $text, $answer->fullmatch, $answer->casesensitive)) {
+                            if ($match = $this->search_text($search, $text, $answer->fullmatch, $answer->casesensitive, $answer->ignorebreaks)) {
                                 $rawfraction += ($answer->feedbackformat / 100);
                                 $myphrases[$match] = $search;
+                            } else if (empty($answer->ignorebreaks) && preg_match('/\\bAND|ANY\\b/', $search) && preg_match("/[\r\n]/us", $text)) {
+                                $breaks++;
                             }
                             $phrases[$search] = $answer->feedbackformat;
                         }
@@ -424,6 +427,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $this->save_current_response('bands', $bands);
         $this->save_current_response('phrases', $phrases);
         $this->save_current_response('myphrases', $myphrases);
+        $this->save_current_response('breaks', $breaks);
         $this->save_current_response('rawpercent', $rawpercent);
         $this->save_current_response('rawfraction', $rawfraction);
         $this->save_current_response('autopercent', $autopercent);
@@ -563,7 +567,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @param string $text
      * @return boolean TRUE if $text mattches the $match; otherwise FALSE;
      */
-    protected function search_text($search, $text, $fullmatch=false, $casesensitive=false) {
+    protected function search_text($search, $text, $fullmatch=false, $casesensitive=false, $ignorebreaks=true) {
 
         $text = trim($text);
         if ($text=='') {
@@ -625,6 +629,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $regexp = "/$regexp/u"; // unicode match
         if (empty($casesensitive)) {
             $regexp .= 'i';
+        }
+        if ($ignorebreaks) {
+            $regexp .= 's';
         }
         if (preg_match($regexp, $text, $match)) {
             if (core_text::strlen($search) < core_text::strlen($match[0])) {
@@ -690,21 +697,20 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     public function get_answers() {
         global $DB;
         if ($this->answers===null) {
-            if ($this->answers = $DB->get_records('question_answers', array('question' => $this->id), 'fraction,id')) {
-
-                //$ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
-                //$ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
+            if ($this->answers = $DB->get_records('question_answers', array('question' => $this->id), 'id')) {
 
                 $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
                 $ANSWER_FULL_MATCH = $this->plugin_constant('ANSWER_FULL_MATCH');
                 $ANSWER_CASE_SENSITIVE = $this->plugin_constant('ANSWER_CASE_SENSITIVE');
+                $ANSWER_IGNORE_BREAKS = $this->plugin_constant('ANSWER_IGNORE_BREAKS');
 
                 foreach ($this->answers as $id => $answer) {
                     $fraction = intval($answer->fraction);
                     $this->answers[$id]->fraction = $fraction;
                     $this->answers[$id]->type = ($fraction & $ANSWER_TYPE);
-                    $this->answers[$id]->fullmatch = ($fraction & $ANSWER_FULL_MATCH);
-                    $this->answers[$id]->casesensitive = ($fraction & $ANSWER_CASE_SENSITIVE);
+                    $this->answers[$id]->fullmatch = (($fraction & $ANSWER_FULL_MATCH) ? 1 : 0);
+                    $this->answers[$id]->casesensitive = (($fraction & $ANSWER_CASE_SENSITIVE) ? 1 : 0);
+                    $this->answers[$id]->ignorebreaks = (($fraction & $ANSWER_IGNORE_BREAKS) ? 1 : 0);
                 }
             } else {
                 $this->answers = array();
