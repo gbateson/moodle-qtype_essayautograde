@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2020-07-09 (89)
+ - add a CSS selector for labels in forms on Moodle <= 3.6
+
 2020-07-08 (88)
  - add new matching options to target phrases and embed media attachments into review page
 

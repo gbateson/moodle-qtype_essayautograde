@@ -147,23 +147,20 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
                 case 'image':
                     $params = array('src' => $url,
-                                    'alt' => $mimetext,
-                                    'style' => 'width: 100%; max-width: 480px;');
+                                    'alt' => $mimetext);
                     $file = html_writer::empty_tag('img', $params);
                     break;
 
                 case 'audio':
                     $file = html_writer::empty_tag('source', array('src' => $url));
-                    $params = array('controls' => 'true',
-                                    'style' => 'width: 100%; max-width: 480px;');
+                    $params = array('controls' => 'true');
                     $file = html_writer::tag('audio', $file.$url, $params);
                     break;
 
                 case 'video':
                     $file = html_writer::empty_tag('source', array('src' => $url));
                     $params = array('controls' => 'true',
-                                    'playsinline' => 'true',
-                                    'style' => 'width: 100%; max-width: 480px;');
+                                    'playsinline' => 'true');
                     $file = html_writer::tag('video', $file.$url, $params);
                     break;
 
@@ -172,7 +169,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $icon = $this->output->pix_icon($icon, $mimetext, 'moodle', array('class' => 'icon'));
                     $file = html_writer::link($qa->get_response_file_url($file), $icon.' '.s($file->get_filename()));
             }
-            $output[] = html_writer::tag('p', $file);
+            $output[] = html_writer::tag('p', $file, array('style' => 'width: 100%; max-width: 480px;'));
         }
         return implode($output);
     }

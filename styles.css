@@ -174,7 +174,10 @@ table.essayautograde.review .present {
 }
 
 @media (min-width: 768px) {
-    [id^=fgroup_id_phrasebehavior_][id$=_label] {
+    /** Moodle <= 3.6 **/
+    [id^=fgroup_id_phrasebehavior_] label,
+    /** Moodle >= 3.7 **/
+    [id^=fgroup_id_phrasebehavior_] [id$=_label] {
         visibility: hidden;
     }
 }
