@@ -216,6 +216,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setType($name, PARAM_INT);
         $mform->setDefault($name, $this->get_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+        $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_FILES'));
 
         $this->add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options);
 
@@ -235,6 +236,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+        $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_FILES'));
 
         $name = 'errorpercent';
         $label = get_string($name, $plugin);
@@ -244,6 +246,11 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->setType($name, PARAM_INT);
         $mform->disabledIf($name, 'errorcmid', 'eq', 0);
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+        $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_FILES'));
+
+        /////////////////////////////////////////////////
+        // Insert responsesample after responsetemplate.
+        /////////////////////////////////////////////////
 
         $name = 'responsesample';
         $label = get_string($name, $plugin);
@@ -507,7 +514,8 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                      $this->plugin_constant('ITEM_TYPE_CHARS') => get_string('chars', $plugin),
                      $this->plugin_constant('ITEM_TYPE_WORDS') => get_string('words', $plugin),
                      $this->plugin_constant('ITEM_TYPE_SENTENCES') => get_string('sentences', $plugin),
-                     $this->plugin_constant('ITEM_TYPE_PARAGRAPHS') => get_string('paragraphs', $plugin));
+                     $this->plugin_constant('ITEM_TYPE_PARAGRAPHS') => get_string('paragraphs', $plugin),
+                     $this->plugin_constant('ITEM_TYPE_FILES') => get_string('files', $plugin));
     }
 
     /**
@@ -598,7 +606,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                          'charspersentence', 'wordspersentence',
                          'longwordspersentence', 'sentencesperparagraph',
                          'lexicaldensity', 'fogindex',
-                         'commonerrors');
+                         'commonerrors', 'files');
         if ($returntext) {
             $plugin = 'qtype_essayautograde'; // $this->plugin_name();
             $options = array_flip($options);

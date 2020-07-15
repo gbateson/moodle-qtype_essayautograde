@@ -74,6 +74,10 @@
     margin-top:    2px;
 }
 
+.que.essayautograde .fp-restrictions span:first-of-type {
+    display: none;
+}
+
 table.essayautograde.review {
     border-collapse: separate;
     border-spacing:         0;

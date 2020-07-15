@@ -53,6 +53,7 @@ class qtype_essayautograde extends question_type {
     const ITEM_TYPE_WORDS = 2;
     const ITEM_TYPE_SENTENCES = 3;
     const ITEM_TYPE_PARAGRAPHS = 4;
+    const ITEM_TYPE_FILES = 5;
 
     /** Show/hide values */
     const SHOW_NONE                  = 0;
@@ -140,6 +141,7 @@ class qtype_essayautograde extends question_type {
             'responsetemplateformat' => $formdata->responsetemplate['format'],
             'responsesample'      => $formdata->responsesample['text'],
             'responsesampleformat' => $formdata->responsesample['format'],
+            'filetypeslist'       => isset($formdata->filetypeslist) ? $formdata->filetypeslist : '',
             'enableautograde'     => isset($formdata->enableautograde) ? $formdata->enableautograde : 1,
             'itemtype'            => isset($formdata->itemtype) ? $formdata->itemtype : self::ITEM_TYPE_CHARS,
             'itemcount'           => isset($formdata->itemcount) ? $formdata->itemcount : 1,
@@ -681,6 +683,7 @@ class qtype_essayautograde extends question_type {
             case self::ITEM_TYPE_WORDS: $output .= 'words'.PHP_EOL; break;
             case self::ITEM_TYPE_SENTENCES: $output .= 'sentences'.PHP_EOL; break;
             case self::ITEM_TYPE_PARAGRAPHS: $output .= 'paragraphs'.PHP_EOL; break;
+            case self::ITEM_TYPE_FILES: $output .= 'files'.PHP_EOL; break;
             default: $output .= 'none';
         }
 
@@ -755,7 +758,7 @@ class qtype_essayautograde extends question_type {
 
         // regular expressions to parse item count and type
         // we must have this as the first line of the $extra value
-        $search = '/^(\s*\d*)?\s*(none|chars|words|sentences|paragraphs)/';
+        $search = '/^(\s*\d*)?\s*(none|chars|words|sentences|paragraphs|files)/';
         if (! preg_match($search, array_shift($options), $matches)) {
             return false;
         }
@@ -769,6 +772,7 @@ class qtype_essayautograde extends question_type {
             case 'words': $question->itemtype = self::ITEM_TYPE_WORDS; break;
             case 'sentences': $question->itemtype = self::ITEM_TYPE_SENTENCES; break;
             case 'paragraphs': $question->itemtype = self::ITEM_TYPE_PARAGRAPHS; break;
+            case 'files': $question->itemtype = self::ITEM_TYPE_FILES; break;
             default: $question->itemtype = self::ITEM_TYPE_NONE;
         }
 

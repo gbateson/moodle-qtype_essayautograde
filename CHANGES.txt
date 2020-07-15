@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2020-07-15 (90)
+ - improve detection and feedback for autograding files.
+
 2020-07-09 (89)
  - add a CSS selector for labels in forms on Moodle <= 3.6
 

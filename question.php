@@ -113,28 +113,11 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return bool whether this response can be graded.
      */
     public function is_gradable_response(array $response) {
-
-        // If there is no answer, the response is not gradable.
-        if (empty($response['answer'])) {
+        if ($this->get_validation_error($response)) {
             return false;
-        }
-
-        // If there is no response template or sample,
-        // the answer must be original and therefore it is gradable.
-        if (empty($this->responsetemplate) && empty($this->responsesample)) {
+        } else {
             return true;
         }
-
-        // Check that the answer is not simply the unaltered response template/sample.
-        if ($this->is_similar_text($response['answer'], $this->responsetemplate)) {
-            return false;
-        }
-        if ($this->is_similar_text($response['answer'], $this->responsesample)) {
-            return false;
-        }
-
-        // The response can be graded.
-        return true;
     }
 
     /**
@@ -143,10 +126,49 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return string the message.
      */
     public function get_validation_error(array $response) {
-        if ($this->is_gradable_response($response)) {
-            return '';
+
+        // Check we have either a text answer or a file attachment.
+        if (empty($response['answer']) && empty($response['attachments'])) {
+            return get_string('noresponse', 'quiz');
         }
-        return get_string('pleaseenterananswer', $this->plugin_name());
+
+        // Ensure we have text response, if required
+        if ($this->responseformat == 'noinline') {
+            $responserequired = 0; // i.e. not required
+        } else {
+            $responserequired = $this->responserequired;
+        }
+        if ($responserequired && empty($response['answer'])) {
+            return get_string('pleaseinputtext', $this->plugin_name());
+        }
+
+        // Ensure we have attachments, if required
+        if ($this->itemtype == $this->plugin_constant('ITEM_TYPE_FILES')) {
+            $attachmentsrequired = $this->itemcount;
+        } else if ($this->attachments) {
+            $attachmentsrequired = $this->attachmentsrequired;
+        } else {
+            $attachmentsrequired = 0;
+        }
+        if ($attachmentsrequired && empty($response['attachments'])) {
+            return get_string('pleaseattachfiles', $this->plugin_name());
+        }
+
+        // Check that the answer is not simply the unaltered response template/sample.
+        if (isset($response['answer']) && $response['answer']) {
+            $names = array('responsetemplate', 'responsesample');
+            foreach ($names as $name) {
+                if (empty($this->$name)) {
+                    continue;
+                }
+                if ($this->is_similar_text($this->$name, $response['answer'])) {
+                    return get_string('responseisnotoriginal', $this->plugin_name());
+                }
+            }
+        }
+
+        // No validation errors.
+        return '';
     }
 
     /**
@@ -315,11 +337,17 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
         }
 
+        if (empty($response) || empty($response['attachments'])) {
+            $files = array();
+        } else {
+            $files = $response['attachments']->get_files();
+        }
+
         // detect common errors
         list($errors, $errorpercent) = $this->get_common_errors($text);
 
         // Get stats for this $text.
-        $stats = $this->get_stats($text, $errors);
+        $stats = $this->get_stats($text, $files, $errors);
 
         // Count items in $text.
         switch ($this->itemtype) {
@@ -327,12 +355,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             case $this->plugin_constant('ITEM_TYPE_WORDS'): $count = $stats->words; break;
             case $this->plugin_constant('ITEM_TYPE_SENTENCES'): $count = $stats->sentences; break;
             case $this->plugin_constant('ITEM_TYPE_PARAGRAPHS'): $count = $stats->paragraphs; break;
+            case $this->plugin_constant('ITEM_TYPE_FILES'): $count = $stats->files; break;
         }
 
         // Get records from "question_answers" table.
         $answers = $this->get_answers();
 
-        if (empty($answers)) {
+        if (empty($answers) || ($this->itemtype == $this->plugin_constant('ITEM_TYPE_FILES'))) {
 
             // Set fractional grade from number of items.
             if (empty($this->itemcount)) {
@@ -722,12 +751,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     /**
      * get_stats
      */
-    protected function get_stats($text, $errors) {
+    protected function get_stats($text, $files, $errors) {
         $precision = 1;
         $stats = (object)array('chars' => $this->get_stats_chars($text),
                                'words' => $this->get_stats_words($text),
                                'sentences' => $this->get_stats_sentences($text),
                                'paragraphs' => $this->get_stats_paragraphs($text),
+                               'files' => $this->get_stats_files($files),
                                'longwords' => $this->get_stats_longwords($text),
                                'uniquewords' => $this->get_stats_uniquewords($text),
                                'fogindex' => 0,
@@ -785,6 +815,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $items = explode("\n", $text);
         $items = array_filter($items);
         return count($items);
+    }
+
+    /**
+     * get_stats_files
+     */
+    protected function get_stats_files($files) {
+        return count($files);
     }
 
     /**
