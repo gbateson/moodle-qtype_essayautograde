@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2020-07-30 (91)
+ - convert response to plain text when checking for similarity to response template/sample
+
 2020-07-15 (90)
  - improve detection and feedback for autograding files.
 

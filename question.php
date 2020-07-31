@@ -75,6 +75,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     /** Information about the latest response */
     protected $currentresponse = null;
 
+    /** Text content of response template */
+    protected $responsetemplatetext = null;
+
+    /** Text content of response sample */
+    protected $responsesampletext = null;
+
     /**
      * These variables are only used if needed
      * to dtect paterns in a student response
@@ -156,14 +162,16 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         // Check that the answer is not simply the unaltered response template/sample.
         if (isset($response['answer']) && $response['answer']) {
-            $names = array('responsetemplate', 'responsesample');
-            foreach ($names as $name) {
-                if (empty($this->$name)) {
-                    continue;
-                }
-                if ($this->is_similar_text($this->$name, $response['answer'])) {
-                    return get_string('responseisnotoriginal', $this->plugin_name());
-                }
+
+            $this->set_template_and_sample_text();
+            $text = $this->get_response_answer_text($response);
+
+            if ($this->is_similar_text($text, $this->responsetemplatetext)) {
+                return get_string('responseisnotoriginal', $this->plugin_name());
+            }
+
+            if ($this->is_similar_text($text, $this->responsesampletext)) {
+                return get_string('responseisnotoriginal', $this->plugin_name());
             }
         }
 
@@ -317,24 +325,17 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $completecount = 0;
         $completepercent = 0;
 
-        // Clean the $response text
-        if (empty($response) || empty($response['answer'])) {
-            $text = ''; // No response was entered. 
-        } else if ($this->is_similar_text($response['answer'], $this->responsetemplate)) {
-            $text = ''; 
-        } else if ($this->is_similar_text($response['answer'], $this->responsesample)) {
-            $text = '';
-        } else {
-            $text = question_utils::to_plain_text($response['answer'],
-                                                  $response['answerformat'],
-                                                  array('para' => false));
-            // Standardize white space in $text.
-            // Html-entity for non-breaking space, $nbsp;,
-            // is converted to a unicode character, "\xc2\xa0",
-            // that can be simulated by two ascii chars (194,160)
-            $text = str_replace(chr(194).chr(160), ' ', $text);
-            $text = preg_replace('/[ \t]+/', ' ', trim($text));
-            $text = preg_replace('/ *[\r\n]+ */s', "\n", $text);
+        $this->set_template_and_sample_text();
+        $text = $this->get_response_answer_text($response);
+
+        if ($text) {
+            if ($this->is_similar_text($text, $this->responsetemplatetext)) {
+                $text = '';
+            } else if ($this->is_similar_text($text, $this->responsesampletext)) {
+                $text = '';
+            } else {
+                $text = $this->standardize_white_space($text);
+            }
         }
 
         if (empty($response) || empty($response['attachments'])) {
@@ -471,6 +472,63 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     /**
+     * set_template_and_sample_text
+     */
+    protected function set_template_and_sample_text() {
+
+        $names = array('responsetemplate', 'responsesample');
+        foreach ($names as $name) {
+
+            $text = $name.'text';
+            $format = $name.'format';
+
+            if (isset($this->$text)) {
+                continue;
+            }
+
+            if (empty($this->$name)) {
+                $this->$text = '';
+            } else {
+                $this->$text = question_utils::to_plain_text(
+                    $this->$name,
+                    $this->$format,
+                    array('para' => false)
+                );
+                $this->$text = $this->standardize_white_space($this->$text);
+            }
+        }
+    }
+
+    /**
+     * get_response_answer_text($response)
+     */
+    protected function get_response_answer_text($response) {
+        if (empty($response) || empty($response['answer'])) {
+            return ''; // No answer - unexpected !!
+        }
+        $text = question_utils::to_plain_text(
+            $response['answer'],
+            $response['answerformat'],
+            array('para' => false)
+        );
+        return $this->standardize_white_space($text);
+    }
+
+    /**
+     * standardize_white_space($text)
+     */
+    protected function standardize_white_space($text) {
+        // Standardize white space in $text.
+        // Html-entity for non-breaking space, $nbsp;,
+        // is converted to a unicode character, "\xc2\xa0",
+        // that can be simulated by two ascii chars (194,160)
+        $text = str_replace(chr(194).chr(160), ' ', $text);
+        $text = preg_replace('/[ \t]+/', ' ', trim($text));
+        $text = preg_replace('/( *[\x0A-\x0D]+ *)+/s', "\n", $text);
+        return $text;
+    }
+
+    /**
      * is_similar_text($a, $b, $thresholdpercent=10)
      */
     protected function is_similar_text($a, $b, $thresholdpercent=10) {
@@ -495,15 +553,15 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         // Cache the length of the longer of the two strings.
         $maxlen = max($alen, $blen);
-        
+
         // Compare short strings (of up to 255 chars) with "levenshtein()" because its faster.
         // Compare long strings with "similar_text()" because it can handle texts of any length.
         if ($alen > 255 || $blen > 255) {
-            // "similar_text()" returns the number of matching chars in both $a and $b, 
+            // "similar_text()" returns the number of matching chars in both $a and $b,
             // i.e. the higher number, the more similar the texts are.
             $fraction = (($maxlen - similar_text($a, $b)) / $maxlen);
         } else {
-            // "levenshtein()" returns the minimal number of characters 
+            // "levenshtein()" returns the minimal number of characters
             // you have to replace, insert or delete to transform $a into $b
             // i.e. the lower the number, the more similar the texts are.
             $fraction = (levenshtein($a, $b) / $maxlen);
@@ -562,7 +620,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             array_multisort($keys, SORT_DESC, $matches);
 
             // remove matches that are substrings of longer matches
-            $keys = array();            
+            $keys = array();
             foreach ($matches as $match) {
                 $search = '/^'.preg_quote($match, '/').'.+/iu';
                 $search = preg_grep($search, $matches);
@@ -583,7 +641,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @param object $entry
      * @param string $match
      * @param string $text
-     * @return string the matching substring in $text or "" 
+     * @return string the matching substring in $text or ""
      */
     protected function glossary_entry_search_text($entry, $search, $text) {
         return $this->search_text($search, $text, $entry->fullmatch, $entry->casesensitive);
