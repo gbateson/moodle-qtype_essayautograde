@@ -444,17 +444,24 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $details[] = $this->get_calculation_detail('explanationtargetphrase', $plugin, $a);
                 }
 
+                // Common errors.
                 foreach ($currentresponse->errors as $error => $link) {
                     $a = (object)array('percent' => $question->errorpercent,
                                        'error'   => $error);
                     $details[] = $this->get_calculation_detail('explanationcommonerror', $plugin, $a, '- ');
                 }
 
+                // Files.
                 if ($question->itemtype == $question->plugin_constant('ITEM_TYPE_FILES')) {
                     $a = (object)array('percent' => $currentresponse->rawpercent,
                                        'filecount' => $currentresponse->count,
                                        'itemcount' => $question->itemcount);
                     $details[] = get_string('explanationfiles', $plugin, $a);
+                }
+
+                // Plagiarism links, if any.
+                foreach ($currentresponse->plagiarism as $plagiarism) {
+                    $details[] = html_writer('p', $plagiarism);
                 }
 
                 if (empty($details) && $currentresponse->count) {
@@ -578,7 +585,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 }
             }
 
-            // show grade bands, if required
+            // Show grade bands, if required.
             if ($showgradebands) {
                 $details = array();
                 $i = 1; // grade band index
@@ -595,7 +602,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $output .= html_writer::tag('dl', implode('', $details), array('class' => 'gradebands'));
             }
 
-            // show target phrases, if required
+            // Show target phrases, if required.
             if ($showtargetphrases) {
                 $details = array();
                 foreach ($currentresponse->phrases as $match => $percent) {
@@ -607,7 +614,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $output .= html_writer::alist($details);
             }
 
-            // show actionable feedback, if required
+            // Show actionable feedback, if required.
             if ($show[$question->showfeedback]) {
                 $hints = array();
 
@@ -702,6 +709,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     }
                 }
 
+                // Errors
                 if ($maxcount = count($currentresponse->errors)) {
                     $hints['errors'] = get_string('feedbackhinterrors', $plugin);
                     $output .= html_writer::start_tag('tr', array('class' => 'errors'));

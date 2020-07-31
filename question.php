@@ -83,7 +83,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
     /**
      * These variables are only used if needed
-     * to dtect paterns in a student response
+     * to detect patterns in a student response
      */
     private static $aliases = null;
     private static $metachars = null;
@@ -161,10 +161,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         }
 
         // Check that the answer is not simply the unaltered response template/sample.
-        if (isset($response['answer']) && $response['answer']) {
+        if ($text = $this->get_response_answer_text($response)) {
 
             $this->set_template_and_sample_text();
-            $text = $this->get_response_answer_text($response);
 
             if ($this->is_similar_text($text, $this->responsetemplatetext)) {
                 return get_string('responseisnotoriginal', $this->plugin_name());
@@ -307,12 +306,37 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     public function update_current_response($response, $displayoptions=null) {
+        global $CFG, $PAGE, $USER;
+
+        if (empty($CFG->enableplagiarism)) {
+            $enableplagiarism = false;
+            $plagiarismparams = array();
+            $context = null;
+            $course = null;
+            $cm = null;
+        } else {
+            $enableplagiarism = true;
+            require_once($CFG->dirroot.'/lib/plagiarismlib.php');
+
+            list($context, $course, $cm) = get_context_info_array($PAGE->context->id);
+            $plagiarismparams = array(
+                'userid' => $USER->id
+            );
+            if ($course) {
+                $plagiarismparams['course'] = $course->id;
+            }
+            if ($cm) {
+                $plagiarismparams['cmid'] = $cm->id;
+                $plagiarismparams[$cm->modname] = $cm->instance;
+            }
+        }
 
         // Initialize data about this $response
         $count = 0;
         $bands = array();
         $phrases = array();
         $myphrases = array();
+        $plagiarism = array();
         $breaks = 0;
         $rawpercent = 0;
         $rawfraction = 0.0;
@@ -325,23 +349,27 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $completecount = 0;
         $completepercent = 0;
 
-        $this->set_template_and_sample_text();
-        $text = $this->get_response_answer_text($response);
-
-        if ($text) {
+        if ($text = $this->get_response_answer_text($response)) {
+            $this->set_template_and_sample_text();
             if ($this->is_similar_text($text, $this->responsetemplatetext)) {
                 $text = '';
             } else if ($this->is_similar_text($text, $this->responsesampletext)) {
                 $text = '';
-            } else {
-                $text = $this->standardize_white_space($text);
             }
+        }
+        if ($enableplagiarism) {
+            $plagiarism[] = plagiarism_get_links($plagiarismparams + array('content' => $text));
         }
 
         if (empty($response) || empty($response['attachments'])) {
             $files = array();
         } else {
             $files = $response['attachments']->get_files();
+        }
+        if ($enableplagiarism) {
+            foreach ($files as $file) {
+                $plagiarism[] = plagiarism_get_links($plagiarismparams + array('file' => $file));
+            }
         }
 
         // detect common errors
@@ -457,6 +485,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $this->save_current_response('bands', $bands);
         $this->save_current_response('phrases', $phrases);
         $this->save_current_response('myphrases', $myphrases);
+        $this->save_current_response('plagiarism', $plagiarism);
         $this->save_current_response('breaks', $breaks);
         $this->save_current_response('rawpercent', $rawpercent);
         $this->save_current_response('rawfraction', $rawfraction);
@@ -475,27 +504,15 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * set_template_and_sample_text
      */
     protected function set_template_and_sample_text() {
-
-        $names = array('responsetemplate', 'responsesample');
-        foreach ($names as $name) {
-
-            $text = $name.'text';
-            $format = $name.'format';
-
-            if (isset($this->$text)) {
-                continue;
-            }
-
-            if (empty($this->$name)) {
-                $this->$text = '';
-            } else {
-                $this->$text = question_utils::to_plain_text(
-                    $this->$name,
-                    $this->$format,
-                    array('para' => false)
-                );
-                $this->$text = $this->standardize_white_space($this->$text);
-            }
+        if ($this->responsetemplatetext === null) {
+            $this->responsetemplatetext = $this->to_plain_text(
+                $this->responsetemplate, $this->responsetemplateformat
+            );
+        }
+        if ($this->responsesampletext === null) {
+            $this->responsesampletext = $this->to_plain_text(
+                $this->responsesample, $this->responsesampleformat
+            );
         }
     }
 
@@ -504,14 +521,21 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function get_response_answer_text($response) {
         if (empty($response) || empty($response['answer'])) {
-            return ''; // No answer - unexpected !!
+            return '';
         }
-        $text = question_utils::to_plain_text(
-            $response['answer'],
-            $response['answerformat'],
-            array('para' => false)
-        );
-        return $this->standardize_white_space($text);
+        return $this->to_plain_text($response['answer'], $response['answerformat']);
+    }
+
+    /**
+     * to_plain_text
+     */
+    protected function to_plain_text($text, $format) {
+        if (empty($text)) {
+            return '';
+        }
+        $plaintext = question_utils::to_plain_text($text, $format, array('para' => false));
+        $plaintext = $this->standardize_white_space($plaintext);
+        return $plaintext;
     }
 
     /**
