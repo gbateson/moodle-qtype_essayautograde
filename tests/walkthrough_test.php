@@ -180,29 +180,30 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
     }
 
     public function test_responsetemplate() {
-        $this->test_editorfield('responsetemplate');
+        $this->check_editorfield('responsetemplate');
     }
 
     public function test_responsesample() {
-        $this->test_editorfield('responsesample');
+        $this->check_editorfield('responsesample');
     }
 
     /**
-     * test_responseformatsample
+     * check_editorfield
      *
      * @param string $fieldname the name of the editor field
      * @return void, but will test fiield behavior
      */
-    public function test_editorfield($editofieldname) {
+    protected function check_editorfield($editorfieldname) {
         global $PAGE;
 
         // The current text editor depends on the users profile setting - so it needs a valid user.
         $this->setAdminUser();
+
         // Required to init a text editor.
         $PAGE->set_url('/');
 
         // Create an essayautograde question.
-        $q = test_question_maker::make_question('essayautograde', $editofieldname);
+        $q = test_question_maker::make_question('essayautograde', $editorfieldname);
         $this->start_attempt_at_question($q, 'deferredfeedback', 1);
 
         $prefix = $this->quba->get_field_prefix($this->slot);

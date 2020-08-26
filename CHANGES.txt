@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2020-08-24 (93)
+ - in tests/walkthrough_test.php, rename text_editorfield to check_editorfield in order to prevent errors in travis. Thanks to ewallah for this suggestion :-)
+
 2020-07-31 (92)
  - first attempt to add hook to plagismplugins - not tested yet
 
