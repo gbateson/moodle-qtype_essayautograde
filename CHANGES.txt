@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2020-09-03 (94)
+ - (issue #37) fix assertions in tests/question_test [Thanks to ewallah]
+
 2020-08-24 (93)
  - in tests/walkthrough_test.php, rename text_editorfield to check_editorfield in order to prevent errors in travis. Thanks to ewallah for this suggestion :-)
 

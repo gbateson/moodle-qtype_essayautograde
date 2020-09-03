@@ -17,8 +17,7 @@
 /**
  * Unit tests for the essayautograde question definition class.
  *
- * @package    qtype
- * @subpackage essayautograde
+ * @package    qtype_essayautograde
  * @copyright  2009 The Open University
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -103,22 +102,22 @@ class qtype_essayautograde_question_test extends advanced_testcase {
         $this->same_response_with_editor('responsesample');
     }
 
-    public function same_response_with_editor($editorfieldname) {
+    protected function same_response_with_editor($editorfieldname) {
         $essayautograde = qtype_essayautograde_test_helper::make_an_essayautograde_question();
 
         $essayautograde->$editorfieldname = $editorfieldname;
 
         $essayautograde->start_attempt(new question_attempt_step(), 1);
 
-        $this->assertTrue($essayautograde->is_same_response(
+        $this->assertFalse($essayautograde->is_same_response(
                 array(),
                 array('answer' => 'Once upon a time')));
 
-        $this->assertTrue($essayautograde->is_same_response(
+        $this->assertFalse($essayautograde->is_same_response(
                 array('answer' => ''),
                 array('answer' => 'Once upon a time')));
 
-        $this->assertTrue($essayautograde->is_same_response(
+        $this->assertFalse($essayautograde->is_same_response(
                 array('answer' => 'Once upon a time'),
                 array('answer' => '')));
 
@@ -126,7 +125,7 @@ class qtype_essayautograde_question_test extends advanced_testcase {
                 array('answer' => ''),
                 array()));
 
-        $this->assertTrue($essayautograde->is_same_response(
+        $this->assertFalse($essayautograde->is_same_response(
                 array('answer' => 'Once upon a time'),
                 array()));
 
