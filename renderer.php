@@ -461,7 +461,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
                 // Plagiarism links, if any.
                 foreach ($currentresponse->plagiarism as $plagiarism) {
-                    $details[] = html_writer('p', $plagiarism);
+                    $details[] = html_writer::tag('p', $plagiarism);
                 }
 
                 if (empty($details) && $currentresponse->count) {
