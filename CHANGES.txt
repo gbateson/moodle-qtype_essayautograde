@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-01-29 (95)
+ - Thanks TimeBandit001, for fix #42, and thanks TimHunt for the review.
+
 2020-09-03 (94)
  - (issue #37) fix assertions in tests/question_test [Thanks to ewallah]
 
