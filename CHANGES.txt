@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-06-08 (96)
+ - modify declaration of parameters accepted by get_default_value method in the edit form
+
 2021-01-29 (95)
  - Thanks TimeBandit001, for fix #42, and thanks TimHunt for the review.
 

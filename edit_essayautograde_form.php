@@ -486,7 +486,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      * @param string|mixed|null $default Default value (optional, default = null)
      * @return string|mixed|null Default value for field with this $name
      */
-    protected function get_default_value($name, $default=null) {
+    protected function get_default_value(string $name, $default) {
         $name = $this->get_preference_name($name);
         return get_user_preferences($name, $default);
     }
