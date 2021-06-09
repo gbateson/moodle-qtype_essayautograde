@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-06-09 (97)
+ - add return value of 'void' to setUp and tearDown methods in tests/questiontype_test.php
+
 2021-06-08 (96)
  - modify declaration of parameters accepted by get_default_value method in the edit form
 

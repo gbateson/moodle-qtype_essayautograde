@@ -39,11 +39,11 @@ require_once($CFG->dirroot . '/question/type/essayautograde/questiontype.php');
 class qtype_essayautograde_test extends advanced_testcase {
     protected $qtype;
 
-    protected function setUp() {
+    protected function setUp(): void {
         $this->qtype = new qtype_essayautograde();
     }
 
-    protected function tearDown() {
+    protected function tearDown(): void {
         $this->qtype = null;
     }
 
