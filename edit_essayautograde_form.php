@@ -105,7 +105,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('selectyesno', $name, $label);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 1));
+        $mform->setDefault($name, $this->get_my_default_value($name, 1));
 
         $name = 'itemtype';
         $label = get_string($name, $plugin);
@@ -113,7 +113,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, $this->plugin_constant('ITEM_TYPE_WORDS')));
+        $mform->setDefault($name, $this->get_my_default_value($name, $this->plugin_constant('ITEM_TYPE_WORDS')));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'itemcount';
@@ -121,7 +121,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('text', $name, $label, $medium_text_options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_NONE'));
 
@@ -130,7 +130,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $showhide_options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'showcalculation';
@@ -138,7 +138,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $showhide_options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'showtextstats';
@@ -146,7 +146,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $showhide_options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'textstatitems';
@@ -164,7 +164,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
         // only use defaults on new record
         //$defaults = 'words,wordspersentence,uniquewords,longwords';
-        //$defaults = $this->get_default_value($name, $defaults);
+        //$defaults = $this->get_my_default_value($name, $defaults);
         //$defaults = explode(',', $defaults);
         //$defaults = array_filter($defaults);
 
@@ -187,7 +187,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $showhide_options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $name = 'addpartialgrades';
@@ -195,7 +195,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('selectyesno', $name, $label);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
 
         $this->add_repeat_gradebands($mform, $plugin, $short_text_options, $long_text_options, $grade_options);
@@ -214,7 +214,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addElement('select', $name, $label, $showhide_options);
         $mform->addHelpButton($name, $name, $plugin);
         $mform->setType($name, PARAM_INT);
-        $mform->setDefault($name, $this->get_default_value($name, 0));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_FILES'));
 
@@ -242,7 +242,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $label = get_string($name, $plugin);
         $mform->addElement('select', $name, $label, $grade_options);
         $mform->addHelpButton($name, $name, $plugin);
-        $mform->setDefault($name, $this->get_default_value($name, 5));
+        $mform->setDefault($name, $this->get_my_default_value($name, 5));
         $mform->setType($name, PARAM_INT);
         $mform->disabledIf($name, 'errorcmid', 'eq', 0);
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
@@ -469,38 +469,20 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     /**
-     * Given a preference item name, returns the full
-     * preference name of that item for this plugin
-     *
-     * @param string $name Item name
-     * @return string full preference name
-     */
-    protected function get_preference_name($name) {
-        return $this->plugin_name()."_$name";
-    }
-
-    /**
      * Returns default value for item
      *
      * @param string $name Item name
      * @param string|mixed|null $default Default value (optional, default = null)
      * @return string|mixed|null Default value for field with this $name
      */
-    protected function get_default_value(string $name, $default) {
-        $name = $this->get_preference_name($name);
-        return get_user_preferences($name, $default);
-    }
-
-    /**
-     * Saves default value for item
-     *
-     * @param string $name Item name
-     * @param string|mixed|null $value
-     * @return bool Always true or exception
-     */
-    protected function set_default_value($name, $value) {
-        $name = $this->get_preference_name($name);
-        return set_user_preferences(array($name => $value));
+    protected function get_my_default_value($name, $default) {
+        if (method_exists($this, 'get_default_value')) {
+            // Moodle >= 3.10
+            return $this->get_default_value($name, $default);
+        } else {
+            // Moodle <= 3.9
+            return get_user_preferences($this->plugin_name().'_'.$name, $default);
+        }
     }
 
     /**

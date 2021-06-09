@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-06-09 (00)
+ - in edit form, rename 'get_default_value()' method to 'get_my_default_value()' for compatability with Moodle >= 3.10
+
 2021-06-09 (98)
  - (Issue #47) do not force regrade when changing parameters on the question settings
 

@@ -68,7 +68,7 @@ class qtype_essayautograde extends question_type {
     public function extra_question_fields() {
         return array($this->plugin_name().'_options', // DB table name
                      'responseformat', 'responserequired', 'responsefieldlines',
-                     'attachments', 'attachmentsrequired', 'filetypeslist',
+                     'attachments', 'attachmentsrequired', 'maxbytes', 'filetypeslist',
                      'graderinfo', 'graderinfoformat',
                      'responsetemplate', 'responsetemplateformat',
                      'responsesample', 'responsesampleformat',
@@ -141,6 +141,7 @@ class qtype_essayautograde extends question_type {
             'responsetemplateformat' => $formdata->responsetemplate['format'],
             'responsesample'      => $formdata->responsesample['text'],
             'responsesampleformat' => $formdata->responsesample['format'],
+            'maxbytes'            => isset($formdata->maxbytes) ? $formdata->maxbytes : 0,
             'filetypeslist'       => isset($formdata->filetypeslist) ? $formdata->filetypeslist : '',
             'enableautograde'     => isset($formdata->enableautograde) ? $formdata->enableautograde : 1,
             'itemtype'            => isset($formdata->itemtype) ? $formdata->itemtype : self::ITEM_TYPE_CHARS,
@@ -972,6 +973,7 @@ class qtype_essayautograde extends question_type {
             'responsetemplateformat' => 0,
             'responsesample'       => '',
             'responsesampleformat' =>  0,
+            'maxbytes'             =>  0,
             'filetypeslist'        => '',
             'enableautograde'      =>  1,
             'itemtype'             =>  0,

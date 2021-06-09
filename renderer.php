@@ -200,12 +200,13 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $pickeroptions->accepted_types = $filetypes;
         }
 
-        $manager = new form_filemanager($pickeroptions);
-        $renderer = $this->page->get_renderer('core', 'files');
+        $filemanager = new form_filemanager($pickeroptions);
+        $filemanager->options->maxbytes = $qa->get_question()->maxbytes;
+        $filesrenderer = $this->page->get_renderer('core', 'files');
         $params = array('type'  => 'hidden',
                         'value' => $itemid,
                         'name'  => $qa->get_qt_field_name($name));
-        $output = $renderer->render($manager).html_writer::empty_tag('input', $params);
+        $output = $filesrenderer->render($filemanager).html_writer::empty_tag('input', $params);
 
         // Remove restrictions (this is done  with CSS)
         // $output = preg_replace('/(?<=<div class="fp-restrictions">)\s*<span>.*?<\/span>/s', '', $output);

@@ -61,6 +61,8 @@ class qtype_essayautograde_test_helper extends question_test_helper {
         $q->responsetemplateformat = FORMAT_HTML;
         $q->responsesample = '';
         $q->responsesampleformat = FORMAT_HTML;
+        $q->maxbytes = 0:
+        $q->filetypeslist = '';
         $q->enableautograde = 1;
         $q->itemtype = 1;
         $q->itemcount = 0;
