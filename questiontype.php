@@ -273,8 +273,9 @@ class qtype_essayautograde extends question_type {
             $oldanswers = array();
         }
 
+        // If anything that affects the grade has changed, we force a regrade.
         if ($addpartialgrades == $options->addpartialgrades && $errorpercent == $options->errorpercent) {
-            $regrade =  true;
+            $regrade =  false;
         } else {
             $regrade =  true;
         }
@@ -311,10 +312,12 @@ class qtype_essayautograde extends question_type {
             $DB->delete_records($answerstable, array('id' => $oldanswer->id));
         }
 
-        // regrade question if necessary
-        if ($regrade) {
-            $this->regrade_question($formdata->id);
-        }
+        // Regrade question if necessary (DISABLED 2021-06-09)
+        // We don't do this anymore, because regrades are supposed to be done manually.
+        // See: https://github.com/gbateson/moodle-qtype_essayautograde/issues/47
+        //if ($regrade) {
+        //    $this->regrade_question($formdata->id);
+        //}
 
         return true;
     }
@@ -427,6 +430,10 @@ class qtype_essayautograde extends question_type {
     /**
      * based on "regrade_attempt()" method
      * in "mod/quiz/report/overview/report.php"
+     *
+     * This method was useful during development, but is not suitable for
+     * public release, so it is never called. For more information, see:
+     * https://github.com/gbateson/moodle-qtype_essayautograde/issues/47
      */
     protected function regrade_question($questionid) {
         global $CFG, $DB;

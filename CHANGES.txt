@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-06-09 (98)
+ - (Issue #47) do not force regrade when changing parameters on the question settings
+
 2021-06-09 (97)
  - add return value of 'void' to setUp and tearDown methods in tests/questiontype_test.php
 
