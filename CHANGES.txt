@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-06-10 (02)
+ - fix small typo introduced in previous commit. Thanks ewallah for spotting this issue.
+
 2021-06-10 (00)
  - add min/max wordlimit fields in options table
 
