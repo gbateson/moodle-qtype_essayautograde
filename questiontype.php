@@ -788,7 +788,6 @@ class qtype_essayautograde extends question_type {
             default: $question->itemtype = self::ITEM_TYPE_NONE;
         }
 
-
         // regular expression to detect question option
         $search = $this->get_gift_fields();
         $search[] = 'gradebands';

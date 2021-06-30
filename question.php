@@ -560,6 +560,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $a = '';
             $alen = 0;
         } else {
+            $a = strip_tags($a);
             $alen = core_text::strlen($a);
         }
 
@@ -567,6 +568,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $b = '';
             $blen = 0;
         } else {
+            $b = strip_tags($b);
             $blen = core_text::strlen($b);
         }
 
@@ -580,15 +582,15 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         // Compare short strings (of up to 255 chars) with "levenshtein()" because its faster.
         // Compare long strings with "similar_text()" because it can handle texts of any length.
-        if ($alen > 255 || $blen > 255) {
-            // "similar_text()" returns the number of matching chars in both $a and $b,
-            // i.e. the higher number, the more similar the texts are.
-            $fraction = (($maxlen - similar_text($a, $b)) / $maxlen);
-        } else {
+        if ($maxlen <= 255) {
             // "levenshtein()" returns the minimal number of characters
             // you have to replace, insert or delete to transform $a into $b
             // i.e. the lower the number, the more similar the texts are.
             $fraction = (levenshtein($a, $b) / $maxlen);
+        } else {
+            // "similar_text()" returns the number of matching chars in both $a and $b,
+            // i.e. the higher number, the more similar the texts are.
+            $fraction = (($maxlen - similar_text($a, $b)) / $maxlen);
         }
 
         return (round($fraction * 100, 2) <= $thresholdpercent);
