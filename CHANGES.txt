@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-07-14 (07)
+ - add Javascript to show/hide editors on settings page depending on setting of responseformat
+
 2021-07-14 (06)
  - improve the insertion of error glossary links into the answer review page
 
