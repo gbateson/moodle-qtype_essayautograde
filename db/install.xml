@@ -35,6 +35,9 @@
         <FIELD NAME="showtargetphrases" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should the target phrases be shown on the grading and review pages?"/>
         <FIELD NAME="errorcmid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course module ID of a Glossary or Database containing a list of common errors"/>
         <FIELD NAME="errorpercent" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The penalty to be deducted for each error that is found in the response"/>
+        <FIELD NAME="errorfullmatch" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should the common errors be matched only as whole words?"/>
+        <FIELD NAME="errorcasesensitive" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should the common errors be matched sensitive to upper and lower case?"/>
+        <FIELD NAME="errorignorebreaks" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Should line breaks and white space be ignored when matching the common errors?"/>
         <FIELD NAME="correctfeedback" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Feedback shown for any correct response."/>
         <FIELD NAME="correctfeedbackformat" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="incorrectfeedback" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Feedback shown for any incorrect response."/>

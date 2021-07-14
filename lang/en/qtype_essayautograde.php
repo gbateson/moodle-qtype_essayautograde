@@ -50,6 +50,8 @@ $string['commonerrors'] = 'Common errors';
 $string['correctresponse'] = 'To get full marks for this question, you must satisfy the following criteria:';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
+$string['errorbehavior_help'] = 'These settings refine the matching behavior for entries in the Glossary of common entries.';
+$string['errorbehavior'] = 'Error matching behavior';
 $string['errorcmid_help'] = 'Choose the Glossary that contains a list of common errors. 
 
 Each time one of the errors is found in the essay response, the specified penalty will be deducted from the student\'s grade for this question.';

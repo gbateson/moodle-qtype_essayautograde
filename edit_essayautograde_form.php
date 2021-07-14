@@ -69,7 +69,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     }
 
     protected function definition_inner($mform) {
-        global $PAGE;
+        global $CFG, $PAGE;
 
         parent::definition_inner($mform);
 
@@ -247,6 +247,32 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->disabledIf($name, 'errorcmid', 'eq', 0);
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_FILES'));
+
+        // add group of error matching behaviors
+        $elements = array();
+
+        $name = 'errorfullmatch';
+        $default = (empty($CFG->glossary_fullmatch) ? 0 : 1);
+        $elements[] = $mform->createElement('select', $name, '', $this->get_fullmatch_options($plugin));
+        $mform->setDefault($name, $this->get_my_default_value($name, $default));
+        $mform->setType($name, PARAM_INT);
+
+        $name = 'errorcasesensitive';
+        $default = (empty($CFG->glossary_casesensitive) ? 0 : 1);
+        $elements[] = $mform->createElement('select', $name, '', $this->get_casesensitive_options($plugin));
+        $mform->setDefault($name, $this->get_my_default_value($name, $default));
+        $mform->setType($name, PARAM_INT);
+
+        $name = 'errorignorebreaks';
+        $elements[] = $mform->createElement('select', $name, '', $this->get_ignorebreaks_options($plugin));
+        $mform->setDefault($name, $this->get_my_default_value($name, 0));
+        $mform->setType($name, PARAM_INT);
+
+        $name = 'errorbehavior';
+        $label = get_string($name, $plugin);
+        $mform->addGroup($elements, $name, $label, ' ', false);
+        $mform->disabledIf($name, 'enableautograde', 'eq', 0);
+        $mform->addHelpButton($name, $name, $plugin);
 
         /////////////////////////////////////////////////
         // Insert responsesample after responsetemplate.

@@ -150,6 +150,14 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2021071205;
+    if ($oldversion < $newversion) {
+        // Add new fields for more granular matching of entries in the Glossary of common errors
+        $fieldnames = array('errorfullmatch', 'errorcasesensitive', 'errorignorebreaks');
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fieldnames);
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
     return true;
 }
 
@@ -195,6 +203,9 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
         new xmldb_field('showtargetphrases',              XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('errorcmid',                      XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('errorpercent',                   XMLDB_TYPE_INTEGER,  6, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('errorfullmatch',                 XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('errorcasesensitive',             XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('errorignorebreaks',              XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('correctfeedback',                XMLDB_TYPE_TEXT),
         new xmldb_field('correctfeedbackformat',          XMLDB_TYPE_INTEGER,  2, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('incorrectfeedback',              XMLDB_TYPE_TEXT),
