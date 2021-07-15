@@ -33,6 +33,10 @@ define(["jquery", "core/str"], function($, STR) {
 
     ESSAY.itemtype = "";
     ESSAY.itemmatch = "";
+
+    ESSAY.minwords = 0;
+    ESSAY.maxwords = 0;
+
     ESSAY.editortype = "";
 
     ESSAY.editormaxtries = 50;
@@ -44,7 +48,7 @@ define(["jquery", "core/str"], function($, STR) {
     /*
      * initialize this AMD module
      */
-    ESSAY.init = function(readonly, itemtype, editortype, responsesample) {
+    ESSAY.init = function(readonly, itemtype, minwords, maxwords, editortype, responsesample) {
 
         // get RegExp expression for this item type
         var itemmatch = "";
@@ -59,6 +63,10 @@ define(["jquery", "core/str"], function($, STR) {
 
         ESSAY.itemtype = itemtype;
         ESSAY.itemmatch = new RegExp(itemmatch, "g");
+
+        ESSAY.minwords = minwords;
+        ESSAY.maxwords = maxwords;
+
         ESSAY.editortype = editortype;
 
         if (readonly) {
@@ -110,10 +118,101 @@ define(["jquery", "core/str"], function($, STR) {
 
     ESSAY.create_itemcount = function(response, id) {
         if (document.getElementById(id)===null) {
-            var p = document.createElement("P");
-            p.setAttribute("id", id);
-            p.setAttribute("class", "itemcount");
-            response.parentNode.insertBefore(p, response.nextSibling);
+            var div = document.createElement("DIV");
+            div.setAttribute("id", id);
+            div.setAttribute("class", "itemcount");
+            if (ESSAY.itemtype == "words") {
+                STR.get_strings([
+                    {"key": "maxwordslabel",   "component": ESSAY.plugin},
+                    {"key": "maxwordswarning", "component": ESSAY.plugin},
+                    {"key": "minwordslabel",   "component": ESSAY.plugin},
+                    {"key": "minwordswarning", "component": ESSAY.plugin},
+                    {"key": "countwordslabel", "component": ESSAY.plugin}
+                ]).done(function(s){
+                    ESSAY.str.maxwordslabel = s[0];
+                    ESSAY.str.maxwordswarning = s[1];
+                    ESSAY.str.minwordslabel = s[2];
+                    ESSAY.str.minwordswarning = s[3];
+                    ESSAY.str.countwordslabel = s[4];
+
+                    // cache the CSS classes for the warnings about min/max words
+                    var wordswarning = "wordswarning rounded bg-danger text-light ml-2 px-2 py-1 d-none";
+
+                    var b = document.createElement("B");
+                    b.setAttribute("class", "label");
+                    b.appendChild(document.createTextNode(ESSAY.str.countwordslabel + ": "));
+
+                    var i = document.createElement("I");
+                    i.setAttribute("class", "value");
+                    i.appendChild(document.createTextNode("0"));
+
+                    var s = document.createElement("SPAN");
+                    s.setAttribute("class", wordswarning);
+
+                    var p = document.createElement("P");
+                    p.setAttribute("class", "countwords mt-2 mb-0");
+                    p.appendChild(b);
+                    p.appendChild(i);
+                    p.appendChild(s);
+                    div.appendChild(p);
+
+                    if (ESSAY.minwords) {
+                        b = document.createElement("B");
+                        b.setAttribute("class", "label");
+                        b.appendChild(document.createTextNode(ESSAY.str.minwordslabel + ": "));
+
+                        i = document.createElement("I");
+                        i.setAttribute("class", "value");
+                        i.appendChild(document.createTextNode(ESSAY.minwords));
+
+                        p = document.createElement("P");
+                        p.setAttribute("class", "minwords my-0");
+                        p.appendChild(b);
+                        p.appendChild(i);
+
+                        div.appendChild(p);
+                    }
+
+                    if (ESSAY.maxwords) {
+                        b = document.createElement("B");
+                        b.setAttribute("class", "label");
+                        b.appendChild(document.createTextNode(ESSAY.str.maxwordslabel + ": "));
+
+                        i = document.createElement("I");
+                        i.setAttribute("class", "value");
+                        i.appendChild(document.createTextNode(ESSAY.maxwords));
+
+                        p = document.createElement("P");
+                        p.setAttribute("class", "maxwords my-0");
+                        p.appendChild(b);
+                        p.appendChild(i);
+
+                        div.appendChild(p);
+                    }
+                });
+            } else {
+                STR.get_strings([
+                    {"key": ESSAY.itemtype, "component": ESSAY.plugin}
+                ]).done(function(s) {
+                    ESSAY.str.countitems = s[0];
+
+                    var b = document.createElement("B");
+                    b.setAttribute("class", "label");
+                    b.appendChild(document.createTextNode(ESSAY.str.countitems + ": "));
+
+                    var i = document.createElement("I");
+                    i.setAttribute("class", "value");
+                    i.appendChild(document.createTextNode("0"));
+
+                    var p = document.createElement("P");
+                    p.setAttribute("class", "countitems my-0");
+                    p.appendChild(b);
+                    p.appendChild(i);
+
+                    div.appendChild(p);
+                });
+            }
+            response.parentNode.insertBefore(div, response.nextSibling);
         }
     };
 
@@ -175,7 +274,7 @@ define(["jquery", "core/str"], function($, STR) {
         return "id_" + name + "_itemcount";
     };
 
-    ESSAY.escape = function(id) {
+    ESSAY.escaped_id = function(id) {
         var regexp = new RegExp("(:|\\.|\\[|\\]|,|=|@)", "g");
         return "#" + id.replace(regexp, "\\$1");
     };
@@ -193,15 +292,37 @@ define(["jquery", "core/str"], function($, STR) {
         }
 
         // fetch descriptor string
-        STR.get_strings([
-            {"key": ESSAY.itemtype, "component": ESSAY.plugin}
-        ]).done(function(s) {
-            $(ESSAY.escape(id)).text(s[0] + ": " + itemcount);
-        });
+        id = ESSAY.escaped_id(id);
+        if (ESSAY.itemtype == "words") {
+            $(id + " .countwords .value").text(itemcount);
+
+            var wordswarning = "";
+
+            if (itemcount) {
+                if (ESSAY.minwords && ESSAY.minwords > itemcount) {
+                    wordswarning = ESSAY.str.minwordswarning;
+                }
+                if (ESSAY.maxwords && ESSAY.maxwords < itemcount) {
+                    wordswarning = ESSAY.str.maxwordswarning;
+                }
+            }
+
+            var elm = document.querySelector(id + " .countwords .wordswarning");
+            if (elm) {
+                elm.innerText = wordswarning;
+                if (wordswarning == "") {
+                    elm.classList.add("d-none");
+                } else {
+                    elm.classList.remove("d-none");
+                }
+            }
+        } else {
+            $(id + " .countitems .value").text(itemcount);
+        }
     };
 
     ESSAY.setup_responsesample = function(txt) {
-        if (txt=='') {
+        if (txt=="") {
             return;
         }
         ESSAY.responsesample = txt;

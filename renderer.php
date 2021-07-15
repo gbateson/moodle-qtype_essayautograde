@@ -108,11 +108,15 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             case $question->plugin_constant('ITEM_TYPE_FILES'): $itemtype = 'files'; break;
         }
 
+        $minwords = (empty($question->minwordlimit) ? 0 : $question->minwordlimit);
+        $maxwords = (empty($question->maxwordlimit) ? 0 : $question->maxwordlimit);
+
         $editor = $this->get_editor_type($question);
         $sample = question_utils::to_plain_text($question->responsesample,
                                                 $question->responsesampleformat,
                                                 array('para' => false));
-        $params = array($readonly, $itemtype, $editor, $sample);
+
+        $params = array($readonly, $itemtype, $minwords, $maxwords, $editor, $sample);
         $PAGE->requires->js_call_amd('qtype_essayautograde/essayautograde', 'init', $params);
 
         return $result;

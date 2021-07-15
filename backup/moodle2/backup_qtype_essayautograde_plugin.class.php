@@ -64,9 +64,12 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         $essayautograde->set_source_table('qtype_essayautograde_options', $params);
 
         // Annote course_module ids.
+        //
         // Note that in some circumstances, the errorcmid field may not exist,
         // so we check that it is available before annotating (Issue #45).
-        if (array_key_exists('errorcmid', $essayautograde->get_final_elements())) {
+        // See "backup/util/structure/base_nested_element.class.php".
+        if ($essayautograde->get_final_element('errorcmid')) {
+            // See "backup/util/structure/backup_nested_element.class.php".
             $essayautograde->annotate_ids('course_modules', 'errorcmid');
         }
 

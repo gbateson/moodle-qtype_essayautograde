@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-07-15 (09)
+ - In Moodle >= 3.11, inform user of minimum and maximum word count, and warn if there are too few, or too many, words.
+
 2021-07-15 (08)
  - (Issue #45) skip backup of errorcmmid field if it does not exist in the database
 

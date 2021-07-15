@@ -525,7 +525,7 @@ class qtype_essayautograde extends question_type {
                 continue;
             }
             if (in_array($field, $textfields)) {
-                $files = $fs->get_area_files($contextid, 'question', $field, $questionid);
+                $files = $fs->get_area_files($question->contextid, 'question', $field, $question->id);
                 $output .= "    <$field ".$format->format($question->options->{$field.'format'}).">\n";
                 $output .= '      '.$format->writetext($question->options->$field);
                 $output .= $format->write_files($files);
