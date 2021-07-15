@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-07-15 (08)
+ - (Issue #45) skip backup of errorcmmid field if it does not exist in the database
+
 2021-07-14 (07)
  - add Javascript to show/hide editors on settings page depending on setting of responseformat
 

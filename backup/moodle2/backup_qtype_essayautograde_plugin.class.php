@@ -64,7 +64,11 @@ class backup_qtype_essayautograde_plugin extends backup_qtype_plugin {
         $essayautograde->set_source_table('qtype_essayautograde_options', $params);
 
         // Annote course_module ids.
-        $essayautograde->annotate_ids('course_modules', 'errorcmid');
+        // Note that in some circumstances, the errorcmid field may not exist,
+        // so we check that it is available before annotating (Issue #45).
+        if (array_key_exists('errorcmid', $essayautograde->get_final_elements())) {
+            $essayautograde->annotate_ids('course_modules', 'errorcmid');
+        }
 
         // Don't need to annotate files.
 
