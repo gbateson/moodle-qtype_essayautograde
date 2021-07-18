@@ -51,7 +51,7 @@ $string['correctresponse'] = 'To get full marks for this question, you must sati
 $string['countwordslabel'] = 'Current word count';
 $string['enableautograde_help'] = 'Enable, or disable, automatic grading';
 $string['enableautograde'] = 'Enable automatic grading';
-$string['errorbehavior_help'] = 'These settings refine the matching behavior for entries in the Glossary of common entries.';
+$string['errorbehavior_help'] = 'These settings refine the matching behavior for entries in the Glossary of common errors.';
 $string['errorbehavior'] = 'Error matching behavior';
 $string['errorcmid_help'] = 'Choose the Glossary that contains a list of common errors. 
 
