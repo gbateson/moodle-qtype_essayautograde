@@ -974,34 +974,36 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         // https://pear.php.net/manual/en/package.text.text-statistics.intro.php
         // https://pear.php.net/package/Text_Statistics/docs/latest/__filesource/fsource_Text_Statistics__Text_Statistics-1.0.1TextWord.php.html
         $str = strtoupper($word);
-        $oldlen = strlen($str);
-        if ($oldlen < 2) {
+        if (strlen($str) < 2) {
             $count = 1;
         } else {
             $count = 0;
 
-            // detect syllables for double-vowels
-            $vowels = array('AA','AE','AI','AO','AU',
-                            'EA','EE','EI','EO','EU',
-                            'IA','IE','II','IO','IU',
-                            'OA','OE','OI','OO','OU',
-                            'UA','UE','UI','UO','UU');
-            $str = str_replace($vowels, '', $str);
-            $newlen = strlen($str);
-            $count += (($oldlen - $newlen) / 2);
+            // Detect syllables for double-vowels.
+            $vowelcount = 0;
+            $vowels = array('AA','AE','AI','AO','AU','AY',
+                            'EA','EE','EI','EO','EU','EY',
+                            'IA','IE','II','IO','IU','IY',
+                            'OA','OE','OI','OO','OU','OY',
+                            'UA','UE','UI','UO','UU','UY',
+                            'YA','YE','YI','YO','YU','YY');
+            $str = str_replace($vowels, '', $str, $vowelcount);
+            $count += $vowelcount;
 
-            // detect syllables for single-vowels
-            $vowels = array('A','E','I','O','U');
-            $str = str_replace($vowels, '', $str);
-            $oldlen = $newlen;
-            $newlen = strlen($str);
-            $count += ($oldlen - $newlen);
+            // Cache the final letter, in case it is an "e"
+            $finalletter = substr($str, -1);
 
-            // adjust count for special last char
-            switch (substr($str, -1)) {
-                case 'E': $count--; break;
-                case 'Y': $count++; break;
-            };
+            // Detect syllables for single-vowels.
+            $vowelcount = 0;
+            $vowels = array('A','E','I','O','U','Y');
+            $str = str_replace($vowels, '', $str, $vowelcount);
+            $count += $vowelcount;
+
+            // Adjust the count for words that end in "e"
+            // and have at least one other vowel.
+            if ($count > 1 && $finalletter == 'E') {
+                $count--;
+            }
         }
         return $count;
     }
