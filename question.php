@@ -194,8 +194,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $state = question_state::graded_state_for_fraction($fraction);
         } else {
             // use manual grading, as per the "essay" question type
-            $fraction = null;
-            $state = question_state::manually_graded_state_for_fraction();
+            $state = question_state::manually_graded_state_for_fraction(null);
         }
         return array($fraction, $state);
     }

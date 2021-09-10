@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-09-10 (11)
+ - #55 fix missing 'fraction' parameter when autograde is not enabled
+
 2021-07-19 (10)
  - refine method to count syllables. Thanks to drachels.
 
