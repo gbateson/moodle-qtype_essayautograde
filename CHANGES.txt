@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2021-10-19 (12)
+ - add buttons to rotate and scale image file submitted as response to question
+
 2021-09-10 (11)
  - #55 fix missing 'fraction' parameter when autograde is not enabled
 

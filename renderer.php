@@ -156,11 +156,15 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $mimetype = $file->get_mimetype();
             $mimetext = get_mimetype_description($file);
 
-            switch (substr($mimetype, 0, strpos($mimetype, '/'))) {
+            $filetype = substr($mimetype, 0, strpos($mimetype, '/'));
+            switch ($filetype) {
 
                 case 'image':
+                    // Use a Bootstrap class to prevent <img> extending outside the <p> element.
+                    // Same effect as style="max-width: 100%; height: auto; width: auto;"
                     $params = array('src' => $url,
-                                    'alt' => $mimetext);
+                                    'alt' => $mimetext,
+                                    'class' => 'img-responsive');
                     $file = html_writer::empty_tag('img', $params);
                     break;
 
@@ -182,7 +186,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $icon = $this->output->pix_icon($icon, $mimetext, 'moodle', array('class' => 'icon'));
                     $file = html_writer::link($qa->get_response_file_url($file), $icon.' '.s($file->get_filename()));
             }
-            $output[] = html_writer::tag('p', $file, array('style' => 'width: 100%; max-width: 480px;'));
+            $params = array('class'=> "read-only-file $filetype",
+                            'style' => 'width: 100%; max-width: 480px;');
+            $output[] = html_writer::tag('p', $file, $params);
         }
         return implode($output);
     }
