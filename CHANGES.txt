@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2022-01-11 (13)
+ - prepare for new buttons to crop and save photo files
+
 2021-10-19 (12)
  - add buttons to rotate and scale image file submitted as response to question
 

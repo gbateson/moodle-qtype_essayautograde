@@ -80,11 +80,28 @@ define(["jquery", "core/str"], function($, STR) {
 
     ESSAY.setup_read_only_files = function() {
        STR.get_strings([
-            {"key": "rotate", "component": ESSAY.plugin},
-            {"key": "scale",  "component": ESSAY.plugin}
+            {"key": "rotate",   "component": ESSAY.plugin},
+            {"key": "scale",    "component": ESSAY.plugin},
+            {"key": "overflow", "component": ESSAY.plugin},
+            {"key": "auto",     "component": ESSAY.plugin},
+            {"key": "hidden",   "component": ESSAY.plugin},
+            {"key": "visible",  "component": ESSAY.plugin},
+            {"key": "actions",  "component": "moodle"},
+            {"key": "crop",     "component": ESSAY.plugin},
+            {"key": "reset",    "component": "moodle"},
+            {"key": "save",     "component": "moodle"}
         ]).done(function(s){
-            ESSAY.str.rotate = s[0];
-            ESSAY.str.scale  = s[1];
+            var i = 0;
+            ESSAY.str.rotate   = s[i++];
+            ESSAY.str.scale    = s[i++];
+            ESSAY.str.overflow = s[i++];
+            ESSAY.str.auto     = s[i++];
+            ESSAY.str.hidden   = s[i++];
+            ESSAY.str.visible  = s[i++];
+            ESSAY.str.actions  = s[i++];
+            ESSAY.str.crop     = s[i++];
+            ESSAY.str.reset    = s[i++];
+            ESSAY.str.save     = s[i++];
 
             document.querySelectorAll(".attachments .read-only-file.image .img-responsive").forEach(function(img){
                 if (img.dataset.buttons_added) {
@@ -110,6 +127,11 @@ define(["jquery", "core/str"], function($, STR) {
                 img.parentNode.insertBefore(container, img);
                 container.appendChild(img);
 
+                // Set transition duration now, so that all
+                // transform() transitions are smooth.
+                img.style.transitionDuration = "1s";
+                container.style.transitionDuration = "1s";
+
                 if (img.complete) {
                     ESSAY.set_image_dimensions(img, container);
                 } else {
@@ -118,47 +140,77 @@ define(["jquery", "core/str"], function($, STR) {
                     };
                 }
 
-                // Create <div> for all buttons
-                var all_buttons = document.createElement("DIV");
-                all_buttons.classList.add("border-0");
-                all_buttons.classList.add("m-0");
-                all_buttons.classList.add("p-0");
-                all_buttons.classList.add("all-buttons");
+                // Create <div> for all buttonsets
+                var buttonsets = document.createElement("DIV");
+                buttonsets.classList.add("border-0");
+                buttonsets.classList.add("m-0");
+                buttonsets.classList.add("p-0");
+                buttonsets.classList.add("buttonsets");
 
-                // Create <div> for rotate buttons
+                // Create <div> for overflow buttonset
+                var type = "overflow";
+                var label = ESSAY.str[type];
+                var buttonset = new Array();
+                var values = new Array("visible", "auto", "hidden");
+                for (var i in values) {
+                    var value = values[i];
+                    var txt = ESSAY.str[value];
+                    var dataset = {"value": value};
+                    buttonset.push(ESSAY.create_button(type, txt, dataset, ESSAY.transform_image));
+                }
+
+                // Add overflow buttonset to the buttonsets DIV
+                buttonsets.appendChild(ESSAY.create_buttonset(type, label, buttonset));
+
+                // Create <div> for rotate buttonset
                 var type = "rotate";
-                var label = "Rotate";
-                var buttons = new Array();
-                var angles = new Array(0, 90, 180, 270);
-                for (var i in angles) {
-                    var angle = angles[i];
-                    var txt = angle + "\u00B0";
+                var label = ESSAY.str[type];
+                var buttonset = new Array();
+                var values = new Array(0, 90, 180, 270);
+                for (var i in values) {
+                    var value = values[i];
+                    var txt = value + "\u00B0";
                     // "\u00B0" is a degrees symbol: °
-                    var dataset = {"angle": angle};
-                    buttons.push(ESSAY.create_button(type, txt, dataset, ESSAY.transform_image));
+                    var dataset = {"value": value};
+                    buttonset.push(ESSAY.create_button(type, txt, dataset, ESSAY.transform_image));
                 }
 
-                // Add zoom buttons to the all_buttons DIV
-                all_buttons.appendChild(ESSAY.create_buttonset(type, label, buttons));
+                // Add rotate buttonset to the buttonsets DIV
+                buttonsets.appendChild(ESSAY.create_buttonset(type, label, buttonset));
 
-                // Create <div> for scale buttons
+                // Create <div> for scale buttonset
                 var type = "scale";
-                var label = "Scale";
-                var buttons = new Array();
-                var factors = new Array(0.5, 1, 1.5, 2);
-                for (var i in factors) {
-                    var factor = factors[i];
-                    var txt = "\u00D7" + factor;
+                var label = ESSAY.str[type];
+                var buttonset = new Array();
+                var values = new Array(0.5, 1, 1.5, 2);
+                for (var i in values) {
+                    var value = values[i];
+                    var txt = "\u00D7" + value;
                     // "\u00D7" is a multiplication sign: ×
-                    var dataset = {"factor": factor};
-                    buttons.push(ESSAY.create_button(type, txt, dataset, ESSAY.transform_image));
+                    var dataset = {"value": value};
+                    buttonset.push(ESSAY.create_button(type, txt, dataset, ESSAY.transform_image));
                 }
 
-                // Add zoom buttons to the all_buttons DIV
-                all_buttons.appendChild(ESSAY.create_buttonset(type, label, buttons));
+                // Add scale buttonset to the buttonsets DIV
+                buttonsets.appendChild(ESSAY.create_buttonset(type, label, buttonset));
 
-                // Insert buttons DIV after the IMG container DIV
-                container.parentNode.insertBefore(all_buttons, container.nextElementSibling);
+                // Create <div> for actions buttonset
+                //var type = "actions";
+                //var label = ESSAY.str[type];
+                //var buttonset = new Array();
+                //var values = new Array("crop", "reset", "save");
+                //for (var i in values) {
+                //    var value = values[i];
+                //    var txt = ESSAY.str[value];
+                //    var dataset = {"value": value};
+                //    buttonset.push(ESSAY.create_button(type, txt, dataset, ESSAY.transform_image));
+                //}
+
+                // Add actions buttonset to the buttonsets DIV
+                //buttonsets.appendChild(ESSAY.create_buttonset(type, label, buttonset));
+
+                // Insert buttonsets after the IMG container
+                container.parentNode.insertBefore(buttonsets, container.nextElementSibling);
             });
         });
     };
@@ -179,10 +231,45 @@ define(["jquery", "core/str"], function($, STR) {
         // it doesn't collapse when we set the img to absolute positioning.
         container.style.height = container.dataset.height+ "px";
         container.style.width = container.dataset.width + "px";
-        container.style.transitionDuration = "1s";
-
         img.style.position = "absolute";
-        img.style.transitionDuration = "1s";
+
+        img.setAttribute("draggable", "true");
+        img.addEventListener("dragstart", ESSAY.image_dragstart, false);
+        img.addEventListener("drag", ESSAY.image_drag, false);
+        img.addEventListener("dragend", ESSAY.image_dragend, false);
+    };
+
+    ESSAY.image_dragstart = function(evt) {
+        this.style.transitionDuration = "0s";
+        // Cache the current coordinates of the mouse and image.
+        this.dataset.evtPageY = evt.pageY;
+        this.dataset.evtPageX = evt.pageX;
+        this.dataset.imgOffsetTop = this.offsetTop;
+        this.dataset.imgOffsetLeft = this.offsetLeft;
+    };
+
+    ESSAY.image_drag = function(evt) {
+        if (evt.pageX && evt.pageY) {
+            // Move the image by the same amount as the mouse
+            // has moved from its original position
+            var offsetY = (evt.pageY - this.dataset.evtPageY);
+            var offsetX = (evt.pageX - this.dataset.evtPageX);
+            var offsetTop = parseInt(this.dataset.imgOffsetTop);
+            var offsetLeft = parseInt(this.dataset.imgOffsetLeft);
+            this.style.top = (offsetTop + offsetY) + "px";
+            this.style.left = (offsetLeft + offsetX) + "px";
+        }
+    };
+
+    ESSAY.image_dragend = function(evt) {
+        this.style.transitionDuration = "1s";
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+            evt.stopPropagation();
+        }
+        return false;
     };
 
     ESSAY.create_buttonset = function(type, txt, buttons) {
@@ -191,9 +278,9 @@ define(["jquery", "core/str"], function($, STR) {
         buttonset.classList.add("rounded");
         buttonset.classList.add("mt-1");
         buttonset.classList.add("pl-1");
-        buttonset.classList.add("buttons");
+        buttonset.classList.add("buttonset");
         if (type) {
-            buttonset.classList.add(type + "-buttons");
+            buttonset.classList.add(type + "-buttonset");
         }
         if (txt) {
             var span = document.createElement("SPAN");
@@ -210,57 +297,55 @@ define(["jquery", "core/str"], function($, STR) {
     };
 
     ESSAY.create_button = function(type, txt, dataset, fn) {
-        var btn = document.createElement("BUTTON");
-        btn.setAttribute("type", "button");
-        btn.classList.add("btn");
-        btn.classList.add("btn-light");
-        btn.classList.add("border");
-        btn.classList.add("rounded");
-        btn.classList.add("my-1");
-        btn.classList.add("ml-1");
-        btn.classList.add("mr-0");
-        btn.classList.add("px-2");
+        var button = document.createElement("BUTTON");
+        button.setAttribute("type", "button");
+        button.classList.add("button");
+        button.classList.add("button-light");
+        button.classList.add("border");
+        button.classList.add("rounded");
+        button.classList.add("my-1");
+        button.classList.add("ml-1");
+        button.classList.add("mr-0");
+        button.classList.add("px-2");
         if (type) {
-            btn.classList.add(type + "-button");
+            button.classList.add(type + "-button");
         }
         if (txt) {
-            btn.appendChild(document.createTextNode(txt));
+            button.appendChild(document.createTextNode(txt));
         }
         if (dataset) {
             for (var name in dataset) {
-                btn.dataset[name] = dataset[name];
+                button.dataset[name] = dataset[name];
             }
         }
         if (fn) {
-            btn.addEventListener("click", fn, false);
+            button.addEventListener("click", fn, false);
         }
-        return btn;
+        return button;
     };
 
     ESSAY.transform_image = function() {
-        var buttons = this.parentNode;
-        if (! buttons.matches(".buttons")) {
+        var buttonset = this.parentNode;
+        if (! buttonset.matches(".buttonset")) {
             return false;
         }
 
-       // remove highlight from ALL buttons in this set of buttons
-        buttons.querySelectorAll(".btn-info").forEach(function(btn){
-            btn.classList.remove("btn-info");
-            btn.classList.add("btn-light");
+       // Deselect ALL buttons in this buttonset
+        buttonset.querySelectorAll(".btn-info").forEach(function(button){
+            ESSAY.deselect_button(button);
         });
 
-        // highlight this button
-        this.classList.remove("btn-light");
-        this.classList.add("btn-info");
+        // Select (=highlight) this button.
+        ESSAY.select_button(this);
 
-        // locate all_buttons
-        var all_buttons = buttons.parentNode;
-        if (! all_buttons.matches(".all-buttons")) {
+        // locate buttonsets
+        var buttonsets = buttonset.parentNode;
+        if (! buttonsets.matches(".buttonsets")) {
             return false;
         }
 
         // locate image container
-        var container = all_buttons.previousElementSibling;
+        var container = buttonsets.previousElementSibling;
         if (! container.matches(".image-container")) {
             return false;
         }
@@ -271,16 +356,33 @@ define(["jquery", "core/str"], function($, STR) {
             return false;
         }
 
-        var rotate_angle = 0;
-        var button = all_buttons.querySelector('.rotate-buttons .btn-info');
+        var reset = (this.dataset.value == "reset");
+
+        var overflow = "visible"; // default value of overflow
+        var button = buttonsets.querySelector('.overflow-buttonset .btn-info');
         if (button) {
-            rotate_angle = button.dataset.angle;
+            if (reset) {
+                button = ESSAY.set_default_button(button, "overflow", overflow);
+            }
+            overflow = button.dataset.value;
+        }
+
+        var rotate_angle = 0;
+        var button = buttonsets.querySelector('.rotate-buttonset .btn-info');
+        if (button) {
+            if (reset) {
+                button = ESSAY.set_default_button(button, "rotate", rotate_angle);
+            }
+            rotate_angle = button.dataset.value;
         }
 
         var scale_factor = 1;
-        var button = all_buttons.querySelector('.scale-buttons .btn-info');
+        var button = buttonsets.querySelector('.scale-buttonset .btn-info');
         if (button) {
-            scale_factor = button.dataset.factor;
+            if (reset) {
+                button = ESSAY.set_default_button(button, "scale", scale_factor);
+            }
+            scale_factor = button.dataset.value;
         }
 
         var t = img.style.transform;
@@ -288,21 +390,69 @@ define(["jquery", "core/str"], function($, STR) {
         if (rotate_angle) {
             t += " rotate(" + rotate_angle + "deg)";
         }
+
         if (rotate_angle == 90 || rotate_angle ==  270) {
-            var ratio = (img.dataset.ratio * scale_factor);
-            var offset = (img.dataset.offset * ratio);
+            if (overflow == "visible") {
+                scale_factor *= img.dataset.ratio;
+            }
+            var offset = (img.dataset.offset * scale_factor);
             if (rotate_angle == 270) {
                 offset = (-offset);
             }
             t += " translate(" + (offset/2) + "px, " + (offset/2) + "px)";
-            img.style.width = (img.dataset.width * ratio) + "px";
-            container.style.height = (container.dataset.width * ratio) + "px";
-        } else {
-            img.style.width = (img.dataset.width * scale_factor) + "px";
-            container.style.height = (container.dataset.height * scale_factor) + "px";
         }
+
         img.style.transform = t.trim();
         img.style.maxWidth = "initial"; // override "100%"
+        img.style.width = (img.dataset.width * scale_factor) + "px";
+
+        var h = 0;
+        if (rotate_angle == 90 || rotate_angle ==  270) {
+            h = container.dataset.width;
+        } else {
+            h = container.dataset.height;
+        }
+        if (overflow == "visible" || scale_factor < 1) {
+            h *= scale_factor;
+        }
+
+        container.style.overflow = overflow;
+        container.style.height = h + "px";
+
+        if (reset) {
+            // deselect the RESET button
+            ESSAY.deselect_button(this);
+        }
+
+    };
+
+    ESSAY.select_button = function(button){
+        button.classList.remove("btn-light");
+        button.classList.add("btn-info");
+    };
+
+    ESSAY.deselect_button = function(button){
+        button.classList.remove("btn-info");
+        button.classList.add("btn-light");
+    };
+
+    ESSAY.set_default_button = function(button, type, value){
+        if (button.dataset.value == value) {
+            return button; // nothing to do
+        }
+
+        // Deselect the currently selected button.
+        ESSAY.deselect_button(button);
+
+        // Locate and highlight the default button.
+        button = button.parentNode.querySelector('.' + type + '-button[data-value="' + value + '"]');
+        if (button) {
+            button.classList.remove("btn-light");
+            button.classList.add("btn-info");
+        }
+
+        // Return default button
+        return button;
     };
 
     ESSAY.setup_response_heights = function() {
@@ -357,11 +507,12 @@ define(["jquery", "core/str"], function($, STR) {
                     {"key": "minwordswarning", "component": ESSAY.plugin},
                     {"key": "countwordslabel", "component": ESSAY.plugin}
                 ]).done(function(s){
-                    ESSAY.str.maxwordslabel = s[0];
-                    ESSAY.str.maxwordswarning = s[1];
-                    ESSAY.str.minwordslabel = s[2];
-                    ESSAY.str.minwordswarning = s[3];
-                    ESSAY.str.countwordslabel = s[4];
+                    var i = 0;
+                    ESSAY.str.maxwordslabel   = s[i++];
+                    ESSAY.str.maxwordswarning = s[i++];
+                    ESSAY.str.minwordslabel   = s[i++];
+                    ESSAY.str.minwordswarning = s[i++];
+                    ESSAY.str.countwordslabel = s[i++];
 
                     // cache the CSS classes for the warnings about min/max words
                     var wordswarning = "wordswarning rounded bg-danger text-light ml-2 px-2 py-1 d-none";
@@ -558,8 +709,9 @@ define(["jquery", "core/str"], function($, STR) {
             {"key": "hidesample", "component": ESSAY.plugin},
             {"key": "showsample", "component": ESSAY.plugin}
         ]).done(function(s) {
-            ESSAY.str.hidesample = s[0];
-            ESSAY.str.showsample = s[1];
+            var i = 0;
+            ESSAY.str.hidesample = s[i++];
+            ESSAY.str.showsample = s[i++];
             var last = $(".qtext").find("p:not(:empty), div:not(:empty)");
             if (last.length) {
                 last = last.last();
