@@ -192,6 +192,9 @@ define(["jquery"], function($) {
     /**
      * modify an "add" button so that the page scrolls down
      * to the appropriate anchor when it reloads
+     *
+     * @param {string} name
+     * @param {string} anchor
      */
     FORM.init_add_button = function(name, anchor) {
         $("input[name=" + name + "]").click(function(){

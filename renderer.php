@@ -83,6 +83,65 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $answer = $renderer->response_area_input('answer', $qa, $step, $linecount, $options->context);
         }
 
+        $countwords = $question->get_current_response('count');
+        $minwords = (empty($question->minwordlimit) ? 0 : $question->minwordlimit);
+        $maxwords = (empty($question->maxwordlimit) ? 0 : $question->maxwordlimit);
+
+        $itemtype = '';
+        $itemcount ='';
+
+        switch ($question->itemtype) {
+            case $question->plugin_constant('ITEM_TYPE_CHARS'): $itemtype = 'chars'; break;
+            case $question->plugin_constant('ITEM_TYPE_WORDS'): $itemtype = 'words'; break;
+            case $question->plugin_constant('ITEM_TYPE_SENTENCES'): $itemtype = 'sentences'; break;
+            case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'): $itemtype = 'paragraphs'; break;
+            case $question->plugin_constant('ITEM_TYPE_FILES'): $itemtype = 'files'; break;
+        }
+
+        if ($itemtype == 'words') {
+
+            $params = array('class' => 'wordswarning rounded bg-danger text-light ml-2 px-2 py-1');
+            $wordswarning = '';
+            switch (true) {
+
+                case $countwords && $maxwords && ($countwords > $maxwords):
+                    $wordswarning = ($readonly ? 'maxwordserror' : 'maxwordswarning');
+                    $wordswarning = get_string($wordswarning, $this->plugin_name());
+                    break;
+
+                case $countwords && $minwords && ($countwords < $minwords):
+                    $wordswarning = ($readonly ? 'minwordserror' : 'minwordswarning');
+                    $wordswarning = get_string($wordswarning, $this->plugin_name());
+                    break;
+
+                default:
+                    $params['class'] .= ' d-none';
+            }
+            $wordswarning = html_writer::tag('span', $wordswarning, $params);
+
+            // Cache the label separator string, usually a colon ": "
+            $separator = get_string('labelsep', 'langconfig');
+
+            $text = get_string('countwordslabel', $this->plugin_name()).$separator;
+            $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
+            $text .= html_writer::tag('i', $countwords, array('class' => 'value')).' '.$wordswarning;
+            $itemcount .= html_writer::tag('p', $text, array('class' => 'countwords mt-2 mb-0'));
+
+            if ($minwords) {
+                $text = get_string('minwordslabel', $this->plugin_name()).$separator;
+                $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
+                $text .= html_writer::tag('i', $minwords, array('class' => 'value'));
+                $itemcount .= html_writer::tag('p', $text, array('class' => 'minwords my-0'));
+            }
+
+            if ($maxwords) {
+                $text = get_string('maxwordslabel', $this->plugin_name()).$separator;
+                $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
+                $text .= html_writer::tag('i', $maxwords, array('class' => 'value'));
+                $itemcount .= html_writer::tag('p', $text, array('class' => 'maxwords my-0'));
+            }
+        }
+
         $files = '';
         if ($question->attachments) {
             if ($readonly) {
@@ -97,19 +156,17 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
         $result .= html_writer::tag('div', $answer, array('class' => 'answer'));
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
-        $result .= html_writer::end_tag('div');
-
-        $itemtype = '';
-        switch ($question->itemtype) {
-            case $question->plugin_constant('ITEM_TYPE_CHARS'): $itemtype = 'chars'; break;
-            case $question->plugin_constant('ITEM_TYPE_WORDS'): $itemtype = 'words'; break;
-            case $question->plugin_constant('ITEM_TYPE_SENTENCES'): $itemtype = 'sentences'; break;
-            case $question->plugin_constant('ITEM_TYPE_PARAGRAPHS'): $itemtype = 'paragraphs'; break;
-            case $question->plugin_constant('ITEM_TYPE_FILES'): $itemtype = 'files'; break;
+        if ($itemcount) {
+            // Mimic the id created by "response_area_input()" in "essay/renderer.php".
+            // The data values are needed by javascript in "mobile/mobile.js".
+            $params = array('id' => 'id_'.$qa->get_qt_field_name('answer_itemcount'),
+                            'class' => 'itemcount',
+                            'data-itemtype' => $itemtype,
+                            'data-minwords' => $minwords,
+                            'data-maxwords' => $maxwords);
+            $result .= html_writer::tag('div', $itemcount, $params);
         }
-
-        $minwords = (empty($question->minwordlimit) ? 0 : $question->minwordlimit);
-        $maxwords = (empty($question->maxwordlimit) ? 0 : $question->maxwordlimit);
+        $result .= html_writer::end_tag('div');
 
         $editor = $this->get_editor_type($question);
         $sample = question_utils::to_plain_text($question->responsesample,

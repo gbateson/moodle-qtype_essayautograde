@@ -524,6 +524,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         if (empty($response) || empty($response['answer'])) {
             return '';
         }
+        if (empty($response['answerformat'])) {
+            $response['answerformat'] = 0; // FORMAT_MOODLE
+        }
         return $this->to_plain_text($response['answer'], $response['answerformat']);
     }
 
@@ -972,39 +975,233 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         // https://github.com/DaveChild/Text-Statistics (English only)
         // https://pear.php.net/manual/en/package.text.text-statistics.intro.php
         // https://pear.php.net/package/Text_Statistics/docs/latest/__filesource/fsource_Text_Statistics__Text_Statistics-1.0.1TextWord.php.html
-        $str = strtoupper($word);
+
+        static $syllable_counts = null;
+        if ($syllable_counts === null) {
+            // initialize with some well-known problematic words
+            $syllable_counts = self::get_syllable_counts();
+        }
+
+        $str = strtolower($word);
+
+        // very short word (1 or 2 chars)
         if (strlen($str) < 2) {
-            $count = 1;
-        } else {
-            $count = 0;
+            return 1;
+        }
 
-            // Detect syllables for double-vowels.
-            $vowelcount = 0;
-            $vowels = array('AA','AE','AI','AO','AU','AY',
-                            'EA','EE','EI','EO','EU','EY',
-                            'IA','IE','II','IO','IU','IY',
-                            'OA','OE','OI','OO','OU','OY',
-                            'UA','UE','UI','UO','UU','UY',
-                            'YA','YE','YI','YO','YU','YY');
-            $str = str_replace($vowels, '', $str, $vowelcount);
-            $count += $vowelcount;
+        // If we already know the syllable count, use that.
+        if (array_key_exists($str, $syllable_counts)) {
+            return $syllable_counts[$str];
+        }
 
-            // Cache the final letter, in case it is an "e"
-            $finalletter = substr($str, -1);
+        $count = 0;
 
-            // Detect syllables for single-vowels.
-            $vowelcount = 0;
-            $vowels = array('A','E','I','O','U','Y');
-            $str = str_replace($vowels, '', $str, $vowelcount);
-            $count += $vowelcount;
+        // Detect common endings with extra syllable.
+        if (preg_match('/(ia|io|ius|ium)^/', $str)) {
+            $count++;
+        }
 
-            // Adjust the count for words that end in "e"
-            // and have at least one other vowel.
-            if ($count > 1 && $finalletter == 'E') {
-                $count--;
+        // Detect syllables for double-vowels.
+        $vowelcount = 0;
+        $vowels = array('aa','ae','ai','ao','au','ay',
+                        'ea','ee','ei','eo','eu','ey',
+                        'ia','ie','ii','io','iu','iy',
+                        'oa','oe','oi','oo','ou','oy',
+                        'ua','ue','ui','uo','uu','uy',
+                        'ya','ye','yi','yo','yu','yy');
+        $str = str_replace($vowels, '', $str, $vowelcount);
+        $count += $vowelcount;
+
+        // If the last letter is "E", it is often silent.
+        $silentvowel = (substr($str, -1) == 'e');
+
+        if ($silentvowel) {
+            $final3chars = substr($str, -3);
+            if (preg_match('/[bcdfgkpstxyz]le/', $final3chars)) {
+                // able, cycle, idle, rifle, angle, ankle, apple, hassle, little, axle, puzzle
+                $silentvowel = false;
+            } else if ($final3chars == 'phe') {
+                // apostrophe, catastrophe
+                $silentvowel = false;
             }
         }
+
+        // Detect syllables for single-vowels.
+        $vowelcount = 0;
+        $vowels = array('a','e','i','o','u','y');
+        $str = str_replace($vowels, '', $str, $vowelcount);
+        $count += $vowelcount;
+
+        // Adjust the count for words that end in "e"
+        // and have at least one other vowel.
+        if ($count > 1 && $silentvowel) {
+            $count--;
+        }
+
+        $syllable_counts[$str] = $count;
         return $count;
+    }
+
+    /**
+     * get_syllable_counts
+     *
+     * @return array of words with their syllable count
+     */
+    static protected function get_syllable_counts() {
+        return array(
+            // final "e" as separate syllable
+            'aborigine' => 5,
+            'adobe' => 3,
+            'anemone' => 4,
+            'cafe' => 2,
+            'chile' => 2,
+            'coyote' => 3,
+            'epitome' => 4,
+            'guacamole' => 4,
+            'hyperbole' => 4,
+            'karate' => 3,
+            'machete' => 3,
+            'maybe' => 2,
+            'recipe' => 3,
+            'sesame' => 3,
+            'simile' => 3,
+            'yosemite' => 4,
+
+            // internal silent-e
+            'jukebox' => 2,
+            'shoreline' => 2,
+
+            // double vowel as 2-syllables
+            'cooperation' => 5,
+            'react' => 2,
+
+            // internal "ia" as 2-syllables
+            'piano' => 3,
+            'giant' => 2,
+            // social, racial, spatial
+
+            // final "ia" as 2-syllables
+            'Australia' => 4,
+            'California' => 5,
+
+            // final "io" as 2-syllables
+            'radio' => 3,
+            'Ohio' => 3,
+
+            // final "ion" as 2-syllables
+            'ion' => 2,
+            'lion' => 2,
+            'union' => 3,
+
+            // final "ius" as 2-syllables
+            'genius' => 3,
+            'celsius' => 3,
+            'radius' => 3,
+
+            // final "ium" as 2-syllables
+            'aquarium' => 3,
+            'calcium' => 3,
+            'stadium' => 3,
+            // Belgium
+
+            // final "eum|oem" as 2-syllables
+            'museum' => 2,
+            'poem' => 2,
+
+            // final "che" as 1-syllable
+            'apache' => 3,
+            'psyche' => 2,
+
+            // final "ble" as 1-syllable
+            'able' => 2,
+            'adaptable' => 4,
+            'incredible' => 4,
+            'syllable' => 3, 
+            'table' => 2,
+
+            // final "cle" as 1-syllable
+            'cycle' => 2,
+            'bicycle' => 3,
+            'vehicle' => 3,
+
+            // final "dle" as 1-syllable
+            'handle' => 2,
+            'idle' => 2,
+            'saddle' => 2,
+
+            // final "fle" as 1-syllable
+            'rifle' => 2,
+            'shuffle' => 2,
+
+            // final "gle" as 1-syllable
+            'angle' => 2,
+            'struggle' => 2,
+            'triangle' => 3,
+
+            // final "kle" as 1-syllable
+            'ankle' => 2,
+            'tackle' => 2,
+            'buckle' => 2,
+
+            // final "ple" as 1-syllable
+            'apple' => 2,
+            'example' => 3,
+            'people' => 2,
+
+            // final "sle" as 1-syllable
+            'aisle' => 1,
+            'isle' => 1,
+            'hassle' => 2,
+
+            // final "tle" as 1-syllable
+            'little' => 2,
+            'subtle' => 2,
+            'title' => 2,
+
+            // final "xle" as 1-syllable
+            'axle' => 2,
+
+            // final "yle" as 1-syllable
+            'style' => 1,
+            'styles' => 1,
+
+            // final "zle" as 1-syllable
+            'puzzle' => 2,
+            'drizzle' => 2,
+
+            // final "phe" as 1-syllable
+            'apostrophe' => 4,
+            'catastrophe' => 4,
+
+            // female names
+            'aphrodite' => 4,
+            'ariadne' => 4,
+            'chloe' => 2,
+            'jesse' => 2,
+            'daphne' => 2,
+            'hermione' => 4,
+            'penelope' => 4,
+            'persephone' => 4,
+            'phoebe' => 2,
+            'zoe' => 2,
+
+            // unusual words
+            'abalone' => 4,
+            'abare' => 3,
+            'abed' => 2,
+            'abruzzese' => 4,
+            'abbruzzese' => 4,
+            'acreage' => 3,
+            'adame' => 3,
+            'adieu' => 2,
+            'calliope' => 4,
+            'circe' => 2,
+            'gethsemane' => 4,
+            'syncope' => 3,
+            'tamale' => 3,
+            'eurydice' => 4,
+            'euterpe' => 3,
+        );
     }
 
     ///////////////////////////////////////////////////////

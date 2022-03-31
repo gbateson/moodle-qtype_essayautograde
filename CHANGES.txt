@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2022-03-31 (14)
+ - add files required to make this question type available to the Moodle mobile app.
+
 2022-01-11 (13)
  - prepare for new buttons to crop and save photo files
 
