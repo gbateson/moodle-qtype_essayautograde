@@ -40,7 +40,7 @@ var result = {
         that.CoreQuestionHelperProvider.replaceFeedbackClasses(div);
         that.CoreQuestionHelperProvider.treatCorrectnessIcons(div);
 
-        // Get useful parts of the provided question html data.
+        // Get useful parts of the data provided in the question's html.
         var text = div.querySelector('.qtext');
         if (text) {
             this.question.text = text.innerHTML;
@@ -122,9 +122,10 @@ var result = {
             var itemcount = this.componentContainer.querySelector('.itemcount');
             if (textarea && itemcount) {
 
-                var p = this.CoreLangProvider;
-                var minwordswarning = this.get_plugin_string(p, 'qtype_essayautograde', 'minwordswarning');
-                var maxwordswarning = this.get_plugin_string(p, 'qtype_essayautograde', 'maxwordswarning');
+                // Maybe "this.CoreLangProvider" has a method for fetching a string
+                // but I can't find it, so we use our own method, thus:
+                var minwordswarning = this.get_plugin_string('qtype_essayautograde', 'minwordswarning');
+                var maxwordswarning = this.get_plugin_string('qtype_essayautograde', 'maxwordswarning');
 
                 var countwords = itemcount.querySelector('.countwords');
                 var countwordsvalue = countwords.querySelector('.value');
@@ -171,58 +172,34 @@ var result = {
         /**
          * get_plugin_string
          *
-         * @param {object} p a reference to this.CoreLangProvider
          * @param {string} component a full plugin name
          * @param {string} name of the required string
          */
-        this.get_plugin_string = function(p, component, name) {
-            return this.get_string(p, 'plugin', component, name);
-        };
-
-        /**
-         * get_string
-         *
-         * @param {object} p a reference to this.CoreLangProvider
-         * @param {string} type, either "core" or "plugin"
-         * @param {string} component a full plugin name
-         * @param {string} name of the required string
-         */
-        this.get_string = function(p, type, component, name) {
-            var langs = new Array(p.getCurrentLanguage(),
-                                  p.getParentLanguage(),
-                                  p.getFallbackLanguage(),
-                                  p.getDefaultLanguage());
-            for (var i = 0; i < langs.length; i++) {
-                var s = this.get_lang_string(p, langs[i], type, component, name);
-                if (s) {
-                    return s;
+        this.get_plugin_string = function(component, name) {
+            var p = this.CoreLangProvider;
+            if (p) {
+                var strings = p.sitePluginsStrings;
+                var langs = new Array(p.getCurrentLanguage(),
+                                      p.getParentLanguage(),
+                                      p.getFallbackLanguage(),
+                                      p.getDefaultLanguage());
+                var n = 'plugin.' + component + '.' + name;
+                for (var i = 0; i < langs.length; i++) {
+                    var lang = langs[i];
+                    if (lang  && strings[lang] && strings[lang][n]) {
+                        return strings[lang][n]['value'];
+                    }
                 }
             }
-            return '';
-        };
-
-        /**
-         * get_lang_string
-         *
-         * @param {object} p a reference to this.CoreLangProvider
-         * @param {string} lang, the required language
-         * @param {string} type, either "core" or "plugin"
-         * @param {string} component a full plugin name
-         * @param {string} name of the required string
-         */
-        this.get_lang_string = function(p, lang, type, component, name) {
-            var strings = p.sitePluginsStrings;
-            var n = type + '.' + component + '.' + name;
-            if (strings[lang] && strings[lang][n]) {
-                return strings[lang][n]['value'];
-            }
+            // Oops, we couldn't find the string!
+            return '[[' + component + '.' + name + ']]';
         };
 
         if (text && textarea) {
             return true;
         }
 
-        // Oops, the expected elements were not found !!
+        // Oops, the expected elements, text and textarea, were not found !!
         return that.CoreQuestionHelperProvider.showComponentError(that.onAbort);
     }
 };
