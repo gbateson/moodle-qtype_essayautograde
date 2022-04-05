@@ -125,7 +125,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $text = get_string('countwordslabel', $this->plugin_name()).$separator;
             $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
             $text .= html_writer::tag('i', $countwords, array('class' => 'value')).' '.$wordswarning;
-            $itemcount .= html_writer::tag('p', $text, array('class' => 'countwords mt-2 mb-0'));
+            $itemcount .= html_writer::tag('p', $text, array('class' => 'countwords my-0'));
 
             if ($minwords) {
                 $text = get_string('minwordslabel', $this->plugin_name()).$separator;
@@ -155,18 +155,18 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $result .= html_writer::tag('div', $qtext, array('class' => 'qtext'));
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
         $result .= html_writer::tag('div', $answer, array('class' => 'answer'));
-        $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
         if ($itemcount) {
             // Mimic the id created by "response_area_input()" in "essay/renderer.php".
-            // The data values are needed by javascript in "mobile/mobile.js".
+            // The data-xxx values are needed by the javascript in "mobile/mobile.js".
             $params = array('id' => 'id_'.$qa->get_qt_field_name('answer_itemcount'),
-                            'class' => 'itemcount',
+                            'class' => 'itemcount rounded border bg-secondary text-dark my-2 px-3 py-2',
                             'data-itemtype' => $itemtype,
                             'data-minwords' => $minwords,
                             'data-maxwords' => $maxwords);
             $result .= html_writer::tag('div', $itemcount, $params);
         }
-        $result .= html_writer::end_tag('div');
+        $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
+        $result .= html_writer::end_tag('div'); // div.ablock
 
         $editor = $this->get_editor_type($question);
         $sample = question_utils::to_plain_text($question->responsesample,

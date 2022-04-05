@@ -23,6 +23,120 @@
  */
 
 var that = this;
+
+/**
+ * replace bootstrap classes
+ */
+that.replaceBootstrapClasses = function(elm){
+
+    // A regular expression to parse a bootstrap selector for margins and paddings
+    var regex = new RegExp('^([mp])([tblrxy]?)-(\\d+)$');
+
+    var names = elm.className.split(' ');
+    names.forEach(function(name){
+
+        var type = '';
+        var side = '';
+        var sides = [];
+        var value = '';
+
+        var m = name.match(regex);
+        if (m && m[1]) {
+            switch (m[1]) {
+                case 'm': type = 'margin'; break;
+                case 'p': type = 'padding'; break;
+            }
+            switch (m[2]) {
+                case 't': side = 'Top'; break;
+                case 'b': side = 'Bottom'; break;
+                case 'l': side = 'Left'; break;
+                case 'r': side = 'Right'; break;
+                case 'y': sides = ['Top', 'Bottom']; break;
+                case 'x': sides = ['Left', 'Right']; break;
+                case '':  sides = ['Top', 'Right', 'Bottom', 'Left']; break;
+            }
+            switch (m[3]) {
+                case '0': value = '0'; break;
+                case '1': value = '0.25rem'; break;
+                case '2': value = '0.5rem'; break;
+                case '3': value = '1rem'; break;
+                case '4': value = '1.5rem'; break;
+            }
+        } else {
+            switch (name) {
+                case 'rounded':
+                    type = 'borderRadius';
+                    value = '0.25rem';
+                    break;
+                case 'border':
+                    type = 'border';
+                    value = '1px solid #dee2e6';
+                    break;
+                case 'bg-secondary':
+                    type = 'backgroundColor';
+                    value = '#eeeeee';
+                    break;
+                case 'bg-danger':
+                    type = 'backgroundColor';
+                    value = '#ca3120';
+                    break;
+                case 'text-dark':
+                    type = 'color';
+                    value = '#343a40';
+                    break;
+                case 'text-light':
+                    type = 'color';
+                    value = '#f8f9fa';
+                    break;
+                case 'd-none':
+                    type = 'display';
+                    value = 'none';
+                    break;
+            }
+        }
+
+        if (type && value) {
+            elm.classList.remove(name);
+            if (sides.length) {
+                sides.forEach(function(side){
+                    elm.style[type + side] = value;
+                });
+            } else if (side) {
+                elm.style[type + side] = value;
+            } else {
+                elm.style[type] = value;
+            }
+        }
+    });
+};
+
+/**
+ * getPluginString
+ *
+ * @param {string} component a full plugin name
+ * @param {string} name of the required string
+ */
+that.getPluginString = function(component, name) {
+    var p = this.CoreLangProvider;
+    if (p) {
+        var strings = p.sitePluginsStrings;
+        var langs = new Array(p.getCurrentLanguage(),
+                              p.getParentLanguage(),
+                              p.getFallbackLanguage(),
+                              p.getDefaultLanguage());
+        var n = 'plugin.' + component + '.' + name;
+        for (var i = 0; i < langs.length; i++) {
+            var lang = langs[i];
+            if (lang  && strings[lang] && strings[lang][n]) {
+                return strings[lang][n]['value'];
+            }
+        }
+    }
+    // Oops, we couldn't find the string!
+    return '[[' + component + '.' + name + ']]';
+};
+
+
 var result = {
     componentInit: function() {
 
@@ -68,46 +182,16 @@ var result = {
 
             // Replace bootstrap styles with inline styles because
             // adding styles to 'mobile/styles_app.css' doesn't seem to be effective :-(
+            that.replaceBootstrapClasses(itemcount);
 
             itemcount.querySelectorAll('p').forEach(function(p){
-                if (p.classList.contains('mt-2')) {
-                    p.classList.remove('mt-2');
-                    p.style.marginTop = '0.5rem';
-                }
-                if (p.classList.contains('mb-0')) {
-                    p.classList.remove('mb-0');
-                    p.style.marginBottom = '0';
-                }
-                if (p.classList.contains('my-0')) {
-                    p.classList.remove('my-0');
-                    p.style.marginBottom = '0';
-                    p.style.marginTop = '0';
-                }
+                that.replaceBootstrapClasses(p);
             });
 
             // Fix background and text color on "wordswarning" span.
             var elm = itemcount.querySelector(".wordswarning");
             if (elm) {
-                elm.classList.remove('rounded');
-                elm.style.borderRadius = '0.25rem';
-
-                elm.classList.remove('bg-danger');
-                elm.style.backgroundColor = '#ca3120';
-                
-                elm.classList.remove('text-light');
-                elm.style.color = '#f8f9fa';
-
-                elm.classList.remove('ml-2');
-                elm.style.marginLeft = '0.5rem';
-
-                elm.classList.remove('px-2');
-                elm.classList.remove('py-1');
-                elm.style.padding = '0.25rem 0.5rem';
-
-                if (elm.classList.contains('d-none')) {
-                    elm.classList.remove('d-none');
-                    elm.style.display = 'none';
-                }
+                that.replaceBootstrapClasses(elm);
             }
 
             this.question.itemcount = itemcount.outerHTML;
@@ -124,8 +208,8 @@ var result = {
 
                 // Maybe "this.CoreLangProvider" has a method for fetching a string
                 // but I can't find it, so we use our own method, thus:
-                var minwordswarning = this.get_plugin_string('qtype_essayautograde', 'minwordswarning');
-                var maxwordswarning = this.get_plugin_string('qtype_essayautograde', 'maxwordswarning');
+                var minwordswarning = that.getPluginString('qtype_essayautograde', 'minwordswarning');
+                var maxwordswarning = that.getPluginString('qtype_essayautograde', 'maxwordswarning');
 
                 var countwords = itemcount.querySelector('.countwords');
                 var countwordsvalue = countwords.querySelector('.value');
@@ -167,32 +251,6 @@ var result = {
                     });
                 }
             }
-        };
-
-        /**
-         * get_plugin_string
-         *
-         * @param {string} component a full plugin name
-         * @param {string} name of the required string
-         */
-        this.get_plugin_string = function(component, name) {
-            var p = this.CoreLangProvider;
-            if (p) {
-                var strings = p.sitePluginsStrings;
-                var langs = new Array(p.getCurrentLanguage(),
-                                      p.getParentLanguage(),
-                                      p.getFallbackLanguage(),
-                                      p.getDefaultLanguage());
-                var n = 'plugin.' + component + '.' + name;
-                for (var i = 0; i < langs.length; i++) {
-                    var lang = langs[i];
-                    if (lang  && strings[lang] && strings[lang][n]) {
-                        return strings[lang][n]['value'];
-                    }
-                }
-            }
-            // Oops, we couldn't find the string!
-            return '[[' + component + '.' + name + ']]';
         };
 
         if (text && textarea) {

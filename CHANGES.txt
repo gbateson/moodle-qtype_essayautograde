@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2022-04-05 (16)
+ - [1] obey setting of 'enable' checkbox for min/max number of words; [2] optimze code to replace bootstrap classes with inline styles
+
 2022-04-04 (15)
  - qtype_essayqutograde optimize JS method to fetch langs strings in the mobile app
 
