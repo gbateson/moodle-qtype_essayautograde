@@ -189,9 +189,9 @@ var result = {
             });
 
             // Fix background and text color on "wordswarning" span.
-            var elm = itemcount.querySelector(".wordswarning");
-            if (elm) {
-                that.replaceBootstrapClasses(elm);
+            var warning = itemcount.querySelector(".warning");
+            if (warning) {
+                that.replaceBootstrapClasses(warning);
             }
 
             this.question.itemcount = itemcount.outerHTML;
