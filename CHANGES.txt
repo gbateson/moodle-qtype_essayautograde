@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2022-09-21 (17)
+ - fix counting of chars on input screen.
+
 2022-04-05 (16)
  - [1] obey setting of 'enable' checkbox for min/max number of words; [2] optimze code to replace bootstrap classes with inline styles
 

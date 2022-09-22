@@ -34,8 +34,8 @@ define(["jquery", "core/str"], function($, STR) {
     JS.itemtype = "";
     JS.itemmatch = "";
 
-    JS.minwords = 0;
-    JS.maxwords = 0;
+    JS.minitems = 0;
+    JS.maxitems = 0;
 
     JS.editortype = "";
 
@@ -48,7 +48,7 @@ define(["jquery", "core/str"], function($, STR) {
     /*
      * initialize this AMD module
      */
-    JS.init = function(readonly, itemtype, minwords, maxwords, editortype, responsesample) {
+    JS.init = function(readonly, itemtype, minitems, maxitems, editortype, responsesample) {
 
         // get RegExp expression for this item type
         var itemmatch = "";
@@ -64,8 +64,8 @@ define(["jquery", "core/str"], function($, STR) {
         JS.itemtype = itemtype;
         JS.itemmatch = new RegExp(itemmatch, "g");
 
-        JS.minwords = minwords;
-        JS.maxwords = maxwords;
+        JS.minitems = minitems;
+        JS.maxitems = maxitems;
 
         JS.editortype = editortype;
 
@@ -578,31 +578,29 @@ define(["jquery", "core/str"], function($, STR) {
 
         // fetch descriptor string
         id = JS.escaped_id(id);
-        if (JS.itemtype == "words") {
-            $(id + " .countwords .value").text(itemcount);
+        $(id + " .countitems .value").text(itemcount);
 
-            var wordswarning = "";
+        if (JS.itemtype == "words") {
+            var warningtext = "";
 
             if (itemcount) {
-                if (JS.minwords && JS.minwords > itemcount) {
-                    wordswarning = JS.str.minwordswarning;
+                if (JS.minitems && JS.minitems > itemcount) {
+                    warningtext = JS.str["min" + JS.itemtype + "warning"];
                 }
-                if (JS.maxwords && JS.maxwords < itemcount) {
-                    wordswarning = JS.str.maxwordswarning;
+                if (JS.maxitems && JS.maxitems < itemcount) {
+                    warningtext = JS.str["min" + JS.itemtype + "warning"];
                 }
             }
 
-            var elm = document.querySelector(id + " .countwords .wordswarning");
+            var elm = document.querySelector(id + " .countitems .warning");
             if (elm) {
-                elm.innerText = wordswarning;
-                if (wordswarning == "") {
+                elm.innerText = warningtext;
+                if (warningtext == "") {
                     elm.classList.add("d-none");
                 } else {
                     elm.classList.remove("d-none");
                 }
             }
-        } else {
-            $(id + " .countitems .value").text(itemcount);
         }
     };
 

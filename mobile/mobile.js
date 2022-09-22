@@ -211,13 +211,13 @@ var result = {
                 var minwordswarning = that.getPluginString('qtype_essayautograde', 'minwordswarning');
                 var maxwordswarning = that.getPluginString('qtype_essayautograde', 'maxwordswarning');
 
-                var countwords = itemcount.querySelector('.countwords');
-                var countwordsvalue = countwords.querySelector('.value');
-                var wordswarning = countwords.querySelector('.wordswarning');
+                var countitems = itemcount.querySelector('.countitems');
+                var value = countitems.querySelector('.value');
+                var warning = countitems.querySelector('.warning');
 
                 var itemtype = itemcount.dataset.itemtype;
-                var minwords = parseInt(itemcount.dataset.minwords);
-                var maxwords = parseInt(itemcount.dataset.maxwords);
+                var minitems = parseInt(itemcount.dataset.minitems);
+                var maxitems = parseInt(itemcount.dataset.maxitems);
 
                 var itemmatch = '';
                 switch (itemtype) {
@@ -230,23 +230,25 @@ var result = {
                 if (itemmatch) {
                     itemmatch = new RegExp(itemmatch, 'g');
                     textarea.addEventListener('keyup', function() {
-                        var warning = '';
                         var count = 0;
+                        var warningtext = '';
                         if (textarea.value) {
                             count = textarea.value.match(itemmatch).length;
-                            if (minwords && (count < minwords)) {
-                                warning = minwordswarning;
+                            if (minitems && (count < minitems)) {
+                                warningtext = minwordswarning;
                             }
-                            if (maxwords && (count > maxwords)) {
-                                warning = maxwordswarning;
+                            if (maxitems && (count > maxitems)) {
+                                warningtext = maxwordswarning;
                             }
                         }
-                        countwordsvalue.innerText = count;
-                        wordswarning.innerText = warning;
-                        if (warning == '') {
-                            wordswarning.style.display = 'none';
-                        } else {
-                            wordswarning.style.display = 'inline';
+                        value.innerText = count;
+                        if (warning) {
+                            warning.innerText = warningtext;
+                            if (warningtext == '') {
+                                warning.style.display = 'none';
+                            } else {
+                                warning.style.display = 'inline';
+                            }
                         }
                     });
                 }

@@ -25,26 +25,26 @@
 define(["jquery"], function($) {
 
     /** @alias module:qtype_essayautograde/form */
-    var FORM = {};
+    var JS = {};
 
     // cache for standard width of TEXT input elements
-    FORM.sizewidths = new Array();
+    JS.sizewidths = new Array();
 
     /**
      * initialize this AMD module
      */
-    FORM.init = function() {
-        FORM.init_responseformat();
-        FORM.init_target_phrases();
-        FORM.init_add_button("addbands", "id_gradebands");
-        FORM.init_add_button("addphrases", "id_targetphrases");
+    JS.init = function() {
+        JS.init_responseformat();
+        JS.init_target_phrases();
+        JS.init_add_button("addbands", "id_gradebands");
+        JS.init_add_button("addphrases", "id_targetphrases");
     };
 
     /**
      * If the responseformat is changed, for example to "Plain text",
      * then change the format of the related editors too.
      */
-    FORM.init_responseformat = function() {
+    JS.init_responseformat = function() {
         var fmt = document.querySelector("select[name=responseformat]");
         $(fmt).change(function(){
             var fmtvalue = this.options[this.selectedIndex].value;
@@ -158,15 +158,15 @@ define(["jquery"], function($) {
      * Make the target phrase text boxes "expandable",
      * i.e. expand/contract to fit the width of the content
      */
-    FORM.init_target_phrases = function() {
+    JS.init_target_phrases = function() {
         $("input[id^=id_phrasematch_]").each(function(){
             $(this).keyup(function(){
                 // get min width for a box with this "size"
                 var sizewidth = 0;
                 var size = $(this).attr("size");
                 if (size) {
-                    if (size in FORM.sizewidths) {
-                        sizewidth = FORM.sizewidths[size];
+                    if (size in JS.sizewidths) {
+                        sizewidth = JS.sizewidths[size];
                     } else {
                         var elm = document.createElement("INPUT");
                         $(elm).attr("size", size);
@@ -174,7 +174,7 @@ define(["jquery"], function($) {
                         $(elm).hide().appendTo("BODY");
                         sizewidth = $(elm).outerWidth();
                         $(elm).remove();
-                        FORM.sizewidths[size] = sizewidth;
+                        JS.sizewidths[size] = sizewidth;
                     }
                 }
                 // get required width for this text value
@@ -196,7 +196,7 @@ define(["jquery"], function($) {
      * @param {string} name
      * @param {string} anchor
      */
-    FORM.init_add_button = function(name, anchor) {
+    JS.init_add_button = function(name, anchor) {
         $("input[name=" + name + "]").click(function(){
             var url = $(this).closest("form").prop("action");
             url = url.replace(new RegExp("#.*$"), "");
@@ -204,5 +204,5 @@ define(["jquery"], function($) {
         });
     };
 
-    return FORM;
+    return JS;
 });

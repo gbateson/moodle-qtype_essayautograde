@@ -50,6 +50,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         // cache read-only flag
         $readonly = ($options->readonly ? 1 : 0);
 
+        // Cache the label separator string, usually a colon ": "
+        $separator = trim(get_string('labelsep', 'langconfig'));
+
         // Answer field.
         $step = $qa->get_last_step_with_qt_var('answer');
 
@@ -83,12 +86,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $answer = $renderer->response_area_input('answer', $qa, $step, $linecount, $options->context);
         }
 
-        $countwords = $question->get_current_response('count');
-        $minwords = (empty($question->minwordlimit) ? 0 : $question->minwordlimit);
-        $maxwords = (empty($question->maxwordlimit) ? 0 : $question->maxwordlimit);
+        $countitems = $question->get_current_response('count');
+        $minitems = 0;
+        $maxitems = 0;
 
         $itemtype = '';
-        $itemcount ='';
+        $itemcount =''; // html string for <div class="itemcount" ...>
 
         switch ($question->itemtype) {
             case $question->plugin_constant('ITEM_TYPE_CHARS'): $itemtype = 'chars'; break;
@@ -98,47 +101,54 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             case $question->plugin_constant('ITEM_TYPE_FILES'): $itemtype = 'files'; break;
         }
 
-        if ($itemtype == 'words') {
+        // We only count chars or words, because counting sentences
+        // and paragraphs is unreliable and not so meaningful.
+        if ($itemtype == 'chars' || $itemtype == 'words') {
 
-            $params = array('class' => 'wordswarning rounded bg-danger text-light ml-2 px-2 py-1');
-            $wordswarning = '';
-            switch (true) {
+            $warning = '';
+            if ($itemtype == 'words') {
+                $minitems = (empty($question->minwordlimit) ? 0 : $question->minwordlimit);
+                $maxitems = (empty($question->maxwordlimit) ? 0 : $question->maxwordlimit);
 
-                case $countwords && $maxwords && ($countwords > $maxwords):
-                    $wordswarning = ($readonly ? 'maxwordserror' : 'maxwordswarning');
-                    $wordswarning = get_string($wordswarning, $this->plugin_name());
-                    break;
+                $params = array('class' => 'warning rounded bg-danger text-light ml-2 px-2 py-1');
+                switch (true) {
 
-                case $countwords && $minwords && ($countwords < $minwords):
-                    $wordswarning = ($readonly ? 'minwordserror' : 'minwordswarning');
-                    $wordswarning = get_string($wordswarning, $this->plugin_name());
-                    break;
+                    case $maxitems && $countitems && ($maxitems < $countitems):
+                        $warning = ($readonly ? 'maxwordserror' : 'maxwordswarning');
+                        $warning = get_string($warning, $this->plugin_name());
+                        break;
 
-                default:
-                    $params['class'] .= ' d-none';
-            }
-            $wordswarning = html_writer::tag('span', $wordswarning, $params);
+                    case $minitems && $countitems && ($minitems > $countitems):
+                        $warning = ($readonly ? 'minwordserror' : 'minwordswarning');
+                        $warning = get_string($warning, $this->plugin_name());
+                        break;
 
-            // Cache the label separator string, usually a colon ": "
-            $separator = get_string('labelsep', 'langconfig');
-
-            $text = get_string('countwordslabel', $this->plugin_name()).$separator;
-            $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
-            $text .= html_writer::tag('i', $countwords, array('class' => 'value')).' '.$wordswarning;
-            $itemcount .= html_writer::tag('p', $text, array('class' => 'countwords my-0'));
-
-            if ($minwords) {
-                $text = get_string('minwordslabel', $this->plugin_name()).$separator;
-                $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
-                $text .= html_writer::tag('i', $minwords, array('class' => 'value'));
-                $itemcount .= html_writer::tag('p', $text, array('class' => 'minwords my-0'));
+                    default:
+                        $params['class'] .= ' d-none';
+                }
+                $warning = ' '.html_writer::tag('span', $warning, $params);
             }
 
-            if ($maxwords) {
-                $text = get_string('maxwordslabel', $this->plugin_name()).$separator;
-                $text = html_writer::tag('b', $text, array('class' => 'labeltext'));
-                $text .= html_writer::tag('i', $maxwords, array('class' => 'value'));
-                $itemcount .= html_writer::tag('p', $text, array('class' => 'maxwords my-0'));
+            $label = 'count'.$itemtype.'label';
+            $label = get_string($label, $this->plugin_name()).$separator;
+            $label = html_writer::tag('b', $label, array('class' => 'labeltext'));
+            $value = html_writer::tag('i', $countitems, array('class' => 'value')).$warning;
+            $itemcount .= html_writer::tag('p', $label.' '.$value, array('class' => 'countitems my-0'));
+
+            if ($minitems) {
+                $label = 'min'.$itemtype.'label';
+                $label = get_string($label, $this->plugin_name()).$separator;
+                $label = html_writer::tag('b', $label, array('class' => 'labeltext'));
+                $value = html_writer::tag('i', $minitems, array('class' => 'value'));
+                $itemcount .= html_writer::tag('p', $label.' '.$value, array('class' => 'minitems my-0'));
+            }
+
+            if ($maxitems) {
+                $label = 'max'.$itemtype.'label';
+                $label = get_string($label, $this->plugin_name()).$separator;
+                $label = html_writer::tag('b', $label, array('class' => 'labeltext'));
+                $value = html_writer::tag('i', $maxitems, array('class' => 'value'));
+                $itemcount .= html_writer::tag('p', $label.' '.$value, array('class' => 'maxitems my-0'));
             }
         }
 
@@ -161,8 +171,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $params = array('id' => 'id_'.$qa->get_qt_field_name('answer_itemcount'),
                             'class' => 'itemcount rounded border bg-secondary text-dark my-2 px-3 py-2',
                             'data-itemtype' => $itemtype,
-                            'data-minwords' => $minwords,
-                            'data-maxwords' => $maxwords);
+                            'data-minitems' => $minitems,
+                            'data-maxitems' => $maxitems);
             $result .= html_writer::tag('div', $itemcount, $params);
         }
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
@@ -173,7 +183,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                                                 $question->responsesampleformat,
                                                 array('para' => false));
 
-        $params = array($readonly, $itemtype, $minwords, $maxwords, $editor, $sample);
+        $params = array($readonly, $itemtype, $minitems, $maxitems, $editor, $sample);
         $PAGE->requires->js_call_amd('qtype_essayautograde/essayautograde', 'init', $params);
 
         return $result;
