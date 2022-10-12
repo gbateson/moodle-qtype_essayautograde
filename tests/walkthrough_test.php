@@ -43,7 +43,11 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->assertTag($arr, $this->currentoutput);
 
         if ($content) {
-            $this->assertMatchesRegularExpression('/' . preg_quote(s($content), '/') . '/', $this->currentoutput);
+            if(method_exists($this, 'assertMatchesRegularExpression')){
+                $this->assertMatchesRegularExpression('/' . preg_quote(s($content), '/') . '/', $this->currentoutput);
+            } else {
+                $this->assertRegExp('/' . preg_quote(s($content), '/') . '/', $this->currentoutput);
+            }
         }
     }
 
@@ -121,7 +125,11 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->check_current_state(question_state::$gradedwrong);
         $this->check_current_mark(0.0);
         $this->render();
-        $this->assertMatchesRegularExpression('/' . preg_quote($response, '/') . '/', $this->currentoutput);
+        if(method_exists($this, 'assertMatchesRegularExpression')){
+            $this->assertMatchesRegularExpression('/' . preg_quote($response, '/') . '/', $this->currentoutput);
+        } else {
+            $this->assertRegExp('/' . preg_quote($response, '/') . '/', $this->currentoutput);
+        }
         $this->check_current_output(
                 $this->get_contains_question_text_expectation($q),
                 $this->get_contains_general_feedback_expectation($q));
@@ -173,7 +181,11 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->check_current_state(question_state::$gradedwrong);
         $this->check_current_mark(0.0);
         $this->render();
-        $this->assertMatchesRegularExpression('/' . preg_quote(s($response), '/') . '/', $this->currentoutput);
+        if(method_exists($this, 'assertMatchesRegularExpression')){
+            $this->assertMatchesRegularExpression('/' . preg_quote(s($response), '/') . '/', $this->currentoutput);
+        } else {
+            $this->assertRegExp('/' . preg_quote(s($response), '/') . '/', $this->currentoutput);
+        }
         $this->check_current_output(
                 $this->get_contains_question_text_expectation($q),
                 $this->get_contains_general_feedback_expectation($q));
@@ -244,8 +256,13 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->check_current_state(question_state::$gradedwrong);
         $this->check_current_mark(0.0);
         $this->render();
-        $this->assertMatchesRegularExpression('/' . preg_quote(s('Once upon a time there was a little green frog.'), '/') . '/',
-             $this->currentoutput);
+        if(method_exists($this, 'assertMatchesRegularExpression')){
+            $this->assertMatchesRegularExpression('/' . preg_quote(s('Once upon a time there was a little green frog.'), '/') . '/',
+                $this->currentoutput);
+        } else {
+            $this->assertRegExp('/' . preg_quote(s('Once upon a time there was a little green frog.'), '/') . '/',
+                $this->currentoutput);
+        }
         $this->check_current_output(
                 $this->get_contains_question_text_expectation($q),
                 $this->get_contains_general_feedback_expectation($q));
@@ -444,7 +461,11 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         // Check the display.
         $this->load_quba();
         $this->render();
-        $this->assertMatchesRegularExpression('/I refuse to draw you a picture, so there!/', $this->currentoutput);
+        if(method_exists($this, 'assertMatchesRegularExpression')){
+            $this->assertMatchesRegularExpression('/I refuse to draw you a picture, so there!/', $this->currentoutput);
+        } else {
+            $this->assertRegExp('/I refuse to draw you a picture, so there!/', $this->currentoutput);
+        }
     }
 
     public function test_deferred_feedback_plain_attempt_on_last() {
@@ -503,8 +524,13 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->load_quba();
         $this->render();
         // Test taht no HTML comment has been added to the response.
-        $this->assertMatchesRegularExpression('/Once upon a time there was a frog called Freddy. He lived happily ever after.(?!&lt;!--)/',
-             $this->currentoutput);
+        if(method_exists($this, 'assertMatchesRegularExpression')){
+            $this->assertMatchesRegularExpression('/Once upon a time there was a frog called Freddy. He lived happily ever after.(?!&lt;!--)/',
+                $this->currentoutput);
+        } else {
+            $this->assertRegExp('/Once upon a time there was a frog called Freddy. He lived happily ever after.(?!&lt;!--)/',
+                $this->currentoutput);
+        }
         // Test for the hash of an empty file area.
         $this->assertStringNotContainsString('d41d8cd98f00b204e9800998ecf8427e', $this->currentoutput);
     }
