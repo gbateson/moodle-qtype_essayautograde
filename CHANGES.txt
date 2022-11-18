@@ -3,6 +3,9 @@ Change log for qtype_essayautograde
 ========================================
 
 2022-09-23 (18)
+ - fix discrepency between word count in JavaScript and word count in PHP.
+
+2022-09-23 (18)
  - small fix for display of word count warning on mobile app in Moodle >= 3.11
 
 2022-09-21 (17)

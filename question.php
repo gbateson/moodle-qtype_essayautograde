@@ -901,6 +901,25 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     /**
+     * get_words
+     *
+     * using the same reg as "count_words()" in moodlelib.php
+     */
+    protected function get_words($text) {
+         return preg_split('/[\p{Z}\p{Cc}—–]+/u', $text, -1, PREG_SPLIT_NO_EMPTY);
+    }
+
+    /**
+     * get_unique_words
+     */
+    protected function get_unique_words($text) {
+        $items = core_text::strtolower($text);
+        $items = $this->get_words($text);
+        $items = array_unique($items);
+        return $items;
+    }
+
+    /**
      * get_stats
      */
     protected function get_stats_chars($text) {
@@ -911,7 +930,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * get_stats_words
      */
     protected function get_stats_words($text) {
-        return str_word_count($text, 0);
+        return count($this->get_words($text));
     }
 
     /**
@@ -943,10 +962,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * get_stats_uniquewords
      */
     protected function get_stats_uniquewords($text) {
-        $items = core_text::strtolower($text);
-        $items = str_word_count($items, 1);
-        $items = array_unique($items);
-        return count($items);
+        return count($this->get_unique_words($text));
     }
 
     /**
@@ -954,9 +970,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function get_stats_longwords($text) {
         $count = 0;
-        $items = core_text::strtolower($text);
-        $items = str_word_count($items, 1);
-        $items = array_unique($items);
+        $items = $this->get_unique_words($text);
         foreach ($items as $item) {
             if ($this->count_syllables($item) > 2) {
                 $count++;

@@ -208,32 +208,35 @@ var result = {
 
                 // Maybe "this.CoreLangProvider" has a method for fetching a string
                 // but I can't find it, so we use our own method, thus:
-                var minwordswarning = that.getPluginString('qtype_essayautograde', 'minwordswarning');
-                var maxwordswarning = that.getPluginString('qtype_essayautograde', 'maxwordswarning');
+                var minwordswarning = that.getPluginString("qtype_essayautograde", "minwordswarning");
+                var maxwordswarning = that.getPluginString("qtype_essayautograde", "maxwordswarning");
 
-                var countitems = itemcount.querySelector('.countitems');
-                var value = countitems.querySelector('.value');
-                var warning = countitems.querySelector('.warning');
+                var countitems = itemcount.querySelector(".countitems");
+                var value = countitems.querySelector(".value");
+                var warning = countitems.querySelector(".warning");
 
                 var itemtype = itemcount.dataset.itemtype;
                 var minitems = parseInt(itemcount.dataset.minitems);
                 var maxitems = parseInt(itemcount.dataset.maxitems);
 
-                var itemmatch = '';
+                var itemsplit = '';
                 switch (itemtype) {
-                    case 'chars': itemmatch = '.'; break;
-                    case 'words': itemmatch = '\\w+'; break;
-                    case 'sentences': itemmatch = '[^\\.?!]+[\\.?!]'; break;
-                    case 'paragraphs': itemmatch = '[^\\r\\n]+[\\r\\n]*'; break;
+                    case "chars": itemsplit = ""; break;
+                    case "words": itemsplit = "[\\s—–]+"; break;
+                    case "sentences": itemsplit = "[\\.?!]+"; break;
+                    case "paragraphs": itemsplit = "[\\r\\n]+"; break;
                 }
 
-                if (itemmatch) {
-                    itemmatch = new RegExp(itemmatch, 'g');
-                    textarea.addEventListener('keyup', function() {
+                if (itemsplit) {
+                    itemsplit = new RegExp(itemsplit);
+                    textarea.addEventListener("keyup", function() {
+                        var text = textarea.value;
+                        var warningtext = "";
                         var count = 0;
-                        var warningtext = '';
-                        if (textarea.value) {
-                            count = textarea.value.match(itemmatch).length;
+                        if (text) {
+                            count = text.split(itemsplit).filter(function(item) {
+                                return (item !== "");
+                            }).length;
                             if (minitems && (count < minitems)) {
                                 warningtext = minwordswarning;
                             }
@@ -244,10 +247,10 @@ var result = {
                         value.innerText = count;
                         if (warning) {
                             warning.innerText = warningtext;
-                            if (warningtext == '') {
-                                warning.style.display = 'none';
+                            if (warningtext == "") {
+                                warning.style.display = "none";
                             } else {
-                                warning.style.display = 'inline';
+                                warning.style.display = "inline";
                             }
                         }
                     });

@@ -32,7 +32,7 @@ define(["jquery", "core/str"], function($, STR) {
     JS.str = {};
 
     JS.itemtype = "";
-    JS.itemmatch = "";
+    JS.itemsplit = "";
 
     JS.minitems = 0;
     JS.maxitems = 0;
@@ -51,18 +51,18 @@ define(["jquery", "core/str"], function($, STR) {
     JS.init = function(readonly, itemtype, minitems, maxitems, editortype, responsesample) {
 
         // get RegExp expression for this item type
-        var itemmatch = "";
+        var itemsplit = "";
         switch (itemtype) {
-            case "chars": itemmatch = "."; break;
-            case "words": itemmatch = "\\w+"; break;
-            case "sentences": itemmatch = "[^\\.?!]+[\\.?!]"; break;
-            case "paragraphs": itemmatch = "[^\\r\\n]+[\\r\\n]*"; break;
+            case "chars": itemsplit = ""; break;
+            case "words": itemsplit = "[\\s—–]+"; break;
+            case "sentences": itemsplit = "[\\.?!]+"; break;
+            case "paragraphs": itemsplit = "[\\r\\n]+"; break;
         }
         // take a look at https://github.com/RadLikeWhoa/Countable/blob/master/Countable.js
         // for more ideas on how to count chars, words, sentences, and paragraphs
 
         JS.itemtype = itemtype;
-        JS.itemmatch = new RegExp(itemmatch, "g");
+        JS.itemsplit = new RegExp(itemsplit);
 
         JS.minitems = minitems;
         JS.maxitems = maxitems;
@@ -565,16 +565,12 @@ define(["jquery", "core/str"], function($, STR) {
     };
 
     JS.show_itemcount = function(response, id) {
-        if ($(response).prop("tagName")=="TEXTAREA") {
-            var itemcount = $(response).val().match(JS.itemmatch);
-        } else {
-            var itemcount = $(response).text().match(JS.itemmatch);
-        }
-        if (itemcount) {
-            itemcount = itemcount.length;
-        } else {
-            itemcount = 0;
-        }
+
+        var tagname = $(response).prop("tagName");
+        var text = (tagname=="TEXTAREA" ? $(response).val() : $(response).text());
+        var itemcount = text.split(JS.itemsplit).filter(function(item) {
+            return (item !== '');
+        }).length;
 
         // fetch descriptor string
         id = JS.escaped_id(id);
@@ -588,7 +584,7 @@ define(["jquery", "core/str"], function($, STR) {
                     warningtext = JS.str["min" + JS.itemtype + "warning"];
                 }
                 if (JS.maxitems && JS.maxitems < itemcount) {
-                    warningtext = JS.str["min" + JS.itemtype + "warning"];
+                    warningtext = JS.str["max" + JS.itemtype + "warning"];
                 }
             }
 
