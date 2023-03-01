@@ -2,7 +2,10 @@
 Change log for qtype_essayautograde
 ========================================
 
-2022-09-23 (18)
+2022-10-18 (19)
+ - fix bug that prevented display of images in question text.
+
+2022-10-18 (19)
  - fix discrepency between word count in JavaScript and word count in PHP.
 
 2022-09-23 (18)

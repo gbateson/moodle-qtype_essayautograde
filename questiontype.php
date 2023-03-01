@@ -61,6 +61,9 @@ class qtype_essayautograde extends question_type {
     const SHOW_TEACHERS_ONLY         = 2;
     const SHOW_TEACHERS_AND_STUDENTS = 3;
 
+    /** @var array Combined feedback fields */
+    public $feedbackfields = array('correctfeedback', 'partiallycorrectfeedback', 'incorrectfeedback');
+
     public function is_manual_graded() {
         return true;
     }
@@ -659,6 +662,9 @@ class qtype_essayautograde extends question_type {
         }
         $newquestion->countphrases = $i;
 
+        // Check that the required feedback fields exist.
+        $this->check_ordering_combined_feedback($newquestion);
+
         //$format->import_combined_feedback($newquestion, $data, false);
         $format->import_hints($newquestion, $data, false);
 
@@ -877,7 +883,28 @@ class qtype_essayautograde extends question_type {
         $question->responsesample   = array('text' => '', 'format' => FORMAT_MOODLE);
         $question->graderinfo       = array('text' => '', 'format' => FORMAT_MOODLE,
                                             'itemid' => '', 'files' => null);
+
+        // Check that the required feedback fields exist.
+        $this->check_ordering_combined_feedback($question);
+
         return $question;
+    }
+
+    /**
+     * Check that the required feedback fields exist
+     *
+     * @param object $question
+     */
+    protected function check_essayautograde_combined_feedback(&$question) {
+        $feedback = array('text' => '',
+                          'format' => FORMAT_MOODLE,
+                          'itemid' => 0,
+                          'files' => null);
+        foreach ($this->feedbackfields as $field) {
+            if (empty($question->$field)) {
+                $question->$field = $feedback;
+            }
+        }
     }
 
     /**

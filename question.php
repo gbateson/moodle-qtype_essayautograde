@@ -214,27 +214,24 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         if (empty($options) || empty($args)) {
             return false; // shouldn't happen !!
         }
-        switch ($component) {
-            case 'question':
-                if ($filearea == 'response_attachments') {
-                    return ($this->attachments != 0);
-                }
-                if ($filearea == 'response_answer') {
-                    return ($this->responseformat === 'editorfilepicker');
-                }
-                if ($filearea == 'hint') {
-                    return $this->check_hint_file_access($qa, $options, $args);
-                }
-                if (in_array($filearea, $this->qtype->feedbackfields)) {
-                    return $this->check_combined_feedback_file_access($qa, $options, $filearea, $args);
-                }
-                break;
-
-            case $this->plugin_name():
-                if ($filearea == 'graderinfo' && $options->manualcomment) {
-                    return ($this->id == reset($args));
-                }
-                break;
+        if ($component == 'question') {
+            if ($filearea == 'response_attachments') {
+                return ($this->attachments != 0);
+            }
+            if ($filearea == 'response_answer') {
+                return ($this->responseformat === 'editorfilepicker');
+            }
+            if ($filearea == 'hint') {
+                return $this->check_hint_file_access($qa, $options, $args);
+            }
+            if (in_array($filearea, $this->qtype->feedbackfields)) {
+                return $this->check_combined_feedback_file_access($qa, $options, $filearea, $args);
+            }
+        }
+        if ($component == $this->plugin_name()) { // qtype_essayautograde
+            if ($filearea == 'graderinfo' && $options->manualcomment) {
+                return ($this->id == reset($args));
+            }
         }
         return parent::check_file_access($qa, $options, $component, $filearea, $args, $forcedownload);
     }
