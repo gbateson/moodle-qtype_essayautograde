@@ -2,6 +2,12 @@
 Change log for qtype_essayautograde
 ========================================
 
+2023-03-29 (22)
+ - fix setting of display options on Moodle >= 4.x and bump version.
+
+2023-03-29 (21)
+ - fix setting of display options on Moodle >= 4.x
+
 2022-10-18 (19)
  - fix bug that prevented display of images in question text.
 

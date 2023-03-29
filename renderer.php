@@ -62,7 +62,10 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         }
 
         $renderer = $question->get_format_renderer($this->page);
-        $renderer->set_displayoptions($options);
+        if (method_exists($renderer, 'set_displayoptions')) {
+            $renderer->set_displayoptions($options); // Moodle 4.x and later
+        }
+
         $linecount = $question->responsefieldlines;
 
         if ($readonly) {
