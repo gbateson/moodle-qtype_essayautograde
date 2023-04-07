@@ -39,6 +39,9 @@ $string['addpartialgrades_help'] = 'If this option is enabled, grades will be ad
 $string['addpartialgrades'] = 'Award partial grades?';
 $string['addsingleband'] = 'Add 1 more grade band';
 $string['addsinglephrase'] = 'Add 1 more target phrase';
+$string['allowsimilarity_help'] = 'The maximum level of similarity that is allowed between a student\'s response and the response template or sample response. The higher this value, the more similar the student\'s response can be to the template or sample. Conversely, the lower the value, the more different the student\'s response must be from the template or sample. Adjusting this value can affect the level of originality and detail required from students in their responses.';
+$string['allowsimilarity'] = 'Allow similarity?';
+$string['allowsimilaritypercent'] = 'Yes - allow up to {$a}% similarity';
 $string['auto'] = 'Auto';
 $string['autograding'] = 'Auto-grading';
 $string['bandcount'] = 'For';
@@ -170,8 +173,8 @@ $string['showtargetphrases'] = 'Show target phrases?';
 $string['showtextstats_help'] = 'If this option is enabled, statistics about the text will be shown.';
 $string['showtextstats'] = 'Show text statistics?';
 $string['showtostudentsonly'] = 'Yes, show to students only';
-$string['showtoteachersonly'] = 'Yes, show to teachers only';
 $string['showtoteachersandstudents'] = 'Yes, show to teachers and students';
+$string['showtoteachersonly'] = 'Yes, show to teachers only';
 $string['targetphrase_help'] = 'Specify the grade that will be added if this target phrase appears in the essay.
 
 > **e.g.** If [Finally] is used, award [10% of the question grade.]

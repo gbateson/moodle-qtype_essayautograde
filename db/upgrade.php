@@ -164,6 +164,13 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2023040723;
+    if ($oldversion < $newversion) {
+        // Add "allowsimilarity" column to denote maximum allowable level of similarity.
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, 'allowsimilarity');
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
     return true;
 }
 
@@ -194,6 +201,7 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
 
         // Fields that are inherited from the "Essay" question type.
         // We omit "id" and "questionid" because they are indexed fields and therefore hard to update.
+        // We include "allowsimilarity", because it relates to the template and sample.
         new xmldb_field('responseformat',         XMLDB_TYPE_CHAR,   16, null, XMLDB_NOTNULL, null, 'editor'),
         new xmldb_field('responserequired',       XMLDB_TYPE_INTEGER, 2, null, XMLDB_NOTNULL, null, 1),
         new xmldb_field('responsefieldlines',     XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 15),
@@ -207,6 +215,7 @@ function xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, $fiel
         new xmldb_field('responsetemplateformat', XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('responsesample',         XMLDB_TYPE_TEXT),
         new xmldb_field('responsesampleformat',   XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 0),
+        new xmldb_field('allowsimilarity',        XMLDB_TYPE_INTEGER, 4, null, XMLDB_NOTNULL, null, 10),
         new xmldb_field('maxbytes',               XMLDB_TYPE_INTEGER, 10, null, XMLDB_NOTNULL, null, 0),
         new xmldb_field('filetypeslist',          XMLDB_TYPE_TEXT),
 

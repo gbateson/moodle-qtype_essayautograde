@@ -179,6 +179,13 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                             'data-maxitems' => $maxitems);
             $result .= html_writer::tag('div', $itemcount, $params);
         }
+
+        if ($qa->get_state() == question_state::$gradedwrong) {
+            if ($error = $question->get_validation_error($step->get_qt_data())) {
+                $result .= html_writer::tag('div', $error, array('class' => 'validationerror'));
+            }
+        }
+
         $result .= html_writer::tag('div', $files, array('class' => 'attachments'));
         $result .= html_writer::end_tag('div'); // div.ablock
 

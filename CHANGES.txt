@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2023-04-07 (23)
+ - add new field, allowsimilarity which allows teacher to specify the maximum allowable level of similarity between a student response and the response template or sample response.
+
 2023-03-29 (22)
  - fix setting of display options on Moodle >= 4.x and bump version.
 

@@ -288,6 +288,21 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->addHelpButton($name, $name, $plugin);
 
         /////////////////////////////////////////////////
+        // Insert allowsimilarity after responsesample.
+        /////////////////////////////////////////////////
+
+        $name = 'allowsimilarity';
+        $label = get_string($name, $plugin);
+        $options = $this->get_allowsimilarity_options($plugin);
+        $i = $mform->_elementIndex['responsesample'];
+        $mform->insertElementBefore($mform->createElement(
+            'select', $name, $label, $options
+        ), array_search($i + 1, $mform->_elementIndex));
+        $mform->addHelpButton($name, $name, $plugin);
+        $mform->setType($name, PARAM_INT);
+        $mform->setDefault($name, $this->get_my_default_value($name, 10));
+
+        /////////////////////////////////////////////////
         // Add feedback fields (= Combined feedback).
         // and interactive settings (= Multiple tries).
         // Move combined feedback after general feedback.
@@ -524,6 +539,21 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                      $this->plugin_constant('ITEM_TYPE_SENTENCES') => get_string('sentences', $plugin),
                      $this->plugin_constant('ITEM_TYPE_PARAGRAPHS') => get_string('paragraphs', $plugin),
                      $this->plugin_constant('ITEM_TYPE_FILES') => get_string('files', $plugin));
+    }
+
+    /**
+     * Get array of similarity threshold percentages
+     *
+     * @param string $plugin name
+     * @return array(value => percent)
+     */
+    protected function get_allowsimilarity_options($plugin) {
+        $options = array();
+        $options[0] = get_string('no');
+        for ($i=5; $i<=100; $i+=5) {
+            $options[$i] = get_string('allowsimilaritypercent', $plugin, $i);
+        }
+        return $options;
     }
 
     /**

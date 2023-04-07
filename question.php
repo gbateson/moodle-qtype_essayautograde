@@ -544,9 +544,14 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function standardize_white_space($text) {
         // Standardize white space in $text.
-        // Html-entity for non-breaking space, $nbsp;,
+        // Html-entity for non-breaking space, &nbsp;,
         // is converted to a unicode character, "\xc2\xa0",
         // that can be simulated by two ascii chars (194,160)
+        // x0A-x0D are various newline characters (see below):
+        //     x0A = 10 = \n = newline (Unix)
+        //     x0B = 11 = \v = vertical tab
+        //     x0C = 12 = \f = form feed
+        //     x0D = 13 = \r = carriage return
         $text = str_replace(chr(194).chr(160), ' ', $text);
         $text = preg_replace('/[ \t]+/', ' ', trim($text));
         $text = preg_replace('/( *[\x0A-\x0D]+ *)+/s', "\n", $text);
@@ -554,9 +559,23 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     }
 
     /**
-     * is_similar_text($a, $b, $thresholdpercent=10)
+     * is_similar_text($a, $b, $similarity=null)
      */
-    protected function is_similar_text($a, $b, $thresholdpercent=10) {
+    protected function is_similar_text($a, $b, $allowsimilarity=null) {
+
+        if ($allowsimilarity === null) {
+            if (isset($this->allowsimilarity)) {
+                $allowsimilarity = $this->allowsimilarity;
+            } else {
+                $allowsimilarity = 10; // may happen during upgrade.
+            }
+        }
+
+        // If 100% similarity is allowed, then we don't need to check anything.
+        if ($allowsimilarity == 100) {
+            return false;
+        }
+
         if (empty($a)) {
             $a = '';
             $alen = 0;
@@ -573,28 +592,42 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $blen = core_text::strlen($b);
         }
 
-        // If possible, we compare with a simple comparison
-        if ($alen==$blen && $a==$b) {
+        // If one string is empty, they are identical if the other is also empty.
+        // Otherwise, they are not similar.
+        if ($alen == 0) {
+            return ($blen == 0);
+        }
+        if ($blen == 0) {
+            return ($alen == 0);
+        }
+
+        // If the strings are identical, then they are similar.
+        if ($alen == $blen && $a == $b) {
             return true;
         }
 
-        // Cache the length of the longer of the two strings.
-        $maxlen = max($alen, $blen);
-
         // Compare short strings (of up to 255 chars) with "levenshtein()" because its faster.
         // Compare long strings with "similar_text()" because it can handle texts of any length.
-        if ($maxlen <= 255) {
+        if (max($alen, $blen) <= 255) {
             // "levenshtein()" returns the minimal number of characters
             // you have to replace, insert or delete to transform $a into $b
             // i.e. the lower the number, the more similar the texts are.
-            $fraction = (levenshtein($a, $b) / $maxlen);
+            // As the levenshtein number grows, the similarity decreases.
+            $similarity = ($alen - levenshtein($a, $b));
         } else {
-            // "similar_text()" returns the number of matching chars in both $a and $b,
+            // "similar_text()" returns the number of matching chars in $a and $b,
             // i.e. the higher number, the more similar the texts are.
-            $fraction = (($maxlen - similar_text($a, $b)) / $maxlen);
+            // As the number of matching chars grows, the similarity also increases.
+            $similarity = similar_text($a, $b);
         }
 
-        return (round($fraction * 100, 2) <= $thresholdpercent);
+        // Convert the similarity to a fraction and then percentage.
+        $similarity = ($similarity / $alen);
+        $similarity = round(100 * $similarity, 2);
+
+        // If the similarity is greater than the allowed similiarity, return true.
+        // Otherwise, return false. (i.e. texts are regarded as not similar)
+        return ($similarity > $allowsimilarity);
     }
 
     /**

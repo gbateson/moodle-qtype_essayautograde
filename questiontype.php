@@ -74,7 +74,7 @@ class qtype_essayautograde extends question_type {
                      'attachments', 'attachmentsrequired',
                      'graderinfo', 'graderinfoformat',
                      'responsetemplate', 'responsetemplateformat',
-                     'responsesample', 'responsesampleformat',
+                     'responsesample', 'responsesampleformat', 'allowsimilarity',
                      'minwordlimit', 'maxwordlimit',
                      'maxbytes', 'filetypeslist',
                      'enableautograde', 'itemtype', 'itemcount',
@@ -147,6 +147,7 @@ class qtype_essayautograde extends question_type {
             'responsetemplateformat' => $formdata->responsetemplate['format'],
             'responsesample'      => $formdata->responsesample['text'],
             'responsesampleformat' => $formdata->responsesample['format'],
+            'allowsimilarity'     => isset($formdata->allowsimilarity) ? $formdata->allowsimilarity : 10,
             'minwordlimit'        => (empty($formdata->minwordenabled) || empty($formdata->minwordlimit)) ? 0 : $formdata->minwordlimit,
             'maxwordlimit'        => (empty($formdata->maxwordenabled) || empty($formdata->maxwordlimit)) ? 0 : $formdata->maxwordlimit,
             'maxbytes'            => isset($formdata->maxbytes) ? $formdata->maxbytes : 0,
@@ -335,7 +336,6 @@ class qtype_essayautograde extends question_type {
     }
 
     protected function initialise_question_instance(question_definition $question, $questiondata) {
-
         // initialize standard question fields
         parent::initialise_question_instance($question, $questiondata);
 
@@ -1007,6 +1007,7 @@ class qtype_essayautograde extends question_type {
             'responsetemplateformat' => 0,
             'responsesample'       => '',
             'responsesampleformat' =>  0,
+            'allowsimilarity'      =>  10,
             'minwordlimit'         =>  0,
             'maxwordlimit'         =>  0,
             'maxbytes'             =>  0,
