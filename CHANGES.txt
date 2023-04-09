@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2023-04-09 (24)
+ - (#72) remove use of uppercase $TYPE variable as it was easily confused with $type; (#73) add missing function to check feedback fields during xml/gift import
+
 2023-04-07 (23)
  - add new field, allowsimilarity which allows teacher to specify the maximum allowable level of similarity between a student response and the response template or sample response.
 

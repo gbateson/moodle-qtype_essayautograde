@@ -663,12 +663,25 @@ class qtype_essayautograde extends question_type {
         $newquestion->countphrases = $i;
 
         // Check that the required feedback fields exist.
-        $this->check_ordering_combined_feedback($newquestion);
+        $this->check_combined_feedback_fields($newquestion);
 
         //$format->import_combined_feedback($newquestion, $data, false);
         $format->import_hints($newquestion, $data, false);
 
         return $newquestion;
+    }
+
+    /**
+     * Check that the required feedback fields exist
+     *
+     * @param object $question
+     */
+    protected function check_combined_feedback_fields(&$question) {
+        foreach ($this->feedbackfields as $field) {
+            if (empty($question->$field)) {
+                $question->$field = array('text' => '', 'format' => FORMAT_MOODLE, 'itemid' => 0, 'files' => null);
+            }
+        }
     }
 
     /**
@@ -885,7 +898,7 @@ class qtype_essayautograde extends question_type {
                                             'itemid' => '', 'files' => null);
 
         // Check that the required feedback fields exist.
-        $this->check_ordering_combined_feedback($question);
+        $this->check_combined_feedback_fields($question);
 
         return $question;
     }
@@ -958,7 +971,7 @@ class qtype_essayautograde extends question_type {
     }
 
     /**
-     * get_gift_fields
+     * get_text_fields
      *
      * @return array of fields used in GIFT format
      */

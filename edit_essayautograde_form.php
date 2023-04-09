@@ -785,7 +785,6 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      */
     protected function add_repeat_elements($mform, $type, $elements, $options, $name) {
         $types = $type.'s';
-        $TYPE = strtoupper($type);
         $plugin = 'qtype_essayautograde'; // $this->plugin_name();
 
         // cache element names
@@ -794,7 +793,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $addtypescount = $addtypes.'count';
         $addtypesgroup = $addtypes.'group';
 
-        $repeats = $this->plugin_constant('ANSWER_TYPE_'.$TYPE); // type
+        $repeats = $this->plugin_constant('ANSWER_TYPE_'.strtoupper($type));
         $repeats = $this->get_answer_repeats($this->question, $repeats);
 
         $count = optional_param($addtypescount, self::NUM_ITEMS_ADD, PARAM_INT);
