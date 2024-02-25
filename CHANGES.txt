@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2023-04-09 (25)
+ - bump the version number in order to push changes to plugins repository on Moodle.org
+
 2023-04-09 (24)
  - (#72) remove use of uppercase $TYPE variable as it was easily confused with $type; (#73) add missing function to check feedback fields during xml/gift import
 
