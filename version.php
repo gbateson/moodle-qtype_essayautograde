@@ -30,10 +30,14 @@ $plugin->cron      = 0;
 $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2015111600; // Moodle 3.0
-$plugin->version   = 2023040924;
-$plugin->release   = '2023-04-09 (25)';
+$plugin->version   = 2024031927;
+$plugin->release   = '2024-03-19 (27)';
 
 // https://docs.moodle.org/dev/Releases
+// Moodle 4.5 2024mmdd00 day month 2024 <= LTS
+// Moodle 4.4 2024042200 22 April 2024
+// Moodle 4.3 2023100900 9 October 2023
+// Moodle 4.2 2023042400 24 April 2023
 // Moodle 4.1 2022112800 28 Nov 2022 <= LTS
 // Moodle 4.0 2022041900 19 Apr 2022
 // Moodle 3.11 2021051700 17 May 2021

@@ -702,9 +702,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             if ($showtargetphrases) {
                 $details = array();
                 foreach ($currentresponse->phrases as $match => $percent) {
-                    $details[] = get_string('phrasematch', $plugin).' "'.$match.'" '.
-                                 get_string('phrasepercent', $plugin).' '.
-                                 get_string('percentofquestiongrade', $plugin, $percent);
+                    $a = (object)['phrase' => '"'.$match.'"', 'percent' => $percent.'%'];
+                    $details[] = get_string('phrasetext', $plugin, $a);
                 }
                 $output .= html_writer::tag('h5', get_string('targetphrases', $plugin));
                 $output .= html_writer::alist($details);

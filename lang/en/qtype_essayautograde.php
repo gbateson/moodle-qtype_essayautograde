@@ -127,7 +127,6 @@ $string['minimumfilecount'] = 'Minimum number of files: {$a}';
 $string['missing'] = 'Missing';
 $string['overflow'] = 'Overflow';
 $string['paragraphs'] = 'Paragraphs';
-$string['percentofquestiongrade'] = '{$a}% of the question grade.';
 $string['phrasebehavior_help'] = 'These settings refine the matching behavior for this target phrase.';
 $string['phrasebehavior'] = 'Target phrase [{no}] behavior';
 $string['phrasecasesensitiveno'] = 'Match is case-insensitive.';
@@ -136,8 +135,24 @@ $string['phrasefullmatchno'] = 'Match full or partial words.';
 $string['phrasefullmatchyes'] = 'Match full words only.';
 $string['phraseignorebreaksno'] = 'Recognize line breaks.';
 $string['phraseignorebreaksyes'] = 'Ignore line breaks.';
-$string['phrasematch'] = 'If';
-$string['phrasepercent'] = 'is used, award';
+
+$string['phrasematch'] = 'Phrase match';
+$string['phrasepercent'] = 'Phrase percent';
+$string['phrasedivisor'] = 'Phrase divisor';
+
+$string['phrasetext'] = 'If {$a->phrase} is used, award {$a->percent} of the question grade.';
+$string['phrasetext1'] = 'If';
+$string['phrasetext2'] = 'is used, award';
+$string['phrasetext3'] = '';
+$string['phrasetext4'] = 'of the question grade.';
+
+$string['phrasepercentexactly'] = 'exactly';
+$string['phrasepercentdividedby'] = 'divided by {$a}';
+
+//$string['phrasematch'] = 'If';
+//$string['phrasepercent'] = 'is used, award';
+//$string['percentofquestiongrade'] = '{$a}% of the question grade.';
+
 $string['pleaseattachfiles'] = 'Please attach the required number of files.';
 $string['pleaseinputtext'] = 'Please input your response in the text box.';
 $string['present'] = 'Present';

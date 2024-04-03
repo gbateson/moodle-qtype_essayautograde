@@ -177,6 +177,35 @@ table.essayautograde.review .present {
     color:             #009900; /* dark green */
 }
 
+/**
+ * Add zebra stripes fo the target phrases
+ * (do not add BG to frst and last elements)
+ */
+#id_targetphrases .fitem:nth-of-type(4n),
+#id_targetphrases .fitem:nth-of-type(4n+1) {
+    background-color: #f8f8f8;
+}
+
+#id_targetphrases .fitem:nth-of-type(4n+2),
+#id_targetphrases .fitem:nth-of-type(4n+3) {
+    background-color: #f0f0f0;
+}
+#id_targetphrases .fitem:first-child,
+#id_targetphrases .fitem:last-child {
+    background-color: initial;
+}
+
+/**
+ * Adjust margins and padding between
+ * targetphrase and phrasebehavior groups.
+ */
+#id_targetphrases .fitem:nth-of-type(2n) {
+    margin-bottom: 0px !important;
+}
+#id_targetphrases .fitem:nth-of-type(2n+1) {
+    padding-top: 3px !important;
+}
+
 @media (min-width: 768px) {
     /** Moodle <= 3.6 **/
     [id^=fgroup_id_phrasebehavior_] label,

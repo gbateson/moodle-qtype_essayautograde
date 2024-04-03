@@ -91,6 +91,9 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         // cache options for form elements to select a grade
         $grade_options = $this->get_grade_options($plugin);
 
+        // cache options for form elements to select a grade
+        $divisor_options = $this->get_divisor_options($plugin);
+
         /////////////////////////////////////////////////
         // add main form elements
         /////////////////////////////////////////////////
@@ -218,7 +221,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $mform->disabledIf($name, 'enableautograde', 'eq', 0);
         $mform->disabledIf($name, 'itemtype', 'eq', $this->plugin_constant('ITEM_TYPE_FILES'));
 
-        $this->add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options);
+        $this->add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options, $divisor_options);
 
         /////////////////////////////////////////////////
         // add common errors
@@ -578,7 +581,25 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
     protected function get_grade_options($plugin) {
         $options = array();
         for ($i=0; $i<=100; $i++) {
-            $options[$i] = get_string('percentofquestiongrade', $plugin, $i);
+            $options[$i] = "$i%";
+        }
+        return $options;
+    }
+
+    /**
+     * Get array of grade options
+     *
+     * @param string $plugin name
+     * @return array(grade => description)
+     */
+    protected function get_divisor_options($plugin) {
+        $options = array();
+        for ($i=1; $i<=20; $i++) {
+            if ($i == 1) {
+                $options[$i] = get_string('phrasepercentexactly', $plugin);
+            } else {
+                $options[$i] = get_string('phrasepercentdividedby', $plugin, $i);
+            }
         }
         return $options;
     }
@@ -728,7 +749,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      * @param array $grade_options
      * @return void, but will update $mform
      */
-    protected function add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options) {
+    protected function add_repeat_targetphrases($mform, $plugin, $short_text_options, $long_text_options, $grade_options, $divisor_options) {
 
         $repeat_elements = array();
         $repeat_options = array();
@@ -736,15 +757,28 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         // add group of target phrases
         $group_elements = array();
 
+        $group_elements[] = $mform->createElement('html', get_string('phrasetext1', $plugin));
+
         $name = 'phrasematch';
-        $label = get_string($name, $plugin);
+        $label = ''; //get_string($name, $plugin);
         $group_elements[] = $mform->createElement('text', $name, $label, $long_text_options);
         $repeat_options[$name] = array('type' => PARAM_TEXT);
 
+        $group_elements[] = $mform->createElement('html', get_string('phrasetext2', $plugin));
+
         $name = 'phrasepercent';
-        $label = get_string($name, $plugin);
+        $label = ''; //get_string($name, $plugin);
         $group_elements[] = $mform->createElement('select', $name, $label, $grade_options);
         $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $group_elements[] = $mform->createElement('html', get_string('phrasetext3', $plugin));
+
+        $name = 'phrasedivisor';
+        $label = ''; //get_string($name, $plugin);
+        $group_elements[] = $mform->createElement('select', $name, $label, $divisor_options);
+        $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $group_elements[] = $mform->createElement('html', get_string('phrasetext4', $plugin));
 
         $name = 'targetphrase';
         $label = get_string($name, $plugin);

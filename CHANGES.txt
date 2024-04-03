@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2024-03-19 (27)
+ - qtype_ordering add new strings to allow allow fractional percents to be awarded for target phrases
+
 2023-04-09 (25)
  - bump the version number in order to push changes to plugins repository on Moodle.org
 
