@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2024-04-11 (29)
+ - ensure that count/min/max strings are fetched from the Essay (auto-grade) plugin, so as not to cause error in the Speak (auto-grade) plugin.
+
 2024-04-11 (28)
  - improve detection of context when deciding whether to display feedbackto students and/or teachers
 

@@ -133,15 +133,18 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 $warning = ' '.html_writer::tag('span', $warning, $params);
             }
 
+            // The strings below have to come from the essayautograde plugin.
+            $plugin = 'qtype_essayautograde';
+
             $label = 'count'.$itemtype.'label';
-            $label = get_string($label, $this->plugin_name()).$separator;
+            $label = get_string($label, $plugin).$separator;
             $label = html_writer::tag('b', $label, array('class' => 'labeltext'));
             $value = html_writer::tag('i', $countitems, array('class' => 'value')).$warning;
             $itemcount .= html_writer::tag('p', $label.' '.$value, array('class' => 'countitems my-0'));
 
             if ($minitems) {
                 $label = 'min'.$itemtype.'label';
-                $label = get_string($label, $this->plugin_name()).$separator;
+                $label = get_string($label, $plugin).$separator;
                 $label = html_writer::tag('b', $label, array('class' => 'labeltext'));
                 $value = html_writer::tag('i', $minitems, array('class' => 'value'));
                 $itemcount .= html_writer::tag('p', $label.' '.$value, array('class' => 'minitems my-0'));
@@ -149,7 +152,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
             if ($maxitems) {
                 $label = 'max'.$itemtype.'label';
-                $label = get_string($label, $this->plugin_name()).$separator;
+                $label = get_string($label, $plugin).$separator;
                 $label = html_writer::tag('b', $label, array('class' => 'labeltext'));
                 $value = html_writer::tag('i', $maxitems, array('class' => 'value'));
                 $itemcount .= html_writer::tag('p', $label.' '.$value, array('class' => 'maxitems my-0'));
