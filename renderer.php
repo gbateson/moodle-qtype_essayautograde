@@ -435,16 +435,11 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             }
             $itemtype = core_text::strtolower($itemtype);
 
-            if (empty($options->context)) {
-                // Shouldn't happen !!
+            $context = $this->get_best_context($options, $question);
+            if ($showteacher = has_capability('mod/quiz:grade', $context)) {
                 $showstudent = false;
-                $showteacher = false;
             } else {
-                if ($showteacher = has_capability('mod/quiz:grade', $options->context)) {
-                    $showstudent = false;
-                } else {
-                    $showstudent = has_capability('mod/quiz:attempt', $options->context);
-                }
+                $showstudent = has_capability('mod/quiz:attempt', $context);
             }
 
             $show = array(
@@ -855,6 +850,50 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         }
 
         return $output;
+    }
+
+    /**
+     * Find the best context for detecting capabilities
+     * for a teacher "mod_quiz:/grade" or student "mod_quiz:attempt"
+     *
+     * @param array $options of display options for this question
+     * @param object $question
+     * @return object of the best context for checking capabilities
+     */
+    protected function get_best_context($options, $question) {
+        global $PAGE;
+
+        // These are the context levels that we are interested in.
+        $levels = [CONTEXT_COURSE, CONTEXT_MODULE];
+
+        if ($options && $options->context) {
+            if (in_array($options->context->contextlevel, $levels)) {
+                return $options->context;
+            }
+        }
+
+        if ($PAGE && $PAGE->context) {
+            if (in_array($PAGE->context->contextlevel, $levels)) {
+                return $PAGE->context;
+            }
+        }
+
+        if ($question && $question->contextid) {
+            $context = context::instance_by_id($question->contextid);
+            if (in_array($context->contextlevel, $levels)) {
+                return $context;
+            }
+        }
+
+        // Otherwise we have another kind of context, i.e.
+        // CONTEXT_USER, CONTEXT_COURSECAT, CONTEXT_SYSTEM.
+        if ($options && $options->context) {
+            return $options->context;
+        }
+        if ($PAGE && $PAGE->context) {
+            return $PAGE->context;
+        }
+        return null; // Shouldn't happen !!
     }
 
     protected function get_calculation_detail($name, $plugin, $a, $prefix='+ ') {

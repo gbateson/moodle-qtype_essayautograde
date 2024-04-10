@@ -151,7 +151,7 @@ $string['phrasepercentdividedby'] = 'divided by {$a}';
 
 //$string['phrasematch'] = 'If';
 //$string['phrasepercent'] = 'is used, award';
-//$string['percentofquestiongrade'] = '{$a}% of the question grade.';
+$string['percentofquestiongrade'] = '{$a}% of the question grade.';
 
 $string['pleaseattachfiles'] = 'Please attach the required number of files.';
 $string['pleaseinputtext'] = 'Please input your response in the text box.';
