@@ -532,8 +532,8 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
                 // Target phrases.
                 foreach ($currentresponse->myphrases as $myphrase => $phrase) {
-                    $percent = $currentresponse->phrases[$phrase];
-                    $a = (object)array('percent' => $percent,
+                    $grade = $currentresponse->phrases[$phrase];
+                    $a = (object)array('percent' => $grade.'%',
                                        'phrase'  => $myphrase);
                     $details[] = $this->get_calculation_detail('explanationtargetphrase', $plugin, $a);
                 }
@@ -564,7 +564,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $details[] = $this->get_calculation_detail('explanationnotenough', $plugin, $a);
                 }
 
-                if ($details = implode(html_writer::empty_tag('br'), $details)) {
+                if ($count = count($details)) {
+
+                    $details = implode(html_writer::empty_tag('br'), $details);
+                    if ($count >= 2) {
+                        $details = "($details)";
+                    }
 
                     $step = $qa->get_last_step_with_behaviour_var('finish');
                     if ($step->get_id()) {
@@ -683,13 +688,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             if ($showgradebands) {
                 $details = array();
                 $i = 1; // grade band index
-                foreach ($currentresponse->bands as $count => $percent) {
+                foreach ($currentresponse->bands as $count => $grade) {
                     $detail = get_string('gradeband', $plugin);
                     $detail = str_replace('{no}', $i++, $detail);
                     $details[] = html_writer::tag('dt', $detail);
-                    $detail =  get_string('bandcount', $plugin).' '.$count.' '.
-                               get_string('bandpercent', $plugin).' '.
-                               get_string('percentofquestiongrade', $plugin, $percent);
+                    $a = (object)array('count' => $count, 'percent' => $grade.'%');
+                    $detail = get_string('bandtext', $plugin, $a);
                     $details[] = html_writer::tag('dd', $detail);
                 }
                 $output .= html_writer::tag('h5', get_string('gradebands', $plugin));
@@ -699,8 +703,11 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             // Show target phrases, if required.
             if ($showtargetphrases) {
                 $details = array();
-                foreach ($currentresponse->phrases as $match => $percent) {
-                    $a = (object)['phrase' => '"'.$match.'"', 'percent' => $percent.'%'];
+                foreach ($currentresponse->phrases as $match => $grade) {
+                    $a = (object)[
+                        'phrase' => '"'.$match.'"',
+                        'percent' => $grade.'%',
+                    ];
                     $details[] = get_string('phrasetext', $plugin, $a);
                 }
                 $output .= html_writer::tag('h5', get_string('targetphrases', $plugin));
@@ -785,7 +792,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $output .= html_writer::tag('td', $count.' / '.$maxcount, array('class' => 'cell c1'));
                     $output .= html_writer::end_tag('tr');
                     $i = 0;
-                    foreach ($currentresponse->phrases as $phrase => $percent) {
+                    foreach ($currentresponse->phrases as $phrase => $grade) {
                         if (in_array($phrase, $currentresponse->myphrases)) {
                             $status = 'present';
                             $img = $this->feedback_image(100.00);
@@ -946,23 +953,26 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
             $answers = $question->get_answers();
             foreach ($answers as $answer) {
-                switch (intval($answer->fraction)) {
+
+                switch ($answer->type) {
 
                     case $ANSWER_TYPE_BAND:
                         if ($percent <= $answer->answerformat) {
                             $percent = $answer->answerformat;
-                            $band = get_string('bandcount', $plugin).' '.$answer->answer.' '.
-                                    get_string('bandpercent', $plugin).' '.
-                                    get_string('percentofquestiongrade', $plugin, $answer->answerformat);
-                            $bands = array($band);
+                            $a = (object)[
+                                'count' => $answer->answer,
+                                'percent' => $answer->answerformat.'%'
+                            ];
+                            $bands = array(get_string('bandtext', $plugin, $a));
                         }
                         break;
 
                     case $ANSWER_TYPE_PHRASE:
-                        $phrase = get_string('phrasematch', $plugin).' "'.$answer->feedback.'" '.
-                                  get_string('phrasepercent', $plugin).' '.
-                                  get_string('percentofquestiongrade', $plugin, $answer->feedbackformat);
-                        $phrases[] = $phrase;
+                        $a = (object)[
+                            'phrase' => $answer->feedback,
+                            'percent' => round($answer->realpercent, 2).'%',
+                        ];
+                        $phrases[] = get_string('phrasetext', $plugin, $a);
                         break;
                 }
             }

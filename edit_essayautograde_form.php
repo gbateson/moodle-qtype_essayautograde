@@ -435,6 +435,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $question->bandpercent = array();
         $question->phrasematch = array();
         $question->phrasepercent = array();
+        $question->phrasedivisor = array();
         $question->phrasefullmatch = array();
         $question->phrasecasesensitive = array();
         $question->phraseignorebreaks = array();
@@ -455,7 +456,10 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
 
         foreach ($question->options->answers as $id => $answer) {
 
-            $fraction = intval($answer->fraction);
+            $fraction = sprintf('%.02f', $answer->fraction);
+            list($fraction, $divisor) = explode('.', $fraction);
+            $fraction = intval($fraction);
+
             $answer->type = ($fraction & $ANSWER_TYPE);
             $answer->phrasefullmatch = (($fraction & $ANSWER_FULL_MATCH) ? 1 : 0);
             $answer->phrasecasesensitive = (($fraction & $ANSWER_CASE_SENSITIVE) ? 1 : 0);
@@ -470,6 +474,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                 case $ANSWER_TYPE_PHRASE:
                     $question->phrasematch[] = $answer->feedback;
                     $question->phrasepercent[] = $answer->feedbackformat;
+                    $question->phrasedivisor[] = intval($divisor);
                     $question->phrasefullmatch[] = $answer->phrasefullmatch;
                     $question->phrasecasesensitive[] = $answer->phrasecasesensitive;
                     $question->phraseignorebreaks[] = $answer->phraseignorebreaks;
@@ -715,19 +720,22 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         // Add group of grade bands
         $group_elements = array();
 
+        $group_elements[] = $mform->createElement('html', get_string('bandtext1', $plugin));
+
         $name = 'bandcount';
-        $label = get_string($name, $plugin);
-        $group_elements[] = $mform->createElement('text', $name, $label, $short_text_options);
+        $group_elements[] = $mform->createElement('text', $name, '', $short_text_options);
         $repeat_options[$name] = array('type' => PARAM_INT);
+
+        $group_elements[] = $mform->createElement('html', get_string('bandtext2', $plugin));
 
         $name = 'bandpercent';
-        $label = get_string($name, $plugin);
-        $group_elements[] = $mform->createElement('select', $name, $label, $grade_options);
+        $group_elements[] = $mform->createElement('select', $name, '', $grade_options);
         $repeat_options[$name] = array('type' => PARAM_INT);
 
+        $group_elements[] = $mform->createElement('html', get_string('bandtext3', $plugin));
+
         $name = 'gradeband';
-        $label = get_string($name, $plugin);
-        $repeat_elements[] = $mform->createElement('group', $name, $label, $group_elements, ' ', false);
+        $repeat_elements[] = $mform->createElement('group', $name, '', $group_elements, ' ', false);
         $repeat_options[$name] = array('helpbutton' => array($name, $plugin),
                                        'disabledif' => array('enableautograde', 'eq', 0));
         $this->add_repeat_elements($mform, 'band', $repeat_elements, $repeat_options, $name);
@@ -760,22 +768,19 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
         $group_elements[] = $mform->createElement('html', get_string('phrasetext1', $plugin));
 
         $name = 'phrasematch';
-        $label = ''; //get_string($name, $plugin);
-        $group_elements[] = $mform->createElement('text', $name, $label, $long_text_options);
+        $group_elements[] = $mform->createElement('text', $name, '', $long_text_options);
         $repeat_options[$name] = array('type' => PARAM_TEXT);
 
         $group_elements[] = $mform->createElement('html', get_string('phrasetext2', $plugin));
 
         $name = 'phrasepercent';
-        $label = ''; //get_string($name, $plugin);
-        $group_elements[] = $mform->createElement('select', $name, $label, $grade_options);
+        $group_elements[] = $mform->createElement('select', $name, '', $grade_options);
         $repeat_options[$name] = array('type' => PARAM_INT);
 
         $group_elements[] = $mform->createElement('html', get_string('phrasetext3', $plugin));
 
         $name = 'phrasedivisor';
-        $label = ''; //get_string($name, $plugin);
-        $group_elements[] = $mform->createElement('select', $name, $label, $divisor_options);
+        $group_elements[] = $mform->createElement('select', $name, '', $divisor_options);
         $repeat_options[$name] = array('type' => PARAM_INT);
 
         $group_elements[] = $mform->createElement('html', get_string('phrasetext4', $plugin));

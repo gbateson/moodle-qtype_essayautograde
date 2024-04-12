@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2024-04-12 (30)
+ - store, implment and display target phrase percents using an integer percent and a divisor
+
 2024-04-11 (29)
  - ensure that count/min/max strings are fetched from the Essay (auto-grade) plugin, so as not to cause error in the Speak (auto-grade) plugin.
 

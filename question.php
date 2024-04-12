@@ -409,6 +409,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             $rawfraction = 0.0;
             $checkbands = true;
             foreach ($answers as $answer) {
+
                 switch ($answer->type) {
 
                     case $ANSWER_TYPE_BAND:
@@ -420,9 +421,9 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                             $completecount   = $currentcount;
                             $completepercent = $currentpercent;
                             $currentcount    = $answer->answer;
-                            $currentpercent  = $answer->answerformat;
+                            $currentpercent  = $answer->percent;
                         }
-                        $bands[$answer->answer] = $answer->answerformat;
+                        $bands[$answer->answer] = $answer->percent;
                         break;
 
                     case $ANSWER_TYPE_PHRASE:
@@ -430,11 +431,11 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                             if ($match = $this->search_text($search, $text, $answer->fullmatch, $answer->casesensitive, $answer->ignorebreaks)) {
                                 list($pos, $length, $match) = $match;
                                 $myphrases[$match] = $search;
-                                $rawfraction += ($answer->feedbackformat / 100);
+                                $rawfraction += $answer->rawfraction;
                             } else if (empty($answer->ignorebreaks) && preg_match('/\\bAND|ANY\\b/', $search) && preg_match("/[\r\n]/us", $text)) {
                                 $breaks++;
                             }
-                            $phrases[$search] = $answer->feedbackformat;
+                            $phrases[$search] = round($answer->realpercent, 2);
                         }
                         break;
                 }
@@ -874,23 +875,60 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             if ($this->answers = $DB->get_records('question_answers', array('question' => $this->id), 'id')) {
 
                 $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
+                $ANSWER_TYPE_BAND = $this->plugin_constant('ANSWER_TYPE_BAND');
+                $ANSWER_TYPE_PHRASE = $this->plugin_constant('ANSWER_TYPE_PHRASE');
                 $ANSWER_FULL_MATCH = $this->plugin_constant('ANSWER_FULL_MATCH');
                 $ANSWER_CASE_SENSITIVE = $this->plugin_constant('ANSWER_CASE_SENSITIVE');
                 $ANSWER_IGNORE_BREAKS = $this->plugin_constant('ANSWER_IGNORE_BREAKS');
 
                 foreach ($this->answers as $id => $answer) {
-                    $fraction = intval($answer->fraction);
-                    $this->answers[$id]->fraction = $fraction;
-                    $this->answers[$id]->type = ($fraction & $ANSWER_TYPE);
-                    $this->answers[$id]->fullmatch = (($fraction & $ANSWER_FULL_MATCH) ? 1 : 0);
-                    $this->answers[$id]->casesensitive = (($fraction & $ANSWER_CASE_SENSITIVE) ? 1 : 0);
-                    $this->answers[$id]->ignorebreaks = (($fraction & $ANSWER_IGNORE_BREAKS) ? 1 : 0);
+
+                    $fraction = sprintf('%.02f', $answer->fraction);
+                    list($fraction, $divisor) = explode('.', $fraction);
+                    $fraction = intval($fraction);
+                    $divisor = intval($divisor);
+
+                    $type = ($fraction & $ANSWER_TYPE);
+                    $this->answers[$id]->type = $type;
+
+                    switch ($type) {
+                        case $ANSWER_TYPE_BAND:
+                            $this->answers[$id]->count = intval($answer->answer);
+                            $this->answers[$id]->percent = intval($answer->answerformat);
+                            break;
+
+                        case $ANSWER_TYPE_PHRASE:
+                            $percent = intval($answer->feedbackformat);
+                            if ($divisor == 0) {
+                                $realpercent = $percent;
+                            } else {
+                                $realpercent = ($percent / $divisor);
+                            }
+                            $this->answers[$id]->percent = $percent;
+                            $this->answers[$id]->divisor = $divisor;
+                            $this->answers[$id]->realpercent = $realpercent;
+                            $this->answers[$id]->rawfraction = ($realpercent / 100);
+                            $this->answers[$id]->fullmatch = (($fraction & $ANSWER_FULL_MATCH) ? 1 : 0);
+                            $this->answers[$id]->casesensitive = (($fraction & $ANSWER_CASE_SENSITIVE) ? 1 : 0);
+                            $this->answers[$id]->ignorebreaks = (($fraction & $ANSWER_IGNORE_BREAKS) ? 1 : 0);
+                            break;
+                    }
                 }
             } else {
                 $this->answers = array();
             }
         }
         return $this->answers;
+    }
+
+    /**
+     * Extract get_fraction_and_divisor from fraction.
+     *
+     * @param object $answer
+     * @return array containing $fraction and $divisor as integers
+     */
+    protected function get_percent($answer) {
+        return round($percent, 1); 
     }
 
     /**

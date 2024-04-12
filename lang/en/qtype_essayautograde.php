@@ -44,8 +44,10 @@ $string['allowsimilarity'] = 'Allow similarity?';
 $string['allowsimilaritypercent'] = 'Yes - allow up to {$a}% similarity';
 $string['auto'] = 'Auto';
 $string['autograding'] = 'Auto-grading';
-$string['bandcount'] = 'For';
-$string['bandpercent'] = 'or more items, award';
+$string['bandtext'] = 'For {$a->count} or more items, award {$a->percent} of the question grade.';
+$string['bandtext1'] = 'For ';
+$string['bandtext2'] = 'or more items, award';
+$string['bandtext3'] = 'of the question grade.';
 $string['chars'] = 'Characters';
 $string['charspersentence'] = 'Characters per sentence';
 $string['commonerror'] = 'Common error';
@@ -77,10 +79,10 @@ $string['explanationnotenough'] = '{$a->count} {$a->itemtype} is less than the m
 $string['explanationoverride'] = 'Later, {$a->datetime}, the grade for this essay was manually set to {$a->manualgrade}.';
 $string['explanationpartialband'] = '{$a->percent}% for partially completing Grade band [{$a->gradeband}]';
 $string['explanationpenalty'] = 'However, {$a->penaltytext} was deducted for checking the response before submission.';
-$string['explanationrawpercent'] = 'The raw percentage grade for this essay is {$a->rawpercent}% <br /> = ({$a->details}).';
+$string['explanationrawpercent'] = 'The raw percentage grade for this essay is {$a->rawpercent}% <br /> = {$a->details}.';
 $string['explanationremainingitems'] = '{$a->percent}% for the remaining {$a->count} {$a->itemtype}';
 $string['explanationseecomment'] = '(see comment below)';
-$string['explanationtargetphrase'] = '{$a->percent}% for including the phrase "{$a->phrase}"';
+$string['explanationtargetphrase'] = '{$a->percent} for including the phrase "{$a->phrase}"';
 $string['feedback'] = 'Feedback';
 $string['feedbackhintbreaks'] = 'Did you use too many line breaks?';
 $string['feedbackhintchars'] = 'Did you write the required number of characters?';
@@ -148,10 +150,6 @@ $string['phrasetext4'] = 'of the question grade.';
 
 $string['phrasepercentexactly'] = 'exactly';
 $string['phrasepercentdividedby'] = 'divided by {$a}';
-
-//$string['phrasematch'] = 'If';
-//$string['phrasepercent'] = 'is used, award';
-$string['percentofquestiongrade'] = '{$a}% of the question grade.';
 
 $string['pleaseattachfiles'] = 'Please attach the required number of files.';
 $string['pleaseinputtext'] = 'Please input your response in the text box.';

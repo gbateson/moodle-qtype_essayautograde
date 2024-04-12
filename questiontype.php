@@ -56,9 +56,9 @@ class qtype_essayautograde extends question_type {
     const ITEM_TYPE_FILES = 5;
 
     /** Show/hide values */
-    const SHOW_NONE                  = 0;
-    const SHOW_STUDENTS_ONLY         = 1;
-    const SHOW_TEACHERS_ONLY         = 2;
+    const SHOW_NONE = 0;
+    const SHOW_STUDENTS_ONLY = 1;
+    const SHOW_TEACHERS_ONLY = 2;
     const SHOW_TEACHERS_AND_STUDENTS = 3;
 
     /** @var array Combined feedback fields */
@@ -236,6 +236,7 @@ class qtype_essayautograde extends question_type {
         $repeats = (empty($formdata->countphrases) ? 0 : $formdata->countphrases);
         $phrases = (empty($formdata->phrasematch) ? array() : $formdata->phrasematch);
         $percent = (empty($formdata->phrasepercent) ? array() : $formdata->phrasepercent);
+        $divisor = (empty($formdata->phrasedivisor) ? array() : $formdata->phrasedivisor);
         $fullmatch = (empty($formdata->phrasefullmatch) ? array() : $formdata->phrasefullmatch);
         $casesensitive = (empty($formdata->phrasecasesensitive) ? array() : $formdata->phrasecasesensitive);
         $ignorebreaks = (empty($formdata->phraseignorebreaks) ? array() : $formdata->phraseignorebreaks);
@@ -258,15 +259,18 @@ class qtype_essayautograde extends question_type {
 			if (array_key_exists($i, $ignorebreaks) && $ignorebreaks[$i]) {
 				$fraction |= self::ANSWER_IGNORE_BREAKS;
 			}
+			// The divisor is stored in the decimal part of the fraction.
+			if (array_key_exists($i, $divisor) && $divisor[$i]) {
+			    $fraction += ($divisor[$i] / 100);
+			}
             $items[$phrase] = (object)array(
             	'phrase' => $phrase,
             	'percent' => $percent[$i],
-            	'fraction' => floatval($fraction)
+            	'fraction' => $fraction,
             );
         }
 
         //asort($items);
-        $fraction = floatval(self::ANSWER_TYPE_PHRASE);
         foreach ($items as $item) {
             $answers[] = (object)array(
                 'question'       => $questionid,
