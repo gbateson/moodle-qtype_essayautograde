@@ -31,7 +31,7 @@ $plugin->component = 'qtype_essayautograde';
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->requires  = 2015111600; // Moodle 3.0
 $plugin->version   = 2024041230;
-$plugin->release   = '2024-04-12 (30)';
+$plugin->release   = '2024-05-31 (31)';
 
 // https://docs.moodle.org/dev/Releases
 // Moodle 4.5 2024mmdd00 day month 2024 <= LTS

@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2024-05-31 (31)
+ - finish inmplementation import/export of percent divisor values for target phrases
+
 2024-04-12 (30)
  - store, implment and display target phrase percents using an integer percent and a divisor
 

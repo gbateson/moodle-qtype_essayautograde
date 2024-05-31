@@ -564,6 +564,7 @@ class qtype_essayautograde extends question_type {
                 case self::ANSWER_TYPE_PHRASE:
                     $tag = 'targetphrase';
                     $text = 'feedback';
+
                     if ($fraction & self::ANSWER_FULL_MATCH) {
                         $extra .= ' fullmatch="1"';
                     }
@@ -573,6 +574,14 @@ class qtype_essayautograde extends question_type {
                     if ($fraction & self::ANSWER_IGNORE_BREAKS) {
                         $extra .= ' ignorebreaks="1"';
                     }
+
+                    if ($divisor = floatval($answer->fraction)) {
+                        $divisor -= intval($answer->fraction);
+                        if ($divisor = intval(100 * $divisor)) {
+                            $extra = ' divisor="'.$divisor.'"'.$extra;
+                        }
+                    }
+
                     break;
             }
 
@@ -614,6 +623,10 @@ class qtype_essayautograde extends question_type {
         $textfield = '/^('.implode('|', $textfields).')$/';
         $formatfield = '/^('.implode('|', $textfields).')format$/';
 
+        // These fields have enabled checkbox.
+        $enabledfields = array('minwordlimit' => 'minwordenabled',
+                               'maxwordlimit' => 'maxwordenabled');
+
         $defaults = self::get_default_values();
         foreach ($defaults as $field => $default) {
             if (preg_match($textfield, $field) || preg_match($formatfield, $field)) {
@@ -629,6 +642,11 @@ class qtype_essayautograde extends question_type {
                     break;
             }
             $newquestion->$field = $value;
+
+            if (array_key_exists($field, $enabledfields)) {
+                $enabledfield = $enabledfields[$field];
+                $newquestion->$enabledfield = (empty($value) ? 0 : 1);
+            }
         }
 
         foreach ($textfields as $field) {
@@ -643,6 +661,7 @@ class qtype_essayautograde extends question_type {
         $newquestion->countphrases = 0;
         $newquestion->phrasematch = array();
         $newquestion->phrasepercent = array();
+        $newquestion->phrasedivisor = array();
         $newquestion->phrasefullmatch = array();
         $newquestion->phrasecasesensitive = array();
         $newquestion->phraseignorebreaks = array();
@@ -659,6 +678,7 @@ class qtype_essayautograde extends question_type {
         while ($answer = $format->getpath($data, array('#', 'answers', 0, '#', 'targetphrase', $i), null)) {
             $newquestion->phrasematch[$i] = (empty($answer['#']) ? '' : $answer['#']);
             $newquestion->phrasepercent[$i] = (empty($answer['@']['percent']) ? 0 : intval($answer['@']['percent']));
+            $newquestion->phrasedivisor[$i] = (empty($answer['@']['divisor']) ? 0 : intval($answer['@']['divisor']));
             $newquestion->phrasefullmatch[$i] = (empty($answer['@']['fullmatch']) ? 0 : intval($answer['@']['fullmatch']));
             $newquestion->phrasecasesensitive[$i] = (empty($answer['@']['casesensitive']) ? 0 : intval($answer['@']['casesensitive']));
             $newquestion->phraseignorebreaks[$i] = (empty($answer['@']['ignorebreaks']) ? 0 : intval($answer['@']['ignorebreaks']));
@@ -752,11 +772,18 @@ class qtype_essayautograde extends question_type {
                     break;
 
                 case self::ANSWER_TYPE_PHRASE:
+                    $percent = intval($answer->feedbackformat);
+                    $divisor = floatval($answer->fraction);
+                    $divisor -= intval($answer->fraction);
+                    $divisor = intval(100 * $divisor);
+                    if ($divisor < 1) {
+                        $divisor = 1;
+                    }
                     $phrases[] = '("'.$answer->feedback.'",'.
-                                      $answer->feedbackformat.'%,'.
-                                      ($fraction & self::ANSWER_FULL_MATCH).','.
-                                      ($fraction & self::ANSWER_CASE_SENSITIVE).
-                                      ($fraction & self::ANSWER_IGNORE_BREAKS).')';
+                                      $percent.'%/'.$divisor.','.
+                                      $fraction & self::ANSWER_FULL_MATCH.','.
+                                      $fraction & self::ANSWER_CASE_SENSITIVE.','.
+                                      $fraction & self::ANSWER_IGNORE_BREAKS.')';
                     break;
             }
         }
@@ -822,9 +849,9 @@ class qtype_essayautograde extends question_type {
         $search = implode('|', $search);
         $search = '/^('.$search.')\s*=\s*(.*?)$/i';
 
-        // regular expressions to parse GRADEBANDS and TARGETPHRASES
+        // regular expressions to parse a single GRADEBAND or TARGETPHRASE
         $gradeband = '/\((\d+),(\d+)%?\)/';
-        $targetphrase = '/\("(.*?)",(\d+)%?,?(\d*),?(\d*),?(\d*)\)/';
+        $targetphrase = '/\("(.*?)",(\d+%?)(\/?\d*),?(\d*),?(\d*),?(\d*)\)/';
 
         $question->countbands = 0;
         $question->bandcount = array();
@@ -833,6 +860,7 @@ class qtype_essayautograde extends question_type {
         $question->countphrases = 0;
         $question->phrasematch = array();
         $question->phrasepercent = array();
+        $question->phrasedivisor = array();
         $question->phrasefullmatch = array();
         $question->phrasecasesensitive = array();
         $question->phraseignorebreaks = array();
@@ -864,10 +892,11 @@ class qtype_essayautograde extends question_type {
                             for ($i=0; $i<$i_max; $i++) {
                                 $question->countphrases++;
                                 array_push($question->phrasematch, $matches[1][$i]);
-                                array_push($question->phrasepercent, $matches[2][$i]);
-                                array_push($question->phrasefullmatch, $matches[3][$i]);
-                                array_push($question->phrasecasesensitive, $matches[4][$i]);
-                                array_push($question->phraseignorebreaks, $matches[5][$i]);
+                                array_push($question->phrasepercent, trim($matches[2][$i], '% '));
+                                array_push($question->phrasedivisor, trim($matches[3][$i], '/ '));
+                                array_push($question->phrasefullmatch, $matches[4][$i]);
+                                array_push($question->phrasecasesensitive, $matches[5][$i]);
+                                array_push($question->phraseignorebreaks, $matches[6][$i]);
                             }
                         }
                         break;
