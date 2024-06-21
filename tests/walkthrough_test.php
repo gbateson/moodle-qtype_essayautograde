@@ -208,6 +208,7 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
 
         $prefix = $this->quba->get_field_prefix($this->slot);
         $fieldname = $prefix . 'answer';
+        $response = 'Once upon a time there was a little green frog.';
 
         // Check the initial state.
         $this->check_current_state(question_state::$todo);
@@ -221,7 +222,7 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         // Save.
         $this->quba->process_all_actions(null, array(
             'slots'                    => $this->slot,
-            $fieldname                 => 'Once upon a time there was a little green frog.',
+            $fieldname                 => $response,
             $fieldname . 'format'      => FORMAT_HTML,
             $prefix . ':sequencecheck' => '1',
         ));
@@ -231,7 +232,7 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->check_current_mark(null);
         $this->check_step_count(2);
         $this->render();
-        $this->check_contains_textarea('answer', 'Once upon a time there was a little green frog.');
+        $this->check_contains_textarea('answer', $response);
         $this->check_current_output(
                 $this->get_contains_question_text_expectation($q),
                 $this->get_does_not_contain_feedback_expectation());
@@ -241,11 +242,10 @@ class qtype_essayautograde_walkthrough_testcase extends qbehaviour_walkthrough_t
         $this->quba->finish_all_questions();
 
         // Verify.
-        $this->check_current_state(question_state::$gradedwrong);
-        $this->check_current_mark(0.0);
+        $this->check_current_state(question_state::$gaveup);
+        $this->check_current_mark(null);
         $this->render();
-        $this->assertMatchesRegularExpression('/' . preg_quote(s('Once upon a time there was a little green frog.'), '/') . '/',
-             $this->currentoutput);
+        $this->assertMatchesRegularExpression('/' . preg_quote(s($response), '/') . '/', $this->currentoutput);
         $this->check_current_output(
                 $this->get_contains_question_text_expectation($q),
                 $this->get_contains_general_feedback_expectation($q));
