@@ -374,7 +374,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $plugin = $this->plugin_name();
             $question = $qa->get_question();
             $comment = $question->graderinfo;
-            $comment = $question->format_text($comment, $comment, $qa, $plugin, 'graderinfo', $question->id);
+            $comment = $question->format_text($comment, $question->graderinfoformat, $qa, $plugin, 'graderinfo', $question->id);
             $comment = html_writer::nonempty_tag('div', $comment, array('class' => 'graderinfo'));
         } else {
             $comment = ''; // comment is not currently editable

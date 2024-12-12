@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2024-12-12 (32)
+ - fix incorrect 'format' parameter when called format_text from within renderer.php
+
 2024-05-31 (31)
  - finish inmplementation import/export of percent divisor values for target phrases
 
