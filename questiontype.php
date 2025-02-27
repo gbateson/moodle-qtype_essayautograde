@@ -781,9 +781,9 @@ class qtype_essayautograde extends question_type {
                     }
                     $phrases[] = '("'.$answer->feedback.'",'.
                                       $percent.'%/'.$divisor.','.
-                                      $fraction & self::ANSWER_FULL_MATCH.','.
-                                      $fraction & self::ANSWER_CASE_SENSITIVE.','.
-                                      $fraction & self::ANSWER_IGNORE_BREAKS.')';
+                                      ($fraction & self::ANSWER_FULL_MATCH).','.
+                                      ($fraction & self::ANSWER_CASE_SENSITIVE).','.
+                                      ($fraction & self::ANSWER_IGNORE_BREAKS).')';
                     break;
             }
         }
