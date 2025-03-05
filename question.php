@@ -45,11 +45,87 @@ require_once($CFG->dirroot.'/question/type/essay/question.php');
 // class:     question_graded_automatically
 class qtype_essayautograde_question extends qtype_essay_question implements question_automatically_gradable {
 
-    /** @var string */
-    public $feedback;
+    // Essay fields
+    // ============
+    // responseformat
+    // responserequired
+    // responsefieldlines
+    // minwordlimit
+    // maxwordlimit
+    // attachments
+    // attachmentsrequired
+    // graderinfo
+    // graderinfoformat
+    
+    /** @var int */
+    public $aiassistant;
 
     /** @var int */
-    public $feedbackformat;
+    public $aipercent;
+
+    // Essay fields
+    // ============
+    // responsetemplate
+    // responsetemplateformat
+
+    /** @var string */
+    public $responsesample;
+
+    /** @var int */
+    public $responsesampleformat;
+
+    /** @var int */
+    public $allowsimilarity;
+
+    // Essay fields
+    // ============
+    // maxbytes
+    // filetypeslist
+
+    /** @var int */
+    public $enableautograde;
+
+    /** @var int */
+    public $itemtype;
+
+    /** @var int */
+    public $itemcount;
+
+    /** @var int */
+    public $showfeedback;
+
+    /** @var int */
+    public $showcalculation;
+
+    /** @var int */
+    public $showtextstats;
+
+    /** @var string */
+    public $textstatitems;
+
+    /** @var int */
+    public $showgradebands;
+
+    /** @var int */
+    public $addpartialgrades;
+
+    /** @var int */
+    public $showtargetphrases;
+
+    /** @var int */
+    public $errorcmid;
+
+    /** @var int */
+    public $errorpercent;
+
+    /** @var int */
+    public $errorfullmatch;
+
+    /** @var int */
+    public $errorcasesensitive;
+
+    /** @var int */
+    public $errorignorebreaks;
 
     /** @var string */
     public $correctfeedback;
@@ -333,6 +409,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $phrases = array();
         $myphrases = array();
         $plagiarism = array();
+        $aifeedback = null;
         $breaks = 0;
         $rawpercent = 0;
         $rawfraction = 0.0;
@@ -353,6 +430,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 $text = '';
             }
         }
+
         if ($enableplagiarism) {
             $plagiarism[] = plagiarism_get_links($plagiarismparams + array('content' => $text));
         }
@@ -366,6 +444,10 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             foreach ($files as $file) {
                 $plagiarism[] = plagiarism_get_links($plagiarismparams + array('file' => $file));
             }
+        }
+
+        if ($this->ai_enabled()) {
+            $aifeedback = $this->get_ai_feedback();
         }
 
         // detect common errors
@@ -929,6 +1011,42 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     protected function get_percent($answer) {
         return round($percent, 1); 
+    }
+
+    /**
+     * ai_enabled
+     */
+    public function ai_enabled() {
+        return false;
+    }
+
+    /**
+     * get_ai_feedback
+     */
+    public function get_ai_feedback($text) {
+        global $USER;
+        if (class_exists('\\core_ai\\manager')) {
+            $manager = new \core_ai\manager();
+            $action = new \core_ai\aiactions\generate_text(
+                contextid: $this->contextid,
+                userid: $USER->id,
+                prompttext: $prompt
+            );
+            $response = $manager->process_action($action);
+            $responsedata = $response->get_response_data();
+
+            // In ai/classes/manager.php, the method
+            // "call_action_provider($provider, $action)"
+            // is protected, but we can mimic it like this:
+            // $classname = 'process_' . $action->get_basename();
+            // $classpath = substr($provider::class, 0, strpos($provider::class, '\\') + 1);
+            // $process = $classpath . $classname;
+            // $processor = new $process($provider, $action);
+    
+            return $processor->process($action);
+
+            return $responsedata['generatedcontent'];
+        }
     }
 
     /**

@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2025-03-05 (35)
+ - fix various preventing complete GIFT import of all settings
+
 2025-02-28 (33)
  - fix export to GIFT of target phrases
 
