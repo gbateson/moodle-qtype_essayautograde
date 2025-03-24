@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2025-03-24 (39)
+ - modify renderer.php and question.php to accommodate speakautograde attempt steps
+
 2025-03-05 (35)
  - fix various preventing complete GIFT import of all settings
 

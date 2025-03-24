@@ -56,7 +56,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     // attachmentsrequired
     // graderinfo
     // graderinfoformat
-    
+
     /** @var int */
     public $aiassistant;
 
@@ -165,6 +165,23 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
     private static $metachars = null;
     private static $flipmetachars = null;
 
+    /** @var mixed Question attempt step */
+    public $step;
+
+    /** @var object to store AI feedback and grade */
+    public $ai;
+
+    /**
+     * Re-initialise the state during a quiz (or question use)
+     *
+     * @param question_attempt_step $step
+     * @return void
+     */
+    public function apply_attempt_state(question_attempt_step $step) {
+        $this->step = $step;
+        $this->extract_ai_feedback($step);
+    }
+
     /**
      * Override "make_behaviour" method in the parent class, "qtype_essay_question",
      * because we may need to autograde the response
@@ -264,7 +281,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return array (float, integer) the fraction, and the state.
      */
     public function grade_response(array $response) {
-        $this->update_current_response($response);
+        $this->update_current_response($response, null, true);
         if ($this->enableautograde) {
             $fraction = $this->get_current_response('autofraction');
             $state = question_state::graded_state_for_fraction($fraction);
@@ -377,7 +394,23 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         return constant($plugin.'::'.$name);
     }
 
-    public function update_current_response($response, $displayoptions=null) {
+    /**
+     * Updates and processes the current response for an essay autograde question.
+     *
+     * This method analyzes the response text, checks for plagiarism (if enabled),
+     * processes AI-generated feedback and grading (if requested), detects common errors,
+     * and calculates various statistics and scores used in autograding. 
+     * 
+     * It then stores all relevant information, including the AI-generated feedback and
+     * grading, response statistics, detected errors, and computed scores for later retrieval.
+     *
+     * @param array $response The response data containing text and attachments.
+     * @param object|null $displayoptions Optional display options affecting the response processing.
+     * @param bool $fetchai Whether to fetch AI grade and feedback.
+     *
+     * @return void
+     */
+    public function update_current_response($response, $displayoptions=null, $fetchai=false) {
         global $CFG, $PAGE, $USER;
 
         if (empty($CFG->enableplagiarism)) {
@@ -409,7 +442,6 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $phrases = array();
         $myphrases = array();
         $plagiarism = array();
-        $aifeedback = null;
         $breaks = 0;
         $rawpercent = 0;
         $rawfraction = 0.0;
@@ -422,35 +454,67 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $completecount = 0;
         $completepercent = 0;
 
+        // Fetch the text submitted as a response the question.
         if ($text = $this->get_response_answer_text($response)) {
             $this->set_template_and_sample_text();
             if ($this->is_similar_text($text, $this->responsetemplatetext)) {
                 $text = '';
             } else if ($this->is_similar_text($text, $this->responsesampletext)) {
-                $text = '';
+                //$text = '';
             }
         }
 
+        // Check response for plagiarism, if requested and available.
         if ($enableplagiarism) {
             $plagiarism[] = plagiarism_get_links($plagiarismparams + array('content' => $text));
         }
 
+        // Fetch files submitted with the response.
         if (empty($response) || empty($response['attachments'])) {
             $files = array();
         } else {
             $files = $response['attachments']->get_files();
         }
+
+        // Check response files for plagiarism, if requested and available.
         if ($enableplagiarism) {
             foreach ($files as $file) {
                 $plagiarism[] = plagiarism_get_links($plagiarismparams + array('file' => $file));
             }
         }
 
+        // Get AI feedback and grade, if requested and available.
         if ($this->ai_enabled()) {
-            $aifeedback = $this->get_ai_feedback();
+            $ai = (object)[
+                'feedback' => '',
+                'feedbackformat' => '',
+                'grade' => 0,
+                'grademax' => 100,
+            ];
+            if ($fetchai) {
+                $ai = $this->get_ai_feedback($text);
+            } else {
+                foreach ($ai as $name => $value) {
+                    if ($this->step->has_qt_var("_ai$name")) {
+                        $ai->$name = $this->step->get_qt_var("_ai$name");
+                    } else {
+                        $ai->$name = $this->fetch_ai_field_directly($name);
+                    }
+                }
+                if ($ai->feedback) {
+                    $ai->feedback = format_text(
+                        $ai->feedback,
+                        $ai->feedbackformat,
+                        (object)['para' => false]
+                    );
+                }
+            }
+            if ($ai->feedback && $ai->grademax) {
+                $this->ai = $ai;
+            }
         }
 
-        // detect common errors
+        // Detect common errors.
         list($errors, $errortext, $errorpercent) = $this->get_common_errors($text);
 
         // Get stats for this $text.
@@ -523,18 +587,18 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 }
             }
 
-            // update band counts for top grade band, if necessary
+            // Update band counts for top grade band, if necessary.
             if ($checkbands) {
                 $completecount = $currentcount;
                 $completepercent = $currentpercent;
             }
 
-            // set the item width of the current band
+            // Set the item width of the current band
             // and the percentage width of the current band
             $currentcount = ($currentcount - $completecount);
             $currentpercent = ($currentpercent - $completepercent);
 
-            // set the number of items to be graded by the current band
+            // Set the number of items to be graded by the current band
             // and thus calculate the percent awarded by the current band
             if ($addpartialgrades && $currentcount) {
                 $partialcount = ($count - $completecount);
@@ -544,8 +608,13 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 $partialpercent = 0;
             }
 
+            // Increment the raw fraction by the percent for grade bands.
             $rawfraction += (($completepercent + $partialpercent) / 100);
 
+            // Increment the raw fraction by the percent for the AI grade.
+            if ($this->ai && $this->ai->grade && $this->ai->grademax && $this->aipercent) {
+                $rawfraction += (($this->ai->grade / $this->ai->grademax) * ($this->aipercent / 100));
+            }
         }
 
         // deduct penalties for common errors
@@ -558,7 +627,8 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $rawpercent = round($rawfraction * 100);
         $autopercent = round($autofraction * 100);
 
-        // store this information, in case it is needed elswhere
+        // Store this information, in case it is needed elswhere
+        // Perhaps this could all be stored as "step" data?
         $this->save_current_response('text', $text);
         $this->save_current_response('stats', $stats);
         $this->save_current_response('count', $count);
@@ -579,6 +649,12 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
         $this->save_current_response('errors', $errors);
         $this->save_current_response('errortext', $errortext);
         $this->save_current_response('errorpercent', $errorpercent);
+        if ($this->ai) {
+            $this->save_current_response('aifeedback', $this->ai->feedback);
+            $this->save_current_response('aifeedbackformat', $this->ai->feedbackformat);
+            $this->save_current_response('aigrade', $this->ai->grade);
+            $this->save_current_response('aigrademax', $this->ai->grademax);
+        }
     }
 
     /**
@@ -833,7 +909,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             return false; // shouldn't happen !!
         }
 
-        if (self::$aliases===null) {
+        if (self::$aliases === null) {
             // human readable aliases for regexp strings
             self::$aliases = array(' OR '  => '|',
                                    ' OR'   => '|',
@@ -894,10 +970,36 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             if (core_text::strlen($search) < core_text::strlen($match[0])) {
                 $match = $search;
             }
-            return array($offset, $length, $match);
+            return array($offset, $length, self::trim_text($match));
         } else {
             return ''; // no matches
         }
+    }
+
+    /**
+     * Trims long text by preserving the beginning and end, inserting an ellipsis in the middle.
+     *
+     * If the length of the input text exceeds the specified `$textlength`, this method returns
+     * a shortened version consisting of the first `$headlength` characters, followed by `...`,
+     * and the last `$taillength` characters.
+     *
+     * Multibyte-safe using Moodle's `core_text` functions.
+     *
+     * @param string $text The input text to be trimmed.
+     * @param int $textlength The maximum allowed length before trimming is applied (default: 28).
+     * @param int $headlength The number of characters to preserve at the start (default: 10).
+     * @param int $taillength The number of characters to preserve at the end (default: 10).
+     *
+     * @return string The trimmed text with an ellipsis in the middle if necessary.
+     */
+    static public function trim_text($text, $textlength=48, $headlength=16, $taillength=16) {
+        $strlen = core_text::strlen($text);
+        if ($strlen > $textlength) {
+            $head = core_text::substr($text, 0, $headlength);
+            $tail = core_text::substr($text, $strlen - $taillength, $taillength);
+            $text = $head.' ... '.$tail;
+        }
+        return $text;
     }
 
     /**
@@ -926,7 +1028,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return void, but will update currentresponse property of this object
      */
     public function save_current_response($name, $value) {
-        if ($this->currentresponse===null) {
+        if ($this->currentresponse === null) {
             $this->currentresponse = new stdClass();
         }
         $this->currentresponse->$name = $value;
@@ -938,7 +1040,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return string
      */
     public function get_current_response($name='') {
-        if ($this->currentresponse===null) {
+        if ($this->currentresponse === null) {
             return $this->currentresponse;
         }
         if (empty($name)) {
@@ -953,7 +1055,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     public function get_answers() {
         global $DB;
-        if ($this->answers===null) {
+        if ($this->answers === null) {
             if ($this->answers = $DB->get_records('question_answers', array('question' => $this->id), 'id')) {
 
                 $ANSWER_TYPE = $this->plugin_constant('ANSWER_TYPE');
@@ -1010,43 +1112,333 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return array containing $fraction and $divisor as integers
      */
     protected function get_percent($answer) {
-        return round($percent, 1); 
+        return round($percent, 1);
     }
 
     /**
-     * ai_enabled
+     * Checks whether AI assistance is enabled and available for the current question.
+     *
+     * This method verifies whether an AI assistant is configured and that a valid provider
+     * is available for the `generate_text` action. If a matching provider is found,
+     * the method may also update the database to store the provider name if it's not already set.
+     *
+     * @global \moodle_database $DB The global database object.
+     *
+     * @return bool True if AI is enabled and a valid provider is available; false otherwise.
      */
     public function ai_enabled() {
+        global $DB;
+        if ($aiassistant = $this->aiassistant) {
+            if (class_exists('\\core_ai\\aiactions\\generate_text')) {
+                $action = \core_ai\aiactions\generate_text::class;
+                if (class_exists('\\core_ai\\manager')) {
+                    $providers = \core_ai\manager::get_providers_for_actions([$action], true);
+                    foreach ($providers[$action] as $provider) {
+                        if ($provider->get_name() == $aiassistant) {
+                            return true;
+                        }
+                    }
+                    if ($provider = reset($providers)) {
+                        $table = $this->plugin_name().'_options';
+                        $field = 'aiassistant';
+                        $value = $provider->get_name();
+                        $params = ['questionid' => $this->id];
+                        $DB->update_field($table, $field, $value, $params);
+                        $this->$field = $value;
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
     /**
-     * get_ai_feedback
+     * Sends the student's answer to the AI assistant and retrieves feedback and a grade.
+     *
+     * This method uses Moodle's core AI manager to process a `generate_text` action.
+     * It formats the prompt, sends it to the AI provider, and parses the response.
+     * The returned result is normalized into a standard object containing:
+     * - `grade` (numeric)
+     * - `grademax` (numeric)
+     * - `feedback` (formatted string or HTML list)
+     * - `feedbackformat` (FORMAT_HTML or FORMAT_PLAIN)
+     *
+     * If the AI response is malformed or unavailable, an error message is returned instead.
+     *
+     * @global \stdClass $USER The global user object.
+     * @param string $answertext The student's submitted answer text.
+     * @return object|null An object containing AI feedback and grading info, or null if AI is unavailable.
      */
-    public function get_ai_feedback($text) {
+    public function get_ai_feedback($answertext) {
         global $USER;
-        if (class_exists('\\core_ai\\manager')) {
-            $manager = new \core_ai\manager();
-            $action = new \core_ai\aiactions\generate_text(
-                contextid: $this->contextid,
-                userid: $USER->id,
-                prompttext: $prompt
-            );
-            $response = $manager->process_action($action);
-            $responsedata = $response->get_response_data();
 
-            // In ai/classes/manager.php, the method
-            // "call_action_provider($provider, $action)"
-            // is protected, but we can mimic it like this:
-            // $classname = 'process_' . $action->get_basename();
-            // $classpath = substr($provider::class, 0, strpos($provider::class, '\\') + 1);
-            // $process = $classpath . $classname;
-            // $processor = new $process($provider, $action);
-    
-            return $processor->process($action);
-
-            return $responsedata['generatedcontent'];
+        if (! class_exists('\\core_ai\\manager')) {
+            // AI is not available (Moodle <= 4.4)
+            return null;
         }
+        if (! class_exists('\\core_ai\\aiactions\\generate_text')) {
+            // Somethings's wrong. The AI manager exists, but the
+            // generate_text action does not. Shouldn't happen !!
+            return null;
+        }
+
+        // Fetch the AI response.
+        $manager = new \core_ai\manager();
+        $action = new \core_ai\aiactions\generate_text(
+            userid: $USER->id,
+            contextid: $this->contextid,
+            prompttext: $this->format_ai_prompt($answertext)
+        );
+        $response = $manager->process_action($action);
+        $responsedata = $response->get_response_data();
+
+        // Decode the AI response.
+        $ai = json_decode($responsedata['generatedcontent']);
+
+        // If there was no error, extract the feedback and grade
+        // and return them as an object.
+        if (json_last_error() === JSON_ERROR_NONE) {
+            if (is_object($ai)) {
+                if (is_object($ai->feedback)) {
+                    $feedback = [];
+                    foreach ($ai->feedback as $category => $comment) {
+                        $feedback[] = html_writer::tag('b', $category).": $comment";
+                    }
+                    $ai->feedback = html_writer::alist($feedback, ['class' => 'list-unstyled']);
+                    $ai->feedbackformat = FORMAT_HTML;
+                }
+            } else if (is_array($ai)) {
+                $ai = (object)$ai;
+            } else if (is_scalar($ai)) {
+                $ai = (object)['feedback' => $ai];
+            } else {
+                $ai = (object)['feedback' => (string)$ai];
+            }
+            $ai->grade = ($ai->grade ?? 0);
+            $ai->grademax = ($ai->grademax ?? 100);
+            $ai->feedback = ($ai->feedback ?? '');
+            $ai->feedbackformat = ($ai->feedbackformat ?? FORMAT_PLAIN);
+            return $this->store_ai_feedback($ai);
+        }
+
+        // Oops, there was some kind of error.
+        if (is_string($responsedata['generatedcontent'])) {
+            $error = $responsedata['generatedcontent'];
+        } else {
+            $error = 'Unexpected response from AI assistant.';
+        }
+        $ai = (object)[
+            'grade' => 0,
+            'grademax' => 100,
+            'feedback' => $error,
+            'feedbackformat' => FORMAT_PLAIN,
+        ];
+        return $this->store_ai_feedback($ai);
+    }
+
+    /**
+     * Retrieves a specific AI-related field value directly from the database.
+     *
+     * This method locates the `complete` question attempt step that corresponds to the same
+     * attempt as the current step and fetches the value of the given AI variable from the
+     * `question_attempt_step_data` table.
+     *
+     * The AI variable name is automatically prefixed with `_ai` to match storage convention.
+     *
+     * @param string $name The name of the AI field to retrieve (e.g., "grade", "feedback").
+     * @return string|false The stored value as a string, or false if not found.
+     */
+    protected function fetch_ai_field_directly($name) {
+        global $DB;
+
+        $select = 'qasd.value';
+        $from = implode(', ', [
+            '{question_attempt_steps} qas1',
+            '{question_attempt_steps} qas2',
+            '{question_attempt_step_data} qasd',
+        ]);
+        $where = implode(' AND ', [
+            'qas1.id = ?',
+            'qas1.questionattemptid = qas2.questionattemptid',
+            'qas2.state = ?',
+            'qas2.id = qasd.attemptstepid',
+            'qasd.name = ?',
+        ]);
+        $params = [$this->step->get_id(), 'complete', "_ai$name"];
+        return $DB->get_field_sql("SELECT $select FROM $from WHERE $where", $params);
+    }
+
+    /**
+     * Stores AI-generated feedback and grade information in the question attempt.
+     *
+     * This method saves each property from the provided AI feedback object to:
+     * - `$this->ai` for runtime access.
+     * - `$this->step` as question attempt variables using the prefix `_ai`.
+     *
+     * This ensures that AI feedback (e.g. grade, grademax, feedback text, format)
+     * is persistently recorded and can be accessed later for rendering or review.
+     *
+     * @param object $ai An object containing AI feedback properties such as 'grade', 'grademax', 'feedback', and 'feedbackformat'.
+     *
+     * @return void
+     */
+    protected function store_ai_feedback($ai) {
+        if (get_class($this->step) == 'question_attempt_step_read_only') {
+            // We cannot use set_qt_var() on a read_only step, because
+            // we get "Cannot modify a question_attempt_step_read_only."
+            // Therefore, we will locate the appropriate "complete" step
+            // and then add the ai feedback to that step manually.
+            return $this->store_ai_feedback_directly($ai);
+        }
+        foreach ($ai as $name => $value) {
+            $this->ai->$name = $value;
+            if ($this->step) {
+                $this->step->set_qt_var("_ai$name", $value);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Stores AI-generated feedback and grading information directly into the database.
+     *
+     * This method looks up the most recent `complete` question attempt step for the same attempt
+     * as the current step, and writes AI-related values into the `question_attempt_step_data` table.
+     *
+     * It updates existing records if they exist, or inserts new records otherwise.
+     * Variable names are prefixed with `_ai` to distinguish them from standard fields.
+     *
+     * @param object $ai An object containing AI feedback properties (e.g., grade, grademax, feedback, feedbackformat).
+     * @return bool Always returns true after attempting to store the data.
+     */
+    protected function store_ai_feedback_directly($ai) {
+        global $DB;
+
+        $select = 'qas2.*';
+        $from = implode(', ', [
+            '{question_attempt_steps} qas1,',
+            '{question_attempt_steps} qas2',
+        ]);
+        $where = implode(' AND ', [
+            'qas1.id = ?',
+            'qas1.questionattemptid = qas2.questionattemptid',
+            'qas2.state = ?'
+        ]);
+        $params = [$this->step->get_id(), 'complete'];
+        if ($step = $DB->get_record_sql("SELECT $select FROM $from WHERE $where", $params)) {
+
+            $qasd = 'question_attempt_step_data';
+            $asid = 'attemptstepid';
+    
+            foreach ($ai as $name => $value) {
+                $params = [$asid => $step->id, 'name' => "_ai$name"];
+                if ($DB->record_exists($qasd, $params)) {
+                    $DB->set_field($qasd, 'value', $value, $params);
+                } else {
+                    $params['value'] = $value;
+                    $DB->insert_record($qasd, $params);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Extracts previously stored AI feedback and grading information from a question attempt step.
+     *
+     * This method initializes the `$this->ai` object with default values and then attempts to
+     * populate it by extracting AI-related variables (prefixed with `_ai`) from the given attempt step.
+     * If feedback text is found, it is formatted using Moodle's `format_text()` function.
+     *
+     * @param \question_attempt_step $step The question attempt step containing stored AI variables.
+     *
+     * @return void
+     */
+    protected function extract_ai_feedback($step) {
+        $this->ai = (object)[
+            'feedback' => '',
+            'feedbackformat' => 0,
+            'grade' => 0,
+            'grademax' => 100,
+        ];
+        if ($step) {
+            foreach ($this->ai as $name => $value) {
+                if ($step->has_qt_var("_ai$name")) {
+                    $this->ai->$name = $step->get_qt_var("_ai$name");
+                }
+            }
+            if ($this->ai->feedback) {
+                $this->ai->feedback = format_text(
+                    $this->ai->feedback,
+                    $this->ai->feedbackformat,
+                    (object)['para' => false]
+                );
+            }
+        }
+    }
+
+    /**
+     * Formats the AI prompt by replacing predefined placeholders with corresponding class properties.
+     *
+     * This method retrieves the grader information and replaces placeholders in the format `{{place-holder}}`
+     * with values from the class properties (`questiontext`, `responsetemplate`, `responsesample`).
+     * If a corresponding `format` property exists (e.g., `questiontextformat`), it applies `format_text()`
+     * for proper formatting.
+     *
+     * @return string The formatted AI prompt with placeholders replaced by actual values.
+     */
+    protected function format_ai_prompt($answertext) {
+        $prompt = $this->graderinfo;
+
+        // If the answer is inserted into the prompt using place-holders,
+        // this flag will be disabled. Otherwise, the answer text will
+        // added automatically at the end of the prompt.
+        $insertanswertext = true;
+
+        // Replace {{place-holders}}
+        $search = [
+            'questiontext',
+            'responsetemplate',
+            'responsesample',
+            'answertext',
+            'studenttext',
+        ];
+        $search = '/\{\{('.implode('|', $search).')\}\}/';
+        if (preg_match_all($search, $prompt, $matches, PREG_OFFSET_CAPTURE)) {
+            $imax = count($matches[0]) - 1;
+            for ($i = $imax; $i >= 0; $i--) {
+                list($match, $start) = $matches[0][$i];
+
+                $textfield = $matches[1][$i][0];
+                $formatfield = $textfield.'format';
+                $format = FORMAT_MOODLE;
+                $text = '';
+
+                if ($textfield == 'answertext' || $textfield == 'studenttext') {
+                    $text = $this->html_to_text($answertext, $format);
+                    $insertanswertext = false;
+
+                } else if (property_exists($this, $textfield)) {
+                    $text = $this->$textfield;
+                    if (property_exists($this, $formatfield)) {
+                        $format = $this->$formatfield;
+                        $text = $this->html_to_text($text, $format);
+                    }
+
+                } else {
+                    $text = 'Missing'; // Shouldn't happen !!
+                }
+                $prompt = substr_replace($prompt, $text, $start, strlen($match));
+            }
+        }
+
+        if ($insertanswertext) {
+            $prompt .= "\n\n".'Here is the answer text that the student submitted for this question:'."\n".$answertext;
+        }
+
+        return $prompt;
     }
 
     /**
@@ -1316,7 +1708,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             'able' => 2,
             'adaptable' => 4,
             'incredible' => 4,
-            'syllable' => 3, 
+            'syllable' => 3,
             'table' => 2,
 
             // final "cle" as 1-syllable

@@ -42,7 +42,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
         $question = $qa->get_question();
         $response = $qa->get_last_qt_data();
+
+        // Generate all the stats for this response.
         $question->update_current_response($response, $options);
+        // This is probably rather wasteful.  A better solution
+        // would be to store the values using $step->set_qt_var()
+        // in question/type/essayautograde/question.php.
 
         // format question text
         $qtext = $question->format_questiontext($qa);
@@ -84,7 +89,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $end = strlen($answer);
                 }
                 $currentresponse = $question->get_current_response();
-                $answer = substr_replace($answer, $currentresponse->errortext, $start, $end - $start);
+                if ($currentresponse->errortext) {
+                    $answer = substr_replace($answer, $currentresponse->errortext, $start, $end - $start);
+                }
             }
         } else {
             $answer = $renderer->response_area_input('answer', $qa, $step, $linecount, $options->context);
@@ -172,7 +179,7 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $result .= html_writer::tag('div', $qtext, array('class' => 'qtext'));
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
         $result .= html_writer::tag('div', $answer, array('class' => 'answer'));
-        if ($itemcount) {
+        if ($itemcount && $this->show_itemcount()) {
             // Mimic the id created by "response_area_input()" in "essay/renderer.php".
             // The data-xxx values are needed by the javascript in "mobile/mobile.js".
             $params = array('id' => 'id_'.$qa->get_qt_field_name('answer_itemcount'),
@@ -201,6 +208,15 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
         $PAGE->requires->js_call_amd('qtype_essayautograde/essayautograde', 'init', $params);
 
         return $result;
+    }
+
+    /**
+     * Specify whether to show (TRUE) the item count DIV, or not (FALSE).
+     *
+     * @return bool
+     */
+    public function show_itemcount() {
+        return true;
     }
 
     /**
@@ -428,6 +444,16 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
             $gradeband = array_search($currentresponse->completepercent, $gradeband);
             $gradeband++;
 
+            if ($question->ai && $question->ai->grademax && $question->ai->feedback) {
+                $aigrade = $question->ai->grade;
+                $aigrademax = $question->ai->grademax;
+                $aifeedback = $question->ai->feedback;
+            } else {
+                $aigrade = $qa->get_last_qt_var('_aigrade', 0);
+                $aigrademax = $qa->get_last_qt_var('_aigrademax', 100);
+                $aifeedback = $qa->get_last_qt_var('_aifeedback', '');
+            }
+
             $itemtype = '';
             switch ($question->itemtype) {
                 case $question->plugin_constant('ITEM_TYPE_CHARS'): $itemtype = get_string('chars', $plugin); break;
@@ -536,6 +562,12 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                     $a = (object)array('percent' => $grade.'%',
                                        'phrase'  => $myphrase);
                     $details[] = $this->get_calculation_detail('explanationtargetphrase', $plugin, $a);
+                }
+
+                // AI generated grade
+                if ($question->aipercent && $aigrademax) {
+                    $aigrade = round($question->aipercent * ($aigrade / $aigrademax), 1);
+                    $details[] = "+ ({$aigrade}% for AI-generated grade: ($aigrade / $aigrademax) x {$question->aipercent}%)";
                 }
 
                 // Common errors.
@@ -851,6 +883,14 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
                 }
 
                 $output .= html_writer::end_tag('table');
+            }
+
+            if ($aifeedback) {
+                $output .= html_writer::tag('h5', 'AI Feedback');
+                $output .= html_writer::tag('p', $aifeedback);
+                if ($aigrademax) {
+                    $output .= html_writer::tag('p', html_writer::tag('b', 'AI Grade:')." {$aigrade} / {$aigrademax}");
+                }
             }
         }
 

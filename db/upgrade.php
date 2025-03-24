@@ -178,6 +178,30 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2025032237;
+    if ($oldversion < $newversion) {
+
+        $update = '{question} q,'.
+                  '{question_attempts} qa,'.
+                  '{question_attempt_steps} qas,'.
+                  '{question_attempt_step_data} qasd';
+
+        $set = $DB->sql_concat("'_'", $DB->sql_substr('qasd.name', 2));
+        $set = "qasd.name = $set";
+
+        $where = $DB->sql_like('qasd.name', '?').' OR '.$DB->sql_like('qasd.name', '?');
+        $where = 'q.qtype = ? AND '.
+                 'q.id = qa.questionid AND '.
+                 'qa.id = qas.questionattemptid AND '.
+                 'qas.id = qasd.attemptstepid AND '.
+                 '('.$where.')';
+
+        $params = ['essayautograde', '-aigrade%', '-aifeedback%'];
+        $DB->execute("UPDATE $update SET $set WHERE $where", $params);
+
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
     return true;
 }
 

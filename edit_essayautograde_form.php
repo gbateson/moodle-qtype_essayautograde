@@ -125,6 +125,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                 $name = 'aiassistant';
                 $label = get_string($name, $plugin);
                 $mform->addElement('hidden', $name, '');
+                $mform->setType($name, PARAM_ALPHANUMEXT);
                 // Show warning message.
                 $text = get_string($name.'notenabled', $plugin);
                 $mform->addElement('static', '', $label, $text);
@@ -136,7 +137,7 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
                 $mform->addHelpButton($name, $name, $plugin);
                 $mform->setType($name, PARAM_ALPHANUMEXT);
                 $mform->setDefault($name, $this->get_my_default_value($name, 0));
-                // Move the "aiassistant" element before the "graderinfo" (=aiprompt) textarea.
+                // Move the "aiassistant" element before the "graderinfo" (AI prompt) textarea.
                 if ($mform->elementExists('graderinfo')) {
                     $mform->insertElementBefore($mform->removeElement($name, false), 'graderinfo');
                 }

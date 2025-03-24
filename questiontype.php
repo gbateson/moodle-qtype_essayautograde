@@ -61,10 +61,10 @@ class qtype_essayautograde extends question_type {
     const SHOW_TEACHERS_ONLY = 2;
     const SHOW_TEACHERS_AND_STUDENTS = 3;
 
-    /** @var array text fields */
-    public $textfields = ['graderinfo', 'responsetemplate', 'responsesample'];
+    /** @var array editor fields */
+    public $editorfields = ['graderinfo', 'responsetemplate', 'responsesample'];
 
-    /** @var array Combined feedback fields */
+    /** @var array feedback fields */
     public $feedbackfields = ['correctfeedback', 'incorrectfeedback', 'partiallycorrectfeedback'];
 
     public function is_manual_graded() {
@@ -529,7 +529,7 @@ class qtype_essayautograde extends question_type {
         $output = '';
 
         $fs = get_file_storage();
-        $textfields = array_merge($this->textfields, $this->feedbackfields);
+        $textfields = array_merge($this->editorfields, $this->feedbackfields);
         $formatfield = '/^('.implode('|', $textfields).')format$/';
 
         $fields = $this->extra_question_fields();
@@ -627,7 +627,7 @@ class qtype_essayautograde extends question_type {
         $newquestion = $format->import_headers($data);
         $newquestion->qtype = $questiontype;
 
-        $textfields = array_merge($this->textfields, $this->feedbackfields);
+        $textfields = array_merge($this->editorfields, $this->feedbackfields);
         $textfield = '/^('.implode('|', $textfields).')$/';
         $formatfield = '/^('.implode('|', $textfields).')format$/';
 
@@ -695,7 +695,7 @@ class qtype_essayautograde extends question_type {
         $newquestion->countphrases = $i;
 
         // Check that the required feedback fields exist.
-        $this->check_combined_feedback_fields($newquestion);
+        $this->check_feedback_fields($newquestion);
 
         //$format->import_combined_feedback($newquestion, $data, false);
         $format->import_hints($newquestion, $data, false);
@@ -704,16 +704,12 @@ class qtype_essayautograde extends question_type {
     }
 
     /**
-     * Check that the required text fields exist
+     * Check that the required editor fields exist
      *
      * @param object $question
      */
-    protected function check_text_fields($question) {
-        foreach ($this->textfields as $field) {
-            if (empty($question->$field)) {
-                $question->$field = ['text' => '', 'format' => FORMAT_MOODLE, 'itemid' => 0, 'files' => null];
-            }
-        }
+    protected function check_editor_fields($question) {
+        $this->check_text_fields($question, $this->editorfields);
     }
 
     /**
@@ -721,10 +717,23 @@ class qtype_essayautograde extends question_type {
      *
      * @param object $question
      */
-    protected function check_combined_feedback_fields($question) {
-        foreach ($this->feedbackfields as $field) {
+    protected function check_feedback_fields($question) {
+        $this->check_text_fields($question, $this->feedbackfields);
+    }
+
+    /**
+     * Check that the required editor fields exist
+     *
+     * @param object $question
+     */
+    protected function check_text_fields($question, $fields) {
+        $defaultfield = [
+            'text' => '', 'format' => FORMAT_MOODLE,
+            'itemid' => 0, 'files' => null,
+        ];
+        foreach ($fields as $field) {
             if (empty($question->$field)) {
-                $question->$field = ['text' => '', 'format' => FORMAT_MOODLE, 'itemid' => 0, 'files' => null];
+                $question->$field = $defaultfield;
             }
         }
     }
@@ -916,7 +925,7 @@ class qtype_essayautograde extends question_type {
             default: $question->itemtype = self::ITEM_TYPE_NONE;
         }
 
-        $textfields = array_merge($this->textfields, $this->feedbackfields);
+        $textfields = array_merge($this->editorfields, $this->feedbackfields);
         $textfield = '/^('.implode('|', $textfields).')$/';
         $formatfield = '/^('.implode('|', $textfields).')format$/';
 
@@ -995,6 +1004,8 @@ class qtype_essayautograde extends question_type {
                         break;
     
                     default:
+                        // Textfields need to be stored as an array
+                        // (emulating what is expected from an editor).
                         if (preg_match($textfield, $name)) {
                             if (empty($question->$name)) {
                                 $question->$name = ['text' => $value, 'format' => FORMAT_MOODLE];
@@ -1003,6 +1014,8 @@ class qtype_essayautograde extends question_type {
                             } else if (is_array($question->$name)) {
                                 $question->$name['text'] = $value;
                             }
+                        // Formatfields need to be stored in the array
+                        // for the corresponding text field.
                         } else if (preg_match($formatfield, $name)) {
                             $field = substr($name, -6);
                             if (empty($question->$field)) {
@@ -1012,6 +1025,7 @@ class qtype_essayautograde extends question_type {
                             } else if (is_array($question->$field)) {
                                 $question->$field['format'] = $value;
                             }
+                        // Otherwise, we have a simple, scalar field.
                         } else {
                             $question->$name = $value;
                         }
@@ -1029,10 +1043,10 @@ class qtype_essayautograde extends question_type {
         }
 
         // fields to mimic HTML editors
-        $this->check_text_fields($question);;
+        $this->check_editor_fields($question);;
 
         // Check that the required feedback fields exist.
-        $this->check_combined_feedback_fields($question);
+        $this->check_feedback_fields($question);
 
         return $question;
     }
