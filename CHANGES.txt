@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2025-03-24 (40)
+ - fix small SQL syntax error in store_ai_directly method
+
 2025-03-24 (39)
  - modify renderer.php and question.php to accommodate speakautograde attempt steps
 

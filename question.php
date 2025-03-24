@@ -1317,7 +1317,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
 
         $select = 'qas2.*';
         $from = implode(', ', [
-            '{question_attempt_steps} qas1,',
+            '{question_attempt_steps} qas1',
             '{question_attempt_steps} qas2',
         ]);
         $where = implode(' AND ', [
