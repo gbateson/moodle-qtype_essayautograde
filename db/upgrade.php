@@ -181,23 +181,27 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
     $newversion = 2025032237;
     if ($oldversion < $newversion) {
 
-        $update = '{question} q,'.
-                  '{question_attempts} qa,'.
-                  '{question_attempt_steps} qas,'.
-                  '{question_attempt_step_data} qasd';
+        $select = 'qasd.*';
 
-        $set = $DB->sql_concat("'_'", $DB->sql_substr('qasd.name', 2));
-        $set = "qasd.name = $set";
+        $from = '{question} q,'.
+                '{question_attempts} qa,'.
+                '{question_attempt_steps} qas,'.
+                '{question_attempt_step_data} qasd';
 
-        $where = $DB->sql_like('qasd.name', '?').' OR '.$DB->sql_like('qasd.name', '?');
-        $where = 'q.qtype = ? AND '.
+        $where = '(q.qtype = ? OR q.qtype = ?) AND '.
                  'q.id = qa.questionid AND '.
                  'qa.id = qas.questionattemptid AND '.
                  'qas.id = qasd.attemptstepid AND '.
-                 '('.$where.')';
+                 $DB->sql_like('qasd.name', '?');
 
-        $params = ['essayautograde', '-aigrade%', '-aifeedback%'];
-        $DB->execute("UPDATE $update SET $set WHERE $where", $params);
+        $params = ['essayautograde', 'speakautograde', '-ai%'];
+
+        if ($records = $DB->get_records_sql("SELECT $select FROM $from WHERE $where", $params)) {
+            foreach ($records as $id => $record) {
+                $record->name = '_'.substr($record->name, 1);
+                $DB->update_record('question_attempt_step_data', $record);
+            }
+        }
 
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }

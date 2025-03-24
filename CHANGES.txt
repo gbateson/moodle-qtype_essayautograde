@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2025-03-24 (41)
+ - fix upgrade SQL that caused error son MSSL, PostgreSQL and Oracle
+
 2025-03-24 (40)
  - fix small SQL syntax error in store_ai_directly method
 
