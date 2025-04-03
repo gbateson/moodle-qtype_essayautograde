@@ -206,6 +206,13 @@ function xmldb_qtype_essayautograde_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
     }
 
+    $newversion = 2025040342;
+    if ($oldversion < $newversion) {
+        // Align the default value of the "allowsimilarity" field with its value in install.xml.
+        xmldb_qtype_essayautograde_addfields($dbman, $pluginoptionstable, 'allowsimilarity');
+        upgrade_plugin_savepoint(true, $newversion, $plugintype, $pluginname);
+    }
+
     return true;
 }
 

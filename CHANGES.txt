@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2025-04-03 (42)
+ - unify settings of fields in the DB with those in in install.xml
+
 2025-03-24 (41)
  - fix upgrade SQL that caused error son MSSL, PostgreSQL and Oracle
 
