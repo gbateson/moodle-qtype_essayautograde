@@ -493,7 +493,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             ];
             if ($fetchai) {
                 $ai = $this->get_ai_feedback($text);
-            } else {
+            } else if ($this->step) {
                 foreach ($ai as $name => $value) {
                     if ($this->step->has_qt_var("_ai$name")) {
                         $ai->$name = $this->step->get_qt_var("_ai$name");
@@ -1128,16 +1128,37 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      */
     public function ai_enabled() {
         global $DB;
+    
         if ($aiassistant = $this->aiassistant) {
-            if (class_exists('\\core_ai\\aiactions\\generate_text')) {
-                $action = \core_ai\aiactions\generate_text::class;
-                if (class_exists('\\core_ai\\manager')) {
-                    $providers = \core_ai\manager::get_providers_for_actions([$action], true);
+    
+            // Define AI action and manager class names.
+            $actionclass = '\\core_ai\\aiactions\\generate_text';
+            $managerclass = '\\core_ai\\manager';
+            $method = 'get_providers_for_actions';
+    
+            // Check that the required AI action class exists.
+            if (class_exists($actionclass)) {
+                $action = trim($actionclass, '\\');
+    
+                // Check that the AI manager class exists.
+                if (class_exists($managerclass)) {
+    
+                    $reflection = new \ReflectionMethod($managerclass, $method);
+                    if ($reflection->isStatic()) {
+                        // Moodle 4.5 and earlier use a static method.
+                        $providers = $managerclass::$method([$action], true);
+                    } else {
+                        // Moodle 5.0 and later - needs an instance with $DB.
+                        $manager = new $managerclass($DB);
+                        $providers = $manager->$method([$action], true);
+                    }
+    
                     foreach ($providers[$action] as $provider) {
                         if ($provider->get_name() == $aiassistant) {
                             return true;
                         }
                     }
+    
                     if ($provider = reset($providers)) {
                         $table = $this->plugin_name().'_options';
                         $field = 'aiassistant';
@@ -1150,6 +1171,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 }
             }
         }
+    
         return false;
     }
 
@@ -1171,24 +1193,44 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
      * @return object|null An object containing AI feedback and grading info, or null if AI is unavailable.
      */
     public function get_ai_feedback($answertext) {
-        global $USER;
+        global $DB, $USER;
 
-        if (! class_exists('\\core_ai\\manager')) {
+        // Define AI action and manager class names.
+        $managerclass = '\\core_ai\\manager';
+        $actionclass = '\\core_ai\\aiactions\\generate_text';
+
+        if (! class_exists($managerclass)) {
             // AI is not available (Moodle <= 4.4)
             return null;
         }
-        if (! class_exists('\\core_ai\\aiactions\\generate_text')) {
+        if (! class_exists($actionclass)) {
             // Somethings's wrong. The AI manager exists, but the
             // generate_text action does not. Shouldn't happen !!
             return null;
         }
 
+        // Set up the AI manager (in Moodle >= 5.0, we need to pass $DB)
+        $requiresdb = false;
+        $reflection = new \ReflectionClass($managerclass);
+        if ($constructor = $reflection->getConstructor()) {
+            $params = $constructor->getParameters();
+            if (count($params) > 0 && !$params[0]->isOptional()) {
+                // First parameter is required (e.g. $DB in Moodle 5.0).
+                $requiresdb = true;
+            }
+        }
+        if ($requiresdb) {
+            // Moodle >= 5.0.
+            $manager = new $managerclass($DB);
+        } else {
+            // Moodle <= 4.5.
+            $manager = new $managerclass();
+        }
+
         // Fetch the AI response.
-        $manager = new \core_ai\manager();
-        $action = new \core_ai\aiactions\generate_text(
-            userid: $USER->id,
-            contextid: $this->contextid,
-            prompttext: $this->format_ai_prompt($answertext)
+        $action = new $actionclass(
+            $this->contextid, $USER->id,
+            $this->format_ai_prompt($answertext)
         );
         $response = $manager->process_action($action);
         $responsedata = $response->get_response_data();
@@ -1297,7 +1339,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
                 $this->step->set_qt_var("_ai$name", $value);
             }
         }
-        return true;
+        return $ai;
     }
 
     /**
@@ -1342,7 +1384,7 @@ class qtype_essayautograde_question extends qtype_essay_question implements ques
             }
         }
 
-        return true;
+        return $ai;
     }
 
     /**

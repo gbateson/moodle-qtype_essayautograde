@@ -2,6 +2,9 @@
 Change log for qtype_essayautograde
 ========================================
 
+2025-04-14 (43)
+ - fix compatability with Moodle 5.x AI manager
+
 2025-04-03 (42)
  - unify settings of fields in the DB with those in in install.xml
 

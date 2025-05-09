@@ -671,21 +671,54 @@ class qtype_essayautograde_edit_form extends qtype_essay_edit_form {
      * where the keys are provider names and the values are localized
      * provider names.
      *
+     * In Moodle 4.5 the "get_providers_for_actions()" method was static,
+     * but in 5.0, it was changed to non-static. To maintain compatibility
+     * with both versions, PHP's ReflectionMethod is used to detect whether
+     * the target method is static or not, and calls it appropriately.
+     *
      * @return array|false An associative array of AI provider names with their localized names,
-     *                     or false if the AI manager class does not exist.
+     *                     or false if the AI manager class or target method does not exist.
      */
     protected function get_ai_providers() {
+        global $DB;
+
+        // Define the PHP class and method that we will use.
+        $managerclass = '\\core_ai\\manager';
+        $actionclass = '\\core_ai\\aiactions\\generate_text';
+        $method = 'get_providers_for_actions';
+    
         // Moodle <= 4.5 had no core AI functionality.
-        if (! class_exists('\\core_ai\\manager')) {
+        if (!class_exists($managerclass)) {
             return false;
         }
+    
+        // Check if the method exists - it should !!
+        if (!method_exists($managerclass, $method)) {
+            return false;
+        }
+    
+        // Initialize the array of options.
         $options = [];
-        $action = \core_ai\aiactions\generate_text::class;
-        $providers = \core_ai\manager::get_providers_for_actions([$action], true);
+
+        // Extract action from class name.
+        $action = trim($actionclass, '\\');
+    
+        $reflection = new \ReflectionMethod($managerclass, $method);
+        if ($reflection->isStatic()) {
+            // Moodle 4.5 and earlier
+            $providers = $managerclass::$method([$action], true);
+        } else {
+            // Moodle 5.0 and later - needs an instance
+            // and furthermore, that instance needs $DB.
+            $manager = new $managerclass($DB);
+            $providers = $manager->$method([$action], true);
+        }
+    
         foreach ($providers[$action] as $provider) {
             $name = $provider->get_name();
             $options[$name] = get_string('pluginname', $name);
         }
+    
         return $options;
     }
 
