@@ -227,9 +227,9 @@ class qtype_essayautograde_question_test extends advanced_testcase {
 
         // Test the case in which we're in "no inline response" mode,
         // in which the response is not required (as it's not provided).
-        $essayautograde->reponserequired = 0;
+        $essayautograde->responserequired = 0;
         $essayautograde->responseformat = 'noinline';
-        $essayautograde->attachmensrequired = 1;
+        $essayautograde->attachmentsrequired = 1;
 
         $this->assertFalse($essayautograde->is_complete_response(
                 array()));
@@ -241,7 +241,7 @@ class qtype_essayautograde_question_test extends advanced_testcase {
                 array('attachments' => $attachments[1])));
 
         // Ensure that responserequired is ignored when we're in inline response mode.
-        $essayautograde->reponserequired = 1;
+        $essayautograde->responserequired = 1;
         $this->assertTrue($essayautograde->is_complete_response(
                 array('attachments' => $attachments[1])));
 

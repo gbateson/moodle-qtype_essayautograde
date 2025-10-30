@@ -442,7 +442,9 @@ class qtype_essayautograde_renderer extends qtype_with_combined_feedback_rendere
 
             $gradeband = array_values($currentresponse->bands); // percents
             $gradeband = array_search($currentresponse->completepercent, $gradeband);
-            $gradeband++;
+            if ($gradeband !== false) {
+                $gradeband++;
+            }
 
             if ($question->ai && $question->ai->grademax && $question->ai->feedback) {
                 $aigrade = $question->ai->grade;
